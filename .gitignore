@@ -1,0 +1,18 @@
+# Claude Code local credentials — never commit
+.devcontainer/claude-config/*
+!.devcontainer/claude-config/.gitkeep
+
+# Go build output
+/bin/
+/dist/
+*.exe
+*.test
+*.out
+
+# Env & secrets
+.env
+.env.local
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db

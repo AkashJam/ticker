@@ -1,0 +1,3 @@
+# Keeps the claude-config/ folder in the repo. Claude Code writes its local
+# credentials and config here (mounted to /home/vscode/.claude-config in the
+# dev container). Everything except this file is git-ignored — see ../../.gitignore.

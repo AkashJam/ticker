@@ -1,0 +1,45 @@
+{
+  "name": "ticker (Go)",
+
+  // Reuses the repo's multi-stage Dockerfile — the `dev` target only (§5).
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "target": "dev"
+  },
+
+  // Go comes from the base image. Node is added so the Claude Code extension
+  // (Node-based) can run inside this Go container; common-utils gives `vscode`.
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "username": "vscode"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24"
+    }
+  },
+
+  "remoteUser": "vscode",
+
+  // Persist Claude Code credentials/config across container rebuilds.
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude-config"
+  },
+  "mounts": [
+    "source=${localWorkspaceFolder}/.devcontainer/claude-config,target=/home/vscode/.claude-config,type=bind,consistency=cached"
+  ],
+
+  "forwardPorts": [8080],
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "golang.go"
+      ]
+    }
+  }
+
+  // Opt-in: also install the `claude` terminal command.
+  // "postCreateCommand": "npm install -g @anthropic-ai/claude-code"
+}
