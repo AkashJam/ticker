@@ -1,0 +1,39 @@
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - contextcheck
+    - errorlint
+    - gocritic
+    - misspell
+    - noctx
+    - revive
+    - sqlclosecheck
+    - unconvert
+    - unparam
+
+  settings:
+    revive:
+      rules:
+        # Deliberately omits the default "exported" rule (comment required
+        # on every exported identifier) — this project's own comment
+        # philosophy is WHY-not-WHAT (see CLAUDE.md/system conventions):
+        # a self-explanatory NewFoo(...) *Foo constructor doesn't need a
+        # "NewFoo returns a new Foo" comment restating its signature.
+        # Other revive checks (unused-parameter, etc.) still apply via the
+        # standard preset below.
+        - name: unused-parameter
+        - name: context-as-argument
+        - name: error-strings
+        - name: errorf
+        - name: indent-error-flow
+        - name: range
+        - name: receiver-naming
+        - name: var-naming
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
