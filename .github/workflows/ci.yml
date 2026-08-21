@@ -15,6 +15,11 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # `secrets` isn't directly usable inside a step's `if:` condition
+    # (GitHub Actions restriction) — expose it via job-level env instead, so
+    # the "Trigger infra deploy" step below can check env.HAS_INFRA_TOKEN.
+    env:
+      HAS_INFRA_TOKEN: ${{ secrets.INFRA_DISPATCH_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -63,7 +68,7 @@ jobs:
       # See the matching step/comment in portfolio/.github/workflows/ci.yml
       # — same cross-repo CD gap, same fix. Conditioned on the secret
       # existing — deferred setup skips this cleanly instead of failing.
-      - if: github.ref == 'refs/heads/main' && github.event_name == 'push' && secrets.INFRA_DISPATCH_TOKEN != ''
+      - if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.HAS_INFRA_TOKEN == 'true'
         name: Trigger infra deploy
         uses: peter-evans/repository-dispatch@v3
         with:
