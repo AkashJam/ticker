@@ -27,9 +27,19 @@ jobs:
         with:
           go-version: "1.26"
 
-      - uses: golangci/golangci-lint-action@v6
+      # Both the action's own major version AND the `version:` input had to
+      # change, not just the input — golangci-lint-action@v6 only knows how
+      # to run golangci-lint v1.x; v7+ is required for v2 (confirmed against
+      # the action's own README: "v6.0.0+ ... v1 only", "v7.0.0 supports
+      # golangci-lint v2 only"). `version: latest` under the old @v6 setup
+      # had resolved to a stale v1.64.8 (built with Go 1.24, too old for
+      # this module's Go 1.26) — and even a fresh v1.x would still fail,
+      # since .golangci.yml uses the v2 config schema (`version: "2"`,
+      # `linters.default: standard`), which v1.x can't parse at all.
+      # v2.13.1 is exactly what was validated locally (0 issues, see phase3.md).
+      - uses: golangci/golangci-lint-action@v8
         with:
-          version: latest
+          version: v2.13.1
 
       - run: go vet ./...
       - run: go test ./...
