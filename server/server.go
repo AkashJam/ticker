@@ -46,8 +46,8 @@ type Server struct {
 	aggregator *aggregate.Aggregator
 	httpServer *http.Server
 
-	wg           sync.WaitGroup
-	cancelPipe   context.CancelFunc
+	wg         sync.WaitGroup
+	cancelPipe context.CancelFunc
 }
 
 // New opens every dependency and wires the pipeline, but doesn't start
@@ -151,11 +151,12 @@ func (s *Server) Run(ctx context.Context) error {
 // ingestion loop releases its leader lock, so neither races against a
 // goroutine that might still be mutating the same state.
 //
-//nolint:contextcheck // deliberately uses a fresh context.Background(), not
 // a ctx from the caller — by the time shutdown runs, the caller's ctx is
 // either already canceled (the ctx.Done() path) or irrelevant (the
 // listener-error path), and Redis/Timescale calls here need a live context
 // to actually complete.
+//
+//nolint:contextcheck // deliberately uses a fresh context.Background(), not
 func (s *Server) shutdown() error {
 	s.log.Info("server: shutting down")
 	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)

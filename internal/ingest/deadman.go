@@ -36,10 +36,11 @@ func NewDeadMan(url string) *DeadMan {
 // point of a dead-man switch: healthchecks.io alerts on a *missing* ping,
 // we don't need to also alert on a failed one here.
 //
-//nolint:contextcheck // deliberately doesn't accept the caller's ctx: the
 // ping runs fire-and-forget in its own goroutine so callers on the hot
 // tick path never block on a network call, and the caller's ctx (scoped to
 // one tick) would cancel this before the request could even complete.
+//
+//nolint:contextcheck // deliberately doesn't accept the caller's ctx: the
 func (d *DeadMan) Ping() {
 	if d.url == "" {
 		return
