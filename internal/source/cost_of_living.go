@@ -177,7 +177,12 @@ func snapshotFor(c colCity, now time.Time) CostOfLivingSnapshot {
 // trend line rather than a single current value.
 func seriesFor(c colCity, now time.Time) []CostOfLivingSeriesPoint {
 	surveyStart := time.Date(c.SurveyYear, time.January, 1, 0, 0, 0, 0, time.UTC)
-	var points []CostOfLivingSeriesPoint
+	// Non-nil for the same reason as the store layer's Candles/Symbols —
+	// the loop bound makes an empty result practically unreachable today
+	// (surveyStart is always in the past), but a nil slice here would
+	// still marshal to JSON `null` against the documented array contract
+	// if that ever stopped being true.
+	points := make([]CostOfLivingSeriesPoint, 0)
 	for t := surveyStart; !t.After(now); t = t.AddDate(0, 1, 0) {
 		points = append(points, CostOfLivingSeriesPoint{
 			Time:  t,

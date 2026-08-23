@@ -111,7 +111,13 @@ func (t *Timescale) Candles(ctx context.Context, symbol, interval string, from, 
 	}
 	defer rows.Close()
 
-	var out []source.Candle
+	// Explicitly non-nil: a `var out []source.Candle` that never gets
+	// appended to stays nil, and encoding/json marshals a nil slice as
+	// `null` — a symbol with no candles yet in the requested range would
+	// break the documented §8 contract (`"candles": [...]`, always an
+	// array) and fail Zod's `z.array(...)` client-side. Caught for real by
+	// the Days 10-12 contract test.
+	out := make([]source.Candle, 0)
 	for rows.Next() {
 		var c source.Candle
 		if err := rows.Scan(&c.Time, &c.Symbol, &c.Interval, &c.Open, &c.High, &c.Low, &c.Close, &c.Volume); err != nil {
@@ -161,7 +167,10 @@ func (t *Timescale) RecentCandles(ctx context.Context, symbol, interval string, 
 	}
 	defer rows.Close()
 
-	var out []source.Candle
+	// Non-nil for the same reason as Candles above — never actually hit
+	// this path's own JSON boundary directly (RecentCandles only feeds the
+	// indicators cache internally), but the same latent nil-slice risk.
+	out := make([]source.Candle, 0)
 	for rows.Next() {
 		var c source.Candle
 		if err := rows.Scan(&c.Time, &c.Symbol, &c.Interval, &c.Open, &c.High, &c.Low, &c.Close, &c.Volume); err != nil {

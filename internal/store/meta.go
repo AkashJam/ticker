@@ -34,7 +34,10 @@ func (m *Meta) Symbols(ctx context.Context) ([]source.SymbolInfo, error) {
 	}
 	defer rows.Close()
 
-	var out []source.SymbolInfo
+	// Non-nil for the same reason as store/timescale.go's Candles/
+	// RecentCandles — a nil slice marshals to JSON `null`, breaking the
+	// documented §8 array contract for GET /symbols.
+	out := make([]source.SymbolInfo, 0)
 	for rows.Next() {
 		var s source.SymbolInfo
 		if err := rows.Scan(&s.Symbol, &s.Name, &s.Type, &s.Exchange); err != nil {
