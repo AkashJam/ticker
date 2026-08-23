@@ -30,6 +30,38 @@ func TestRSI_WilderSmoothing(t *testing.T) {
 	}
 }
 
+func TestRSISeries_WilderSmoothing(t *testing.T) {
+	// Same input/worked example as TestRSI_WilderSmoothing, but checking
+	// every intermediate point, not just the final value — this is exactly
+	// where a plain-SMA RSI bug would diverge from Wilder's smoothing but a
+	// final-value-only test could still coincidentally pass on other inputs.
+	//   series[0] (seed):    avgGain=4/3, avgLoss=1/3 → RSI = 100-100/5    = 80
+	//   series[1] (delta -1): avgGain=8/9, avgLoss=5/9 → RSI = 100-100/2.6  = 800/13
+	//   series[2] (delta +2): avgGain=34/27, avgLoss=10/27 → RSI = 850/11 (final)
+	candles := closesOf(10, 12, 11, 13, 12, 14)
+	want := []float64{80, 800.0 / 13.0, 850.0 / 11.0}
+
+	got, ok := RSISeries(candles, 3)
+	if !ok {
+		t.Fatalf("RSISeries: expected ok=true")
+	}
+	if len(got) != len(want) {
+		t.Fatalf("RSISeries: got %d points, want %d: %v", len(got), len(want), got)
+	}
+	for i := range want {
+		if !fuzzyEqual(got[i], want[i], 1e-9) {
+			t.Errorf("RSISeries[%d] = %v, want %v", i, got[i], want[i])
+		}
+	}
+}
+
+func TestRSISeries_NotEnoughCandles(t *testing.T) {
+	candles := closesOf(10, 11, 12)
+	if _, ok := RSISeries(candles, 3); ok {
+		t.Errorf("RSISeries: expected ok=false with only period candles (need period+1)")
+	}
+}
+
 func TestRSI_AllGains(t *testing.T) {
 	// Strictly increasing closes ⇒ avgLoss stays 0 ⇒ RSI saturates at 100.
 	candles := closesOf(10, 11, 12, 13, 14)

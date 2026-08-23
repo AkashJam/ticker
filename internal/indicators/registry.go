@@ -2,26 +2,37 @@ package indicators
 
 import "github.com/AkashJam/ticker/internal/source"
 
-// ComputeFunc is the extension point (§6.4): every entry is a pure
-// func([]Candle) → value, added to Registry — new indicators (§16.1's
+// SeriesFunc is the extension point (§6.4): every entry is a pure
+// func([]Candle) → series, added to Registry — new indicators (§16.1's
 // SMA/MACD/Bollinger/VWAP) are new registry entries, not new code paths.
-type ComputeFunc func(candles []source.Candle) (value float64, ok bool)
+// The returned series is one value per candle from the indicator's seed
+// point onward, oldest first.
+type SeriesFunc func(candles []source.Candle) (series []float64, ok bool)
 
-// Entry pairs a registry name with its default period and compute
-// function.
+// Entry pairs a registry name with its default period and series function.
 type Entry struct {
-	Period  int
-	Compute ComputeFunc
+	Period int
+	Series SeriesFunc
+}
+
+// Compute returns just the latest value of Series — the single-value §8
+// response shape (`GET .../indicators` without `series=true`).
+func (e Entry) Compute(candles []source.Candle) (value float64, ok bool) {
+	series, ok := e.Series(candles)
+	if !ok || len(series) == 0 {
+		return 0, false
+	}
+	return series[len(series)-1], true
 }
 
 // Registry maps the API's `set=` query values (§8) to their indicator.
 var Registry = map[string]Entry{
 	"ema": {
-		Period:  DefaultEMAPeriod,
-		Compute: func(c []source.Candle) (float64, bool) { return EMA(c, DefaultEMAPeriod) },
+		Period: DefaultEMAPeriod,
+		Series: func(c []source.Candle) ([]float64, bool) { return EMASeries(c, DefaultEMAPeriod) },
 	},
 	"rsi": {
-		Period:  RSIPeriod,
-		Compute: func(c []source.Candle) (float64, bool) { return RSI(c, RSIPeriod) },
+		Period: RSIPeriod,
+		Series: func(c []source.Candle) ([]float64, bool) { return RSISeries(c, RSIPeriod) },
 	},
 }

@@ -5,15 +5,17 @@ import "github.com/AkashJam/ticker/internal/source"
 // RSIPeriod is fixed at 14 per portfolio.md §6.4/§8 ("RSI(14)").
 const RSIPeriod = 14
 
-// RSI computes the Relative Strength Index over candle closes using
+// RSISeries computes the Relative Strength Index over candle closes using
 // Wilder's original smoothing method (α = 1/period) — not a plain
 // SMA-of-gains/losses RSI, which is a common and easy mistake (flagged
 // during planning: portfolio.md §15 itself names an "RSI Wilder-smoothing
 // bug" as an anticipated war story). Needs at least period+1 candles to
-// produce the first value; ok=false otherwise.
-func RSI(candles []source.Candle, period int) (value float64, ok bool) {
+// produce the first value; ok=false otherwise. Returns one value per
+// candle from the seed point onward: series[0] aligns to candles[period],
+// series[i] to candles[period+i].
+func RSISeries(candles []source.Candle, period int) (series []float64, ok bool) {
 	if period <= 0 || len(candles) < period+1 {
-		return 0, false
+		return nil, false
 	}
 
 	deltas := make([]float64, len(candles)-1)
@@ -32,6 +34,8 @@ func RSI(candles []source.Candle, period int) (value float64, ok bool) {
 	}
 	avgGain /= float64(period)
 	avgLoss /= float64(period)
+	series = make([]float64, 0, len(deltas)-period+1)
+	series = append(series, rsiFromAverages(avgGain, avgLoss))
 
 	// Wilder smoothing over the remaining deltas: each new average blends
 	// in one more period's worth of weight while retaining (period-1)/period
@@ -45,15 +49,30 @@ func RSI(candles []source.Candle, period int) (value float64, ok bool) {
 		}
 		avgGain = (avgGain*float64(period-1) + gain) / float64(period)
 		avgLoss = (avgLoss*float64(period-1) + loss) / float64(period)
+		series = append(series, rsiFromAverages(avgGain, avgLoss))
 	}
 
+	return series, true
+}
+
+// RSI returns just the latest value of RSISeries — the single-value §8
+// response shape.
+func RSI(candles []source.Candle, period int) (value float64, ok bool) {
+	series, ok := RSISeries(candles, period)
+	if !ok {
+		return 0, false
+	}
+	return series[len(series)-1], true
+}
+
+func rsiFromAverages(avgGain, avgLoss float64) float64 {
 	switch {
 	case avgLoss == 0 && avgGain == 0:
-		return 50, true // no movement at all in the window
+		return 50 // no movement at all in the window
 	case avgLoss == 0:
-		return 100, true // only gains — RS is unbounded, RSI saturates at 100
+		return 100 // only gains — RS is unbounded, RSI saturates at 100
 	default:
 		rs := avgGain / avgLoss
-		return 100 - (100 / (1 + rs)), true
+		return 100 - (100 / (1 + rs))
 	}
 }

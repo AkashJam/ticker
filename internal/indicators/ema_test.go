@@ -33,6 +33,34 @@ func TestEMA(t *testing.T) {
 	}
 }
 
+func TestEMASeries(t *testing.T) {
+	// Same input/worked example as TestEMA, checking every intermediate
+	// point: seed = SMA(10,11,12) = 11, then 12, 13, 14 (final, matches
+	// TestEMA).
+	candles := closesOf(10, 11, 12, 13, 14, 15)
+	want := []float64{11, 12, 13, 14}
+
+	got, ok := EMASeries(candles, 3)
+	if !ok {
+		t.Fatalf("EMASeries: expected ok=true")
+	}
+	if len(got) != len(want) {
+		t.Fatalf("EMASeries: got %d points, want %d: %v", len(got), len(want), got)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("EMASeries[%d] = %v, want %v", i, got[i], want[i])
+		}
+	}
+}
+
+func TestEMASeries_NotEnoughCandles(t *testing.T) {
+	candles := closesOf(10, 11)
+	if _, ok := EMASeries(candles, 3); ok {
+		t.Errorf("EMASeries: expected ok=false with fewer candles than the period")
+	}
+}
+
 func TestEMA_NotEnoughCandles(t *testing.T) {
 	candles := closesOf(10, 11)
 	if _, ok := EMA(candles, 3); ok {
