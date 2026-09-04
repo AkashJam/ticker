@@ -17,6 +17,11 @@ type symbolResponse struct {
 	Name     string `json:"name"`
 	Type     string `json:"type"`
 	Exchange string `json:"exchange"`
+	// Regime surfaces source.SymbolInfo.Regime (steady/high_vol/
+	// mean_reverting/gappy) — the sim source's per-symbol behavior label,
+	// previously computed but never serialized. Used by the portfolio
+	// site's market dashboard to badge each card (mockups/v3).
+	Regime string `json:"regime"`
 }
 
 // GetSymbols handles GET /symbols (§8).
@@ -30,7 +35,10 @@ func (h *Handlers) GetSymbols(c *gin.Context) {
 
 	out := make([]symbolResponse, len(symbols))
 	for i, s := range symbols {
-		out[i] = symbolResponse{Symbol: s.Symbol, Name: s.Name, Type: string(s.Type), Exchange: s.Exchange}
+		out[i] = symbolResponse{
+			Symbol: s.Symbol, Name: s.Name, Type: string(s.Type), Exchange: s.Exchange,
+			Regime: string(s.Regime),
+		}
 	}
 	c.JSON(http.StatusOK, out)
 }
