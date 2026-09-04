@@ -89,7 +89,7 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 	deadman := ingest.NewDeadMan(cfg.HealthchecksURL)
 	producer := ingest.NewProducer(redis, leader, deadman, log)
 
-	aggregator := aggregate.New(redis, ts, aggWindowLabel(cfg.AggWindow), cfg.AggWindow, log)
+	aggregator := aggregate.New(redis, ts, aggWindowLabel(cfg.AggWindow), cfg.AggWindow, cfg.Consumer, log)
 
 	cache := indicators.NewCache(redis)
 	hub := sse.NewHub(redis, sseMaxConns, log)

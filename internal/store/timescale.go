@@ -43,16 +43,22 @@ func NewTimescale(pool *pgxpool.Pool) *Timescale {
 }
 
 // InsertTick appends one raw tick — the `ticks` hypertable, 7-day retention
-// (ADR-004).
-func (t *Timescale) InsertTick(ctx context.Context, tick source.NormalizedTick) error {
+// (ADR-004) — keyed by (time, streamID) so it doubles as the dedupe gate for
+// Redis Streams' at-least-once delivery (content/REVIEW.md's central
+// design): a redelivered stream entry has the same time and streamID, so
+// ON CONFLICT DO NOTHING makes the second insert a no-op. inserted reports
+// whether this call's row was new — false means the caller already
+// processed this stream entry and must skip accumulating it again.
+func (t *Timescale) InsertTick(ctx context.Context, tick source.NormalizedTick, streamID string) (inserted bool, err error) {
 	const q = `
-		INSERT INTO ticks (time, symbol, price, volume, simulated)
-		VALUES ($1, $2, $3, $4, $5)`
-	_, err := t.pool.Exec(ctx, q, tick.Timestamp, tick.Symbol, tick.Price, tick.Volume, tick.Simulated)
+		INSERT INTO ticks (time, symbol, price, volume, simulated, stream_id)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (time, stream_id) DO NOTHING`
+	tag, err := t.pool.Exec(ctx, q, tick.Timestamp, tick.Symbol, tick.Price, tick.Volume, tick.Simulated, streamID)
 	if err != nil {
-		return fmt.Errorf("store: insert tick: %w", err)
+		return false, fmt.Errorf("store: insert tick: %w", err)
 	}
-	return nil
+	return tag.RowsAffected() > 0, nil
 }
 
 // UpsertCandle writes the current state of one (symbol, interval, time)

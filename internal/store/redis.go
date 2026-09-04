@@ -163,6 +163,30 @@ func (r *Redis) ReadGroup(ctx context.Context, stream, group, consumer string, c
 	return out, nil
 }
 
+// AutoClaim claims entries idle for at least minIdle from other consumers in
+// the group (content/REVIEW.md #2/#4: makes redelivery real, rather than
+// leaving crashed/stalled consumers' pending entries stranded forever).
+// start is the cursor to resume scanning the group's PEL from ("0" scans
+// from the beginning); next is passed back in as start on the following
+// call to page through a large PEL rather than reclaiming the same prefix
+// repeatedly.
+func (r *Redis) AutoClaim(ctx context.Context, stream, group, consumer string, minIdle time.Duration, start string, count int64) (msgs []StreamMessage, next string, err error) {
+	xmsgs, next, err := r.Client.XAutoClaim(ctx, &redis.XAutoClaimArgs{
+		Stream: stream, Group: group, Consumer: consumer,
+		MinIdle: minIdle, Start: start, Count: count,
+	}).Result()
+	if err != nil {
+		return nil, "", fmt.Errorf("store: xautoclaim: %w", err)
+	}
+
+	out := make([]StreamMessage, 0, len(xmsgs))
+	for _, m := range xmsgs {
+		data, _ := m.Values["data"].(string)
+		out = append(out, StreamMessage{ID: m.ID, Data: data})
+	}
+	return out, next, nil
+}
+
 // Ack acknowledges processed entries so they aren't redelivered.
 func (r *Redis) Ack(ctx context.Context, stream, group string, ids ...string) error {
 	if len(ids) == 0 {

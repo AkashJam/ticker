@@ -29,6 +29,11 @@ type Config struct {
 	TimescaleDSN    string
 	RedisAddr       string
 	HealthchecksURL string // optional dead-man switch ping URL (§13) — empty disables it
+	// Consumer names this instance in the ticks:raw consumer group. Empty
+	// falls back to aggregate.New's hostname-pid default, correct for
+	// today's single-aggregator deployment; ADR-003's revisit trigger (a
+	// second aggregator replica) is what would need this set explicitly.
+	Consumer string
 }
 
 // Validate fails fast on anything that would otherwise surface as a

@@ -15,16 +15,6 @@ type Entry struct {
 	Series SeriesFunc
 }
 
-// Compute returns just the latest value of Series — the single-value §8
-// response shape (`GET .../indicators` without `series=true`).
-func (e Entry) Compute(candles []source.Candle) (value float64, ok bool) {
-	series, ok := e.Series(candles)
-	if !ok || len(series) == 0 {
-		return 0, false
-	}
-	return series[len(series)-1], true
-}
-
 // Registry maps the API's `set=` query values (§8) to their indicator.
 var Registry = map[string]Entry{
 	"ema": {

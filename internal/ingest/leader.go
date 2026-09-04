@@ -15,7 +15,6 @@ const (
 	leaderLockKey = "lock:ingest-leader"
 	leaderTTL     = 15 * time.Second
 	leaderRetry   = 3 * time.Second
-	leaderRenew   = 5 * time.Second
 )
 
 // Leader elects a single ingesting instance via Redis (SET NX PX, §6.3) so

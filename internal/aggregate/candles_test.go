@@ -2,6 +2,7 @@ package aggregate
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"log/slog"
 	"sync"
@@ -20,14 +21,22 @@ type candleKey struct {
 	time             time.Time
 }
 
+// tickKey mirrors the store's real (time, stream_id) unique constraint that
+// makes InsertTick double as the dedupe gate.
+type tickKey struct {
+	time     time.Time
+	streamID string
+}
+
 type fakeCandleStore struct {
 	mu     sync.Mutex
 	latest map[candleKey]source.Candle
 	calls  int
+	ticks  map[tickKey]bool
 }
 
 func newFakeCandleStore() *fakeCandleStore {
-	return &fakeCandleStore{latest: make(map[candleKey]source.Candle)}
+	return &fakeCandleStore{latest: make(map[candleKey]source.Candle), ticks: make(map[tickKey]bool)}
 }
 
 func (f *fakeCandleStore) UpsertCandle(_ context.Context, c source.Candle) error {
@@ -36,6 +45,19 @@ func (f *fakeCandleStore) UpsertCandle(_ context.Context, c source.Candle) error
 	f.calls++
 	f.latest[candleKey{c.Symbol, c.Interval, c.Time}] = c
 	return nil
+}
+
+// InsertTick mirrors Timescale's ON CONFLICT (time, stream_id) DO NOTHING —
+// inserted is false on a repeat (time, streamID) pair.
+func (f *fakeCandleStore) InsertTick(_ context.Context, tick source.NormalizedTick, streamID string) (bool, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	k := tickKey{time: tick.Timestamp, streamID: streamID}
+	if f.ticks[k] {
+		return false, nil
+	}
+	f.ticks[k] = true
+	return true, nil
 }
 
 func (f *fakeCandleStore) get(symbol, interval string, t time.Time) (source.Candle, bool) {
@@ -61,6 +83,10 @@ func (f *fakeRedis) EnsureConsumerGroup(_ context.Context, _, _ string) error {
 
 func (f *fakeRedis) ReadGroup(_ context.Context, _, _, _ string, _ int64, _ time.Duration) ([]store.StreamMessage, error) {
 	return nil, nil
+}
+
+func (f *fakeRedis) AutoClaim(_ context.Context, _, _, _ string, _ time.Duration, _ string, _ int64) ([]store.StreamMessage, string, error) {
+	return nil, "0", nil
 }
 
 func (f *fakeRedis) Ack(_ context.Context, _, _ string, _ ...string) error {
@@ -90,7 +116,7 @@ func must(t *testing.T, err error) {
 
 func newTestAggregator(redis StreamConsumer, ts CandleStore) *Aggregator {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	return New(redis, ts, "1m", time.Minute, log)
+	return New(redis, ts, "1m", time.Minute, "test-consumer", log)
 }
 
 func TestAggregator_OHLCVCorrectness(t *testing.T) {
@@ -165,11 +191,11 @@ func TestAggregator_CandleClose(t *testing.T) {
 }
 
 func TestAggregator_UpsertIdempotency(t *testing.T) {
-	// ADR-004 / Risk Register #4: candle upsert is idempotent by
+	// SQL-level idempotency only: candle upsert is idempotent by
 	// (symbol, interval, time) — writing the same candle state repeatedly
-	// (as processTick does on every tick within a still-open bucket, and as
-	// a redelivered Stream entry could trigger) must never produce more
-	// than one stored row for that key.
+	// (as processTick does on every tick within a still-open bucket) must
+	// never produce more than one stored row for that key. Redelivery safety
+	// is a separate claim, covered by TestAggregator_DuplicateTickIsSkipped.
 	ts := newFakeCandleStore()
 	ctx := context.Background()
 	c := source.Candle{Symbol: "SIM:TEST", Interval: "1m", Time: time.Unix(0, 0).UTC(), Open: 100, High: 105, Low: 98, Close: 102, Volume: 40}
@@ -186,6 +212,36 @@ func TestAggregator_UpsertIdempotency(t *testing.T) {
 	got, ok := ts.get(c.Symbol, c.Interval, c.Time)
 	if !ok || got != c {
 		t.Errorf("stored candle = %+v, want %+v", got, c)
+	}
+}
+
+// TestAggregator_DuplicateTickIsSkipped drives handleMessage twice with the
+// same stream ID (as a redelivered/reclaimed Stream entry would) and asserts
+// the tick's effect — volume — is only counted once. This must fail before
+// the stream_id insert-as-dedupe gate lands (content/REVIEW.md's central
+// design) and pass after, or it isn't proving anything.
+func TestAggregator_DuplicateTickIsSkipped(t *testing.T) {
+	ts := newFakeCandleStore()
+	agg := newTestAggregator(&fakeRedis{}, ts)
+	ctx := context.Background()
+
+	base := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	tick := source.NormalizedTick{Symbol: "SIM:TEST", Price: 100, Volume: 10, Timestamp: base}
+	payload, err := json.Marshal(tick)
+	if err != nil {
+		t.Fatalf("marshal tick: %v", err)
+	}
+	msg := store.StreamMessage{ID: "1-0", Data: string(payload)}
+
+	must(t, agg.handleMessage(ctx, msg))
+	must(t, agg.handleMessage(ctx, msg)) // redelivery of the same stream entry
+
+	got, ok := ts.get("SIM:TEST", "1m", base)
+	if !ok {
+		t.Fatalf("expected an upserted 1m candle")
+	}
+	if got.Volume != tick.Volume {
+		t.Errorf("volume = %v, want %v (duplicate delivery must not double-count)", got.Volume, tick.Volume)
 	}
 }
 

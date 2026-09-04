@@ -42,15 +42,16 @@ func main() {
 	dbDSNFlag := &cli.StringFlag{Name: "db-dsn", Sources: cli.EnvVars("TIMESCALE_DSN")}
 	redisAddrFlag := &cli.StringFlag{Name: "redis-addr", Sources: cli.EnvVars("REDIS_ADDR")}
 	healthchecksFlag := &cli.StringFlag{Name: "healthchecks-url", Sources: cli.EnvVars("HEALTHCHECKS_URL")}
+	consumerFlag := &cli.StringFlag{Name: "consumer", Sources: cli.EnvVars("CONSUMER"), Usage: "ticks:raw consumer group member name; defaults to hostname-pid"}
 
-	sharedFlags := []cli.Flag{sourceFlag, envFlag, addrFlag, aggWindowFlag, logLevelFlag, dbDSNFlag, redisAddrFlag, healthchecksFlag}
+	sharedFlags := []cli.Flag{sourceFlag, envFlag, addrFlag, aggWindowFlag, logLevelFlag, dbDSNFlag, redisAddrFlag, healthchecksFlag, consumerFlag}
 
 	configFromCmd := func(cmd *cli.Command) flags.Config {
 		return flags.Config{
 			Source: cmd.String("source"), Env: cmd.String("env"), Addr: cmd.String("addr"),
 			AggWindow: cmd.Duration("agg-window"), LogLevel: cmd.String("log-level"),
 			TimescaleDSN: cmd.String("db-dsn"), RedisAddr: cmd.String("redis-addr"),
-			HealthchecksURL: cmd.String("healthchecks-url"),
+			HealthchecksURL: cmd.String("healthchecks-url"), Consumer: cmd.String("consumer"),
 		}
 	}
 

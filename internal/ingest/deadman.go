@@ -42,7 +42,7 @@ func NewDeadMan(url string) *DeadMan {
 //
 //nolint:contextcheck // deliberately doesn't accept the caller's ctx: the
 func (d *DeadMan) Ping() {
-	if d.url == "" {
+	if d == nil || d.url == "" {
 		return
 	}
 
