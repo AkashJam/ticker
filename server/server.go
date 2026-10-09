@@ -43,11 +43,13 @@ type Server struct {
 	src        source.MarketSource
 	leader     *ingest.Leader
 	producer   *ingest.Producer
+	deadman    *ingest.DeadMan
 	aggregator *aggregate.Aggregator
 	httpServer *http.Server
 
 	wg         sync.WaitGroup
 	cancelPipe context.CancelFunc
+	startedAt  time.Time
 }
 
 // New opens every dependency and wires the pipeline, but doesn't start
@@ -87,7 +89,7 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 
 	leader := ingest.NewLeader(redis, log)
 	deadman := ingest.NewDeadMan(cfg.HealthchecksURL)
-	producer := ingest.NewProducer(redis, leader, deadman, log)
+	producer := ingest.NewProducer(redis, leader, log)
 
 	aggregator := aggregate.New(redis, ts, aggWindowLabel(cfg.AggWindow), cfg.AggWindow, cfg.Consumer, log)
 
@@ -100,15 +102,39 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 	return &Server{
 		cfg: cfg, log: log,
 		pool: pool, redis: redis, ts: ts,
-		src: src, leader: leader, producer: producer, aggregator: aggregator,
+		src: src, leader: leader, producer: producer, deadman: deadman, aggregator: aggregator,
 		httpServer: &http.Server{Addr: cfg.Addr, Handler: router},
 	}, nil
+}
+
+// maxTickAge is how long the leader may go without ingesting a tick before
+// the dead-man switch stops pinging. Generous on purpose: a quiet upstream
+// or reconnect shouldn't page, only a genuinely stuck ingest loop.
+const maxTickAge = 30 * time.Minute
+
+// healthy is the dead-man switch's liveness check (§13): Redis must be
+// reachable on every replica, and the leader must also have ingested
+// recently. A leader that hasn't ticked since startup is measured from
+// startedAt, so a fresh deploy doesn't false-alert.
+func (s *Server) healthy(ctx context.Context) bool {
+	if err := s.redis.Ping(ctx); err != nil {
+		return false
+	}
+	if !s.leader.IsLeader() {
+		return true
+	}
+	last := s.producer.LastTick()
+	if last.IsZero() {
+		last = s.startedAt
+	}
+	return time.Since(last) < maxTickAge
 }
 
 // Run starts the pipeline and the HTTP server, blocking until ctx is
 // canceled (e.g. by a SIGTERM handler in cmd/main.go) or the server fails.
 // Performs the §15 graceful shutdown itself before returning.
 func (s *Server) Run(ctx context.Context) error {
+	s.startedAt = time.Now()
 	pipeCtx, cancel := context.WithCancel(ctx)
 	s.cancelPipe = cancel
 
@@ -118,9 +144,10 @@ func (s *Server) Run(ctx context.Context) error {
 		return fmt.Errorf("server: subscribe: %w", err)
 	}
 
-	s.wg.Add(3)
+	s.wg.Add(4)
 	go func() { defer s.wg.Done(); s.leader.Run(pipeCtx) }()
 	go func() { defer s.wg.Done(); s.producer.Run(pipeCtx, ticks) }()
+	go func() { defer s.wg.Done(); s.deadman.Run(pipeCtx, s.healthy) }()
 	go func() {
 		defer s.wg.Done()
 		if err := s.aggregator.Run(pipeCtx); err != nil {

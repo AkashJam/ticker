@@ -38,7 +38,7 @@ func (f *fakeProducerRedis) CacheSet(_ context.Context, _, _ string, _ time.Dura
 func newTestProducer(leader bool) (*Producer, *fakeProducerRedis) {
 	redis := &fakeProducerRedis{}
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	return NewProducer(redis, &fakeLeader{leader: leader}, NewDeadMan(""), log), redis
+	return NewProducer(redis, &fakeLeader{leader: leader}, log), redis
 }
 
 // TestProducer_StandbyDoesNotIngest is the "dedup" property (§6.1): with
@@ -103,5 +103,22 @@ func TestProducer_Run_StopsOnChannelClose(t *testing.T) {
 
 	if redis.xaddCalls != 1 {
 		t.Errorf("expected the buffered tick to be processed before Run returned, xadd=%d", redis.xaddCalls)
+	}
+}
+
+func TestProducer_LastTick(t *testing.T) {
+	p, _ := newTestProducer(false)
+	p.handle(context.Background(), validTick())
+	if !p.LastTick().IsZero() {
+		t.Error("standby should not record a last tick")
+	}
+
+	p, _ = newTestProducer(true)
+	if !p.LastTick().IsZero() {
+		t.Error("LastTick should be zero before any ingest")
+	}
+	p.handle(context.Background(), validTick())
+	if time.Since(p.LastTick()) > time.Second {
+		t.Errorf("LastTick should be ~now after leader ingest, got %v", p.LastTick())
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"sync/atomic"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -45,17 +46,24 @@ type LeaderChecker interface {
 // happen here, from the single point that already knows this instance is
 // (or isn't) the ingest leader.
 type Producer struct {
-	redis   RedisPort
-	leader  LeaderChecker
-	deadman *DeadMan
-	log     *slog.Logger
+	redis    RedisPort
+	leader   LeaderChecker
+	log      *slog.Logger
+	lastTick atomic.Int64 // unix nanos of the last tick written to the Stream; 0 if none yet
 }
 
-// NewProducer's deadman may be nil — Ping is a no-op on a nil receiver via
-// the zero-value-URL check, but callers should still pass a real *DeadMan
-// (possibly with an empty URL) rather than nil; see server.go.
-func NewProducer(redis RedisPort, leader LeaderChecker, deadman *DeadMan, log *slog.Logger) *Producer {
-	return &Producer{redis: redis, leader: leader, deadman: deadman, log: log}
+func NewProducer(redis RedisPort, leader LeaderChecker, log *slog.Logger) *Producer {
+	return &Producer{redis: redis, leader: leader, log: log}
+}
+
+// LastTick is when this producer last wrote a tick to the Stream, or the
+// zero time if it hasn't yet. Feeds the dead-man health check (§13).
+func (p *Producer) LastTick() time.Time {
+	n := p.lastTick.Load()
+	if n == 0 {
+		return time.Time{}
+	}
+	return time.Unix(0, n)
 }
 
 // Run consumes ticks until the channel closes (on source-side ctx
@@ -96,6 +104,7 @@ func (p *Producer) handle(ctx context.Context, tick source.NormalizedTick) {
 		return
 	}
 	ticksProduced.WithLabelValues(tick.Symbol).Inc()
+	p.lastTick.Store(time.Now().UnixNano())
 
 	envelope, err := json.Marshal(source.PubSubMessage{Type: "quote", Payload: payload})
 	if err != nil {
@@ -109,6 +118,4 @@ func (p *Producer) handle(ctx context.Context, tick source.NormalizedTick) {
 	if err := p.redis.CacheSet(ctx, store.QuoteCacheKey(tick.Symbol), string(payload), quoteTTL); err != nil {
 		p.log.Error("ingest: quote cache set failed", "symbol", tick.Symbol, "error", err)
 	}
-
-	p.deadman.Ping() // no-op if disabled (empty URL) — §13
 }

@@ -3,69 +3,70 @@ package ingest
 import (
 	"context"
 	"net/http"
-	"sync"
 	"time"
 )
 
-// pingInterval throttles how often DeadMan actually calls out, even if
-// Ping is invoked on every tick (several times a second) — healthchecks.io
-// only needs to hear from us well inside its own alert window, not on
-// every single tick.
+// pingInterval is how often DeadMan checks health and, if healthy, pings.
+// healthchecks.io only needs to hear from us well inside its own alert
+// window, not on every single tick.
 const pingInterval = 60 * time.Second
 
-// DeadMan is the dead-man switch (portfolio.md §13): a periodic ping from
-// the ingestion loop to an external monitor (healthchecks.io), so a stuck
-// or crashed ingest loop gets alerted on even though nothing about a
-// silently-stopped process trips an in-process health check. A zero-value
-// url disables it entirely — not every environment (e.g. local dev) has
-// one configured.
+// DeadMan is the dead-man switch (portfolio.md §13): a periodic heartbeat to
+// an external monitor (healthchecks.io), so a stuck or crashed process gets
+// alerted on even though nothing about a silently-stopped process trips an
+// in-process health check. A zero-value url disables it entirely — not every
+// environment (e.g. local dev) has one configured.
+//
+// The heartbeat runs on its own timer, deliberately decoupled from tick
+// flow: a quiet upstream or a leader failover isn't an outage, so it must
+// not look like one to the monitor. Liveness is instead decided by the
+// healthy callback passed to Run.
 type DeadMan struct {
-	url    string
-	client *http.Client
-
-	mu   sync.Mutex
-	last time.Time
+	url      string
+	client   *http.Client
+	interval time.Duration
 }
 
 func NewDeadMan(url string) *DeadMan {
-	return &DeadMan{url: url, client: &http.Client{Timeout: 5 * time.Second}}
+	return &DeadMan{url: url, client: &http.Client{Timeout: 5 * time.Second}, interval: pingInterval}
 }
 
-// Ping fires a best-effort GET to the configured URL, throttled to at most
-// once per pingInterval. Failures are silently swallowed — that's the
-// point of a dead-man switch: healthchecks.io alerts on a *missing* ping,
-// we don't need to also alert on a failed one here.
-//
-// ping runs fire-and-forget in its own goroutine so callers on the hot
-// tick path never block on a network call, and the caller's ctx (scoped to
-// one tick) would cancel this before the request could even complete.
-//
-//nolint:contextcheck // deliberately doesn't accept the caller's ctx: the
-func (d *DeadMan) Ping() {
+// Run pings every interval while healthy reports true, until ctx is
+// canceled. It returns immediately when disabled (nil receiver or empty
+// URL). Failed pings are silently swallowed — that's the point of a
+// dead-man switch: healthchecks.io alerts on a *missing* ping, we don't
+// need to also alert on a failed one here.
+func (d *DeadMan) Run(ctx context.Context, healthy func(context.Context) bool) {
 	if d == nil || d.url == "" {
 		return
 	}
 
-	d.mu.Lock()
-	if time.Since(d.last) < pingInterval {
-		d.mu.Unlock()
+	t := time.NewTicker(d.interval)
+	defer t.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			if healthy(ctx) {
+				d.send(ctx)
+			}
+		}
+	}
+}
+
+func (d *DeadMan) send(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, d.client.Timeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, d.url, nil)
+	if err != nil {
 		return
 	}
-	d.last = time.Now()
-	d.mu.Unlock()
-
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), d.client.Timeout)
-		defer cancel()
-
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, d.url, nil)
-		if err != nil {
-			return
-		}
-		resp, err := d.client.Do(req)
-		if err != nil {
-			return
-		}
-		_ = resp.Body.Close()
-	}()
+	resp, err := d.client.Do(req)
+	if err != nil {
+		return
+	}
+	_ = resp.Body.Close()
 }
