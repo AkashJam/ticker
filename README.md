@@ -126,6 +126,8 @@ Every setting is a CLI flag, an environment variable, or both — precedence is
 | `--db-dsn` | `TIMESCALE_DSN` | — (required) | `postgres://user:pass@host:5432/dbname?sslmode=disable` |
 | `--redis-addr` | `REDIS_ADDR` | — (required) | `host:6379` |
 | `--healthchecks-url` | `HEALTHCHECKS_URL` | — (optional) | A [healthchecks.io](https://healthchecks.io) URL for the ingestion loop's dead-man switch; empty disables it |
+| `--finnhub-api-key` | `FINNHUB_API_KEY` | — (optional) | Finnhub API key; required with `--source finnhub` and by the daily-bar sweep. Production reads it from SSM |
+| `--healthchecks-sweep-url` | `HEALTHCHECKS_SWEEP_URL` | — (optional) | A second healthchecks.io URL, for the daily-bar sweep only; empty disables it |
 
 ## HTTP API
 

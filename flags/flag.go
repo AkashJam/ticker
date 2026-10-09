@@ -29,6 +29,14 @@ type Config struct {
 	TimescaleDSN    string
 	RedisAddr       string
 	HealthchecksURL string // optional dead-man switch ping URL (§13) — empty disables it
+	// FinnhubAPIKey authenticates Finnhub REST calls (the post-close /quote
+	// sweep, and the adapter later). Required with --source finnhub; the
+	// sweep enforces its own requirement. Never log it.
+	FinnhubAPIKey string
+	// HealthchecksSweepURL is the sweep's own healthchecks.io check, separate
+	// from the ingest dead-man so a missed sweep pages on its own. Empty
+	// disables the ping.
+	HealthchecksSweepURL string
 	// Consumer names this instance in the ticks:raw consumer group. Empty
 	// falls back to aggregate.New's hostname-pid default, correct for
 	// today's single-aggregator deployment; ADR-003's revisit trigger (a
@@ -43,6 +51,9 @@ func (c Config) Validate() error {
 	case "sim", "finnhub":
 	default:
 		return fmt.Errorf("flags: --source must be \"sim\" or \"finnhub\", got %q", c.Source)
+	}
+	if c.Source == "finnhub" && c.FinnhubAPIKey == "" {
+		return fmt.Errorf("flags: FINNHUB_API_KEY (or --finnhub-api-key) is required with --source finnhub")
 	}
 	if c.AggWindow <= 0 {
 		return fmt.Errorf("flags: --agg-window must be positive, got %s", c.AggWindow)

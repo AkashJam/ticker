@@ -42,9 +42,11 @@ func main() {
 	dbDSNFlag := &cli.StringFlag{Name: "db-dsn", Sources: cli.EnvVars("TIMESCALE_DSN")}
 	redisAddrFlag := &cli.StringFlag{Name: "redis-addr", Sources: cli.EnvVars("REDIS_ADDR")}
 	healthchecksFlag := &cli.StringFlag{Name: "healthchecks-url", Sources: cli.EnvVars("HEALTHCHECKS_URL")}
+	finnhubKeyFlag := &cli.StringFlag{Name: "finnhub-api-key", Sources: cli.EnvVars("FINNHUB_API_KEY")}
+	sweepHealthchecksFlag := &cli.StringFlag{Name: "healthchecks-sweep-url", Sources: cli.EnvVars("HEALTHCHECKS_SWEEP_URL")}
 	consumerFlag := &cli.StringFlag{Name: "consumer", Sources: cli.EnvVars("CONSUMER"), Usage: "ticks:raw consumer group member name; defaults to hostname-pid"}
 
-	sharedFlags := []cli.Flag{sourceFlag, envFlag, addrFlag, aggWindowFlag, logLevelFlag, dbDSNFlag, redisAddrFlag, healthchecksFlag, consumerFlag}
+	sharedFlags := []cli.Flag{sourceFlag, envFlag, addrFlag, aggWindowFlag, logLevelFlag, dbDSNFlag, redisAddrFlag, healthchecksFlag, finnhubKeyFlag, sweepHealthchecksFlag, consumerFlag}
 
 	configFromCmd := func(cmd *cli.Command) flags.Config {
 		return flags.Config{
@@ -52,6 +54,7 @@ func main() {
 			AggWindow: cmd.Duration("agg-window"), LogLevel: cmd.String("log-level"),
 			TimescaleDSN: cmd.String("db-dsn"), RedisAddr: cmd.String("redis-addr"),
 			HealthchecksURL: cmd.String("healthchecks-url"), Consumer: cmd.String("consumer"),
+			FinnhubAPIKey: cmd.String("finnhub-api-key"), HealthchecksSweepURL: cmd.String("healthchecks-sweep-url"),
 		}
 	}
 
