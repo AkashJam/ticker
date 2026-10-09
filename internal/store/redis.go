@@ -110,8 +110,17 @@ func (r *Redis) ReleaseLock(ctx context.Context, key, token string) error {
 
 // --- Stream (ticks:raw) ---
 
+// streamMaxLen caps ticks:raw (portfolio.md §15 Phase 8 step 0, §22 row 9).
+// Acks never delete stream entries and nothing else trims, so uncapped the
+// stream held 4,054,757 entries (~555 MiB, effectively all of Redis) after
+// two weeks of the simulator alone. Old entries are never read back: every
+// tick is persisted to Timescale (ADR-004). 100,000 is ~14h at the sim's
+// rate and ~1.5h at Phase 13's coalesced 18/sec, far beyond any consumer lag.
+// Approx lets Redis trim whole macro-nodes, which is much cheaper than exact.
+const streamMaxLen = 100000
+
 func (r *Redis) XAdd(ctx context.Context, stream string, values map[string]any) error {
-	err := r.Client.XAdd(ctx, &redis.XAddArgs{Stream: stream, Values: values}).Err()
+	err := r.Client.XAdd(ctx, &redis.XAddArgs{Stream: stream, MaxLen: streamMaxLen, Approx: true, Values: values}).Err()
 	if err != nil {
 		return fmt.Errorf("store: xadd: %w", err)
 	}
