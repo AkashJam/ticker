@@ -1,0 +1,190 @@
+{
+  "source": "portfolio.md §15 Phase 10 country set; mockups/atlas-v1/atlas.html",
+  "asOf": "2026-10-10",
+  "rows": [
+    {
+      "city": "Mumbai",
+      "country": "India",
+      "code": "IN",
+      "currency": "INR",
+      "euroArea": false,
+      "sensor": "HDB"
+    },
+    {
+      "city": "Jakarta",
+      "country": "Indonesia",
+      "code": "ID",
+      "currency": "IDR",
+      "euroArea": false,
+      "sensor": "TLK"
+    },
+    {
+      "city": "Johannesburg",
+      "country": "South Africa",
+      "code": "ZA",
+      "currency": "ZAR",
+      "euroArea": false,
+      "sensor": null
+    },
+    {
+      "city": "Shanghai",
+      "country": "China",
+      "code": "CN",
+      "currency": "CNY",
+      "euroArea": false,
+      "sensor": null
+    },
+    {
+      "city": "São Paulo",
+      "country": "Brazil",
+      "code": "BR",
+      "currency": "BRL",
+      "euroArea": false,
+      "sensor": "ITUB"
+    },
+    {
+      "city": "Santiago",
+      "country": "Chile",
+      "code": "CL",
+      "currency": "CLP",
+      "euroArea": false,
+      "sensor": "BCH"
+    },
+    {
+      "city": "Mexico City",
+      "country": "Mexico",
+      "code": "MX",
+      "currency": "MXN",
+      "euroArea": false,
+      "sensor": "AMX"
+    },
+    {
+      "city": "Istanbul",
+      "country": "Türkiye",
+      "code": "TR",
+      "currency": "TRY",
+      "euroArea": false,
+      "sensor": "TKC"
+    },
+    {
+      "city": "Warsaw",
+      "country": "Poland",
+      "code": "PL",
+      "currency": "PLN",
+      "euroArea": false,
+      "sensor": null
+    },
+    {
+      "city": "Seoul",
+      "country": "South Korea",
+      "code": "KR",
+      "currency": "KRW",
+      "euroArea": false,
+      "sensor": "KB"
+    },
+    {
+      "city": "Tokyo",
+      "country": "Japan",
+      "code": "JP",
+      "currency": "JPY",
+      "euroArea": false,
+      "sensor": "MUFG"
+    },
+    {
+      "city": "Milan",
+      "country": "Italy",
+      "code": "IT",
+      "currency": null,
+      "euroArea": true,
+      "sensor": null
+    },
+    {
+      "city": "Paris",
+      "country": "France",
+      "code": "FR",
+      "currency": null,
+      "euroArea": true,
+      "sensor": null
+    },
+    {
+      "city": "Auckland",
+      "country": "New Zealand",
+      "code": "NZ",
+      "currency": "NZD",
+      "euroArea": false,
+      "sensor": null
+    },
+    {
+      "city": "Tel Aviv",
+      "country": "Israel",
+      "code": "IL",
+      "currency": "ILS",
+      "euroArea": false,
+      "sensor": null
+    },
+    {
+      "city": "Toronto",
+      "country": "Canada",
+      "code": "CA",
+      "currency": "CAD",
+      "euroArea": false,
+      "sensor": "RY"
+    },
+    {
+      "city": "Amsterdam",
+      "country": "Netherlands",
+      "code": "NL",
+      "currency": null,
+      "euroArea": true,
+      "sensor": "ING"
+    },
+    {
+      "city": "Berlin",
+      "country": "Germany",
+      "code": "DE",
+      "currency": null,
+      "euroArea": true,
+      "sensor": null
+    },
+    {
+      "city": "Dublin",
+      "country": "Ireland",
+      "code": "IE",
+      "currency": null,
+      "euroArea": true,
+      "sensor": null
+    },
+    {
+      "city": "Sydney",
+      "country": "Australia",
+      "code": "AU",
+      "currency": "AUD",
+      "euroArea": false,
+      "sensor": null
+    },
+    {
+      "city": "London",
+      "country": "United Kingdom",
+      "code": "GB",
+      "currency": "GBP",
+      "euroArea": false,
+      "sensor": "LYG"
+    },
+    {
+      "city": "Oslo",
+      "country": "Norway",
+      "code": "NO",
+      "currency": "NOK",
+      "euroArea": false,
+      "sensor": null
+    },
+    {
+      "city": "New York",
+      "country": "United States",
+      "code": "US",
+      "currency": "USD",
+      "euroArea": false,
+      "sensor": null
+    }
+  ]
+}

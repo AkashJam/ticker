@@ -1,0 +1,54 @@
+{
+  "rows": [
+    {
+      "city": "Milan",
+      "country": "Italy",
+      "currency": "EUR",
+      "value": 972,
+      "unit": "EUR/month",
+      "method": "Absolute poverty threshold",
+      "source": "ISTAT absolute-poverty basket",
+      "asOf": "2024"
+    },
+    {
+      "city": "Paris",
+      "country": "France",
+      "currency": "EUR",
+      "value": 1634,
+      "unit": "EUR/month",
+      "method": "Reference budget (budget de référence)",
+      "source": "ONPES budget de référence",
+      "asOf": "2022"
+    },
+    {
+      "city": "London",
+      "country": "United Kingdom",
+      "currency": "GBP",
+      "value": 2333,
+      "unit": "GBP/month",
+      "method": "Minimum Income Standard (MIS)",
+      "source": "JRF / Loughborough — MIS",
+      "asOf": "2024"
+    },
+    {
+      "city": "Tokyo",
+      "country": "Japan",
+      "currency": "JPY",
+      "value": 130700,
+      "unit": "JPY/month",
+      "method": "Livelihood protection standard (Seikatsu Hogo)",
+      "source": "MHLW Seikatsu Hogo welfare std",
+      "asOf": "2024"
+    },
+    {
+      "city": "New York",
+      "country": "United States",
+      "currency": "USD",
+      "value": 4833,
+      "unit": "USD/month",
+      "method": "Living wage calculator, pre-tax",
+      "source": "MIT living wage (pre-tax)",
+      "asOf": "2025"
+    }
+  ]
+}
