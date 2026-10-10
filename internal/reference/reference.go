@@ -66,11 +66,11 @@ func (s *Store) Get(ctx context.Context, name string, v any) (Source, error) {
 		raw, err := s.cache.CacheGet(ctx, CacheKey(name))
 		switch {
 		case err == nil:
-			if jerr := json.Unmarshal([]byte(raw), v); jerr == nil {
+			jerr := json.Unmarshal([]byte(raw), v)
+			if jerr == nil {
 				return SourceLive, nil
-			} else {
-				s.log.Warn("reference: corrupt cached payload, using embedded", "dataset", name, "err", jerr)
 			}
+			s.log.Warn("reference: corrupt cached payload, using embedded", "dataset", name, "err", jerr)
 		case errors.Is(err, store.ErrCacheMiss):
 			// Cold start: expected, not worth a log line.
 		default:
