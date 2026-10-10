@@ -1,0 +1,1299 @@
+{
+  "generatedAt": "2026-10-10T18:31:25Z",
+  "windows": [
+    "2021",
+    "2016",
+    "2010"
+  ],
+  "end": "2025-Q4",
+  "rows": {
+    "AU": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01AUM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 79.1,
+          "2016": 73.3,
+          "2021": 28.9
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 9.3
+          },
+          {
+            "at": "2018",
+            "change": 25.4
+          },
+          {
+            "at": "2022",
+            "change": 50.9
+          },
+          {
+            "at": "2025-Q4",
+            "change": 79.1
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QAUR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 40.7,
+          "2016": 25.4,
+          "2021": 13.7
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 0.8
+          },
+          {
+            "at": "2018",
+            "change": 21.2
+          },
+          {
+            "at": "2022",
+            "change": 41.9
+          },
+          {
+            "at": "2025-Q4",
+            "change": 40.7
+          }
+        ]
+      }
+    },
+    "BR": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01BRM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 133.5,
+          "2016": 304.5,
+          "2021": 33.3
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": -28.1
+          },
+          {
+            "at": "2018",
+            "change": 18
+          },
+          {
+            "at": "2022",
+            "change": 55.9
+          },
+          {
+            "at": "2025-Q4",
+            "change": 133.5
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QBRR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": -0.4,
+          "2016": -15.8,
+          "2021": 14.4
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 30.3
+          },
+          {
+            "at": "2018",
+            "change": 6
+          },
+          {
+            "at": "2022",
+            "change": -18.8
+          },
+          {
+            "at": "2025-Q4",
+            "change": -0.4
+          }
+        ]
+      }
+    },
+    "CA": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01CAM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 170.7,
+          "2016": 154.7,
+          "2021": 77.2
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 17.7
+          },
+          {
+            "at": "2018",
+            "change": 39.6
+          },
+          {
+            "at": "2022",
+            "change": 80.5
+          },
+          {
+            "at": "2025-Q4",
+            "change": 170.7
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QCAR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 42,
+          "2016": 12.2,
+          "2021": -15.1
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 9.2
+          },
+          {
+            "at": "2018",
+            "change": 53.8
+          },
+          {
+            "at": "2022",
+            "change": 98.2
+          },
+          {
+            "at": "2025-Q4",
+            "change": 42
+          }
+        ]
+      }
+    },
+    "CL": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01CLM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 199.2,
+          "2016": 194.2,
+          "2021": 129.1
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 3.5
+          },
+          {
+            "at": "2018",
+            "change": 66.7
+          },
+          {
+            "at": "2022",
+            "change": 28.9
+          },
+          {
+            "at": "2025-Q4",
+            "change": 199.2
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QCLR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 110.8,
+          "2016": 34.8,
+          "2021": 3.5
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 34.1
+          },
+          {
+            "at": "2018",
+            "change": 71.6
+          },
+          {
+            "at": "2022",
+            "change": 102
+          },
+          {
+            "at": "2025-Q4",
+            "change": 110.8
+          }
+        ]
+      }
+    },
+    "CN": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01CNM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 23.3,
+          "2016": 29.9,
+          "2021": 9.7
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": -35.6
+          },
+          {
+            "at": "2018",
+            "change": 8.9
+          },
+          {
+            "at": "2022",
+            "change": 11.4
+          },
+          {
+            "at": "2025-Q4",
+            "change": 23.3
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QCNR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": -11.9,
+          "2016": -8.6,
+          "2021": -21.5
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 2.3
+          },
+          {
+            "at": "2018",
+            "change": 5.2
+          },
+          {
+            "at": "2022",
+            "change": 11
+          },
+          {
+            "at": "2025-Q4",
+            "change": -11.9
+          }
+        ]
+      }
+    },
+    "DE": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01DEM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 152.3,
+          "2016": 70.8,
+          "2021": 34.8
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 46.9
+          },
+          {
+            "at": "2018",
+            "change": 92.9
+          },
+          {
+            "at": "2022",
+            "change": 104.6
+          },
+          {
+            "at": "2025-Q4",
+            "change": 152.3
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QDER628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 29.8,
+          "2016": 12.8,
+          "2021": -13.5
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 4.3
+          },
+          {
+            "at": "2018",
+            "change": 27.4
+          },
+          {
+            "at": "2022",
+            "change": 60.7
+          },
+          {
+            "at": "2025-Q4",
+            "change": 29.8
+          }
+        ]
+      }
+    },
+    "FR": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01FRM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 114.9,
+          "2016": 77.6,
+          "2021": 37.9
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 16
+          },
+          {
+            "at": "2018",
+            "change": 54.3
+          },
+          {
+            "at": "2022",
+            "change": 93.8
+          },
+          {
+            "at": "2025-Q4",
+            "change": 114.9
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QFRR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 2.6,
+          "2016": 5.2,
+          "2021": -7.6
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": -1.2
+          },
+          {
+            "at": "2018",
+            "change": 0.6
+          },
+          {
+            "at": "2022",
+            "change": 14.6
+          },
+          {
+            "at": "2025-Q4",
+            "change": 2.6
+          }
+        ]
+      }
+    },
+    "GB": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01GBM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 80.6,
+          "2016": 64.6,
+          "2021": 46.2
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 24.1
+          },
+          {
+            "at": "2018",
+            "change": 42.2
+          },
+          {
+            "at": "2022",
+            "change": 38.5
+          },
+          {
+            "at": "2025-Q4",
+            "change": 80.6
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QGBR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 10.7,
+          "2016": 1.8,
+          "2021": -8
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": -5.2
+          },
+          {
+            "at": "2018",
+            "change": 12.8
+          },
+          {
+            "at": "2022",
+            "change": 22.5
+          },
+          {
+            "at": "2025-Q4",
+            "change": 10.7
+          }
+        ]
+      }
+    },
+    "ID": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01IDM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 229.8,
+          "2016": 90.7,
+          "2021": 38.4
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 66.5
+          },
+          {
+            "at": "2018",
+            "change": 147
+          },
+          {
+            "at": "2022",
+            "change": 154.2
+          },
+          {
+            "at": "2025-Q4",
+            "change": 229.8
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QIDR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": -6.7,
+          "2016": -9.9,
+          "2021": -6.5
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 4
+          },
+          {
+            "at": "2018",
+            "change": 2.9
+          },
+          {
+            "at": "2022",
+            "change": -1
+          },
+          {
+            "at": "2025-Q4",
+            "change": -6.7
+          }
+        ]
+      }
+    },
+    "IE": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01IEM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 323.7,
+          "2016": 100.3,
+          "2021": 73.8
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 54.7
+          },
+          {
+            "at": "2018",
+            "change": 132.3
+          },
+          {
+            "at": "2022",
+            "change": 174.6
+          },
+          {
+            "at": "2025-Q4",
+            "change": 323.7
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QIER628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 37.5,
+          "2016": 55,
+          "2021": 19
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": -30.3
+          },
+          {
+            "at": "2018",
+            "change": 8.1
+          },
+          {
+            "at": "2022",
+            "change": 25.5
+          },
+          {
+            "at": "2025-Q4",
+            "change": 37.5
+          }
+        ]
+      }
+    },
+    "IL": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01ILM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 166.7,
+          "2016": 123.8,
+          "2021": 111.5
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 4.7
+          },
+          {
+            "at": "2018",
+            "change": 11
+          },
+          {
+            "at": "2022",
+            "change": 60.8
+          },
+          {
+            "at": "2025-Q4",
+            "change": 166.7
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QILR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 86,
+          "2016": 29.4,
+          "2021": 14.6
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 26.7
+          },
+          {
+            "at": "2018",
+            "change": 50.7
+          },
+          {
+            "at": "2022",
+            "change": 81
+          },
+          {
+            "at": "2025-Q4",
+            "change": 86
+          }
+        ]
+      }
+    },
+    "IN": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01INM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 393.2,
+          "2016": 243.5,
+          "2021": 75.1
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 21.4
+          },
+          {
+            "at": "2018",
+            "change": 103.1
+          },
+          {
+            "at": "2022",
+            "change": 245
+          },
+          {
+            "at": "2025-Q4",
+            "change": 393.2
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QINR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 69,
+          "2016": 2.1,
+          "2021": -2.8
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 51.3
+          },
+          {
+            "at": "2018",
+            "change": 80.2
+          },
+          {
+            "at": "2022",
+            "change": 66.3
+          },
+          {
+            "at": "2025-Q4",
+            "change": 69
+          }
+        ]
+      }
+    },
+    "IT": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01ITM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 112.9,
+          "2016": 120.1,
+          "2021": 85
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": -6.8
+          },
+          {
+            "at": "2018",
+            "change": 19.1
+          },
+          {
+            "at": "2022",
+            "change": 45.5
+          },
+          {
+            "at": "2025-Q4",
+            "change": 112.9
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QITR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": -23.9,
+          "2016": -3.9,
+          "2021": -1.4
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": -16.3
+          },
+          {
+            "at": "2018",
+            "change": -23.4
+          },
+          {
+            "at": "2022",
+            "change": -23.6
+          },
+          {
+            "at": "2025-Q4",
+            "change": -23.9
+          }
+        ]
+      }
+    },
+    "JP": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01JPM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 262.5,
+          "2016": 138.6,
+          "2021": 84.1
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 36.9
+          },
+          {
+            "at": "2018",
+            "change": 100.4
+          },
+          {
+            "at": "2022",
+            "change": 109.4
+          },
+          {
+            "at": "2025-Q4",
+            "change": 262.5
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QJPR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 22,
+          "2016": 17.4,
+          "2021": 7.9
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 2.3
+          },
+          {
+            "at": "2018",
+            "change": 7.9
+          },
+          {
+            "at": "2022",
+            "change": 22.3
+          },
+          {
+            "at": "2025-Q4",
+            "change": 22
+          }
+        ]
+      }
+    },
+    "KR": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01KRM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 143.4,
+          "2016": 115.7,
+          "2021": 33
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 15.9
+          },
+          {
+            "at": "2018",
+            "change": 49.7
+          },
+          {
+            "at": "2022",
+            "change": 69.8
+          },
+          {
+            "at": "2025-Q4",
+            "change": 143.4
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QKRR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 5.2,
+          "2016": 1,
+          "2021": -8.7
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": -0.6
+          },
+          {
+            "at": "2018",
+            "change": 3.7
+          },
+          {
+            "at": "2022",
+            "change": 24.9
+          },
+          {
+            "at": "2025-Q4",
+            "change": 5.2
+          }
+        ]
+      }
+    },
+    "MX": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01MXM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 100.7,
+          "2016": 54.8,
+          "2021": 41.9
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 30.4
+          },
+          {
+            "at": "2018",
+            "change": 56
+          },
+          {
+            "at": "2022",
+            "change": 64.1
+          },
+          {
+            "at": "2025-Q4",
+            "change": 100.7
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QMXR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 55.3,
+          "2016": 38.5,
+          "2021": 18.3
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 3.9
+          },
+          {
+            "at": "2018",
+            "change": 18.1
+          },
+          {
+            "at": "2022",
+            "change": 31.8
+          },
+          {
+            "at": "2025-Q4",
+            "change": 55.3
+          }
+        ]
+      }
+    },
+    "NL": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01NLM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 142.5,
+          "2016": 97.8,
+          "2021": 35.9
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 15.9
+          },
+          {
+            "at": "2018",
+            "change": 59.8
+          },
+          {
+            "at": "2022",
+            "change": 104.5
+          },
+          {
+            "at": "2025-Q4",
+            "change": 142.5
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QNLR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 31.3,
+          "2016": 56.5,
+          "2021": 13.8
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": -21
+          },
+          {
+            "at": "2018",
+            "change": -4.3
+          },
+          {
+            "at": "2022",
+            "change": 27.8
+          },
+          {
+            "at": "2025-Q4",
+            "change": 31.3
+          }
+        ]
+      }
+    },
+    "NO": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01NOM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 350.8,
+          "2016": 219,
+          "2021": 77.5
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 44.4
+          },
+          {
+            "at": "2018",
+            "change": 121
+          },
+          {
+            "at": "2022",
+            "change": 210.3
+          },
+          {
+            "at": "2025-Q4",
+            "change": 350.8
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QNOR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 34.2,
+          "2016": 8.2,
+          "2021": -4.5
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 16.2
+          },
+          {
+            "at": "2018",
+            "change": 29
+          },
+          {
+            "at": "2022",
+            "change": 44.9
+          },
+          {
+            "at": "2025-Q4",
+            "change": 34.2
+          }
+        ]
+      }
+    },
+    "NZ": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01NZM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 146.5,
+          "2016": 60.9,
+          "2021": -11.9
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 32
+          },
+          {
+            "at": "2018",
+            "change": 93.5
+          },
+          {
+            "at": "2022",
+            "change": 162.4
+          },
+          {
+            "at": "2025-Q4",
+            "change": 146.5
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QNZR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 53.9,
+          "2016": 15.4,
+          "2021": -19.9
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 8.4
+          },
+          {
+            "at": "2018",
+            "change": 49.9
+          },
+          {
+            "at": "2022",
+            "change": 104.2
+          },
+          {
+            "at": "2025-Q4",
+            "change": 53.9
+          }
+        ]
+      }
+    },
+    "PL": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01PLM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 179.2,
+          "2016": 159.9,
+          "2021": 96
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 24.6
+          },
+          {
+            "at": "2018",
+            "change": 61.5
+          },
+          {
+            "at": "2022",
+            "change": 71.7
+          },
+          {
+            "at": "2025-Q4",
+            "change": 179.2
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QPLR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 21.7,
+          "2016": 38.2,
+          "2021": 10.4
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": -16.4
+          },
+          {
+            "at": "2018",
+            "change": -7
+          },
+          {
+            "at": "2022",
+            "change": 14.1
+          },
+          {
+            "at": "2025-Q4",
+            "change": 21.7
+          }
+        ]
+      }
+    },
+    "TR": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01TRM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 1965.2,
+          "2016": 1477.4,
+          "2021": 636.1
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 21.5
+          },
+          {
+            "at": "2018",
+            "change": 114.6
+          },
+          {
+            "at": "2022",
+            "change": 269.1
+          },
+          {
+            "at": "2025-Q4",
+            "change": 1965.2
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QTRR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 123.8,
+          "2016": 79.3,
+          "2021": 77.9
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 10.5
+          },
+          {
+            "at": "2018",
+            "change": 24.3
+          },
+          {
+            "at": "2022",
+            "change": 56.2
+          },
+          {
+            "at": "2025-Q4",
+            "change": 123.8
+          }
+        ]
+      }
+    },
+    "US": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01USM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 202.4,
+          "2016": 130.4,
+          "2021": 48.1
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 41.2
+          },
+          {
+            "at": "2018",
+            "change": 82.8
+          },
+          {
+            "at": "2022",
+            "change": 132.6
+          },
+          {
+            "at": "2025-Q4",
+            "change": 202.4
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QUSR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 55.9,
+          "2016": 33.2,
+          "2021": 8.3
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 7
+          },
+          {
+            "at": "2018",
+            "change": 25.2
+          },
+          {
+            "at": "2022",
+            "change": 57.5
+          },
+          {
+            "at": "2025-Q4",
+            "change": 55.9
+          }
+        ]
+      }
+    },
+    "ZA": {
+      "shares": {
+        "source": "OECD via FRED SPASTT01ZAM661N",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": 311.2,
+          "2016": 136.6,
+          "2021": 80.5
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": 66.7
+          },
+          {
+            "at": "2018",
+            "change": 118.2
+          },
+          {
+            "at": "2022",
+            "change": 169.1
+          },
+          {
+            "at": "2025-Q4",
+            "change": 311.2
+          }
+        ]
+      },
+      "housing": {
+        "source": "BIS via FRED QZAR628BIS",
+        "asOf": "2025-Q4",
+        "change": {
+          "2010": -10.7,
+          "2016": -11.3,
+          "2021": -8.1
+        },
+        "trail": [
+          {
+            "at": "2014",
+            "change": -0.6
+          },
+          {
+            "at": "2018",
+            "change": -1.8
+          },
+          {
+            "at": "2022",
+            "change": -3.3
+          },
+          {
+            "at": "2025-Q4",
+            "change": -10.7
+          }
+        ]
+      }
+    }
+  }
+}

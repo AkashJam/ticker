@@ -8,6 +8,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -20,6 +21,8 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/AkashJam/ticker/flags"
+	"github.com/AkashJam/ticker/internal/fred"
+	"github.com/AkashJam/ticker/internal/reference"
 	"github.com/AkashJam/ticker/internal/source"
 	"github.com/AkashJam/ticker/internal/store"
 	"github.com/AkashJam/ticker/internal/sweep"
@@ -48,9 +51,10 @@ func main() {
 	healthchecksFlag := &cli.StringFlag{Name: "healthchecks-url", Sources: cli.EnvVars("HEALTHCHECKS_URL")}
 	finnhubKeyFlag := &cli.StringFlag{Name: "finnhub-api-key", Sources: cli.EnvVars("FINNHUB_API_KEY")}
 	sweepHealthchecksFlag := &cli.StringFlag{Name: "healthchecks-sweep-url", Sources: cli.EnvVars("HEALTHCHECKS_SWEEP_URL")}
+	referenceHealthchecksFlag := &cli.StringFlag{Name: "healthchecks-reference-url", Sources: cli.EnvVars("HEALTHCHECKS_REFERENCE_URL")}
 	consumerFlag := &cli.StringFlag{Name: "consumer", Sources: cli.EnvVars("CONSUMER"), Usage: "ticks:raw consumer group member name; defaults to hostname-pid"}
 
-	sharedFlags := []cli.Flag{sourceFlag, envFlag, addrFlag, aggWindowFlag, logLevelFlag, dbDSNFlag, redisAddrFlag, healthchecksFlag, finnhubKeyFlag, sweepHealthchecksFlag, consumerFlag}
+	sharedFlags := []cli.Flag{sourceFlag, envFlag, addrFlag, aggWindowFlag, logLevelFlag, dbDSNFlag, redisAddrFlag, healthchecksFlag, finnhubKeyFlag, sweepHealthchecksFlag, referenceHealthchecksFlag, consumerFlag}
 
 	configFromCmd := func(cmd *cli.Command) flags.Config {
 		return flags.Config{
@@ -59,6 +63,7 @@ func main() {
 			TimescaleDSN: cmd.String("db-dsn"), RedisAddr: cmd.String("redis-addr"),
 			HealthchecksURL: cmd.String("healthchecks-url"), Consumer: cmd.String("consumer"),
 			FinnhubAPIKey: cmd.String("finnhub-api-key"), HealthchecksSweepURL: cmd.String("healthchecks-sweep-url"),
+			HealthchecksReferenceURL: cmd.String("healthchecks-reference-url"),
 		}
 	}
 
@@ -90,6 +95,14 @@ func main() {
 				Flags: sharedFlags,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					return runSweep(ctx, configFromCmd(cmd))
+				},
+			},
+			{
+				Name:  "fred",
+				Usage: "fetch the FRED index series and write the dataset to --out, or to Redis without it, then exit",
+				Flags: append([]cli.Flag{&cli.StringFlag{Name: "out", Usage: "write JSON here instead of Redis; this is how embedded/fred.json is made"}}, sharedFlags...),
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					return runFred(ctx, configFromCmd(cmd), cmd.String("out"))
 				},
 			},
 			{
@@ -162,6 +175,42 @@ func runSweep(ctx context.Context, cfg flags.Config) error {
 	if res.State == sweep.StateFailed {
 		return fmt.Errorf("sweep: %d symbol(s) not written", len(res.Failed))
 	}
+	return nil
+}
+
+// runFred is a manual run of the FRED fetcher. With --out it writes the
+// dataset to a file, which is how the embedded snapshot is generated and
+// refreshed; without it the dataset goes to Redis. It does not ping
+// healthchecks.io: that check watches the scheduled run.
+func runFred(ctx context.Context, cfg flags.Config, out string) error {
+	log := newLogger(cfg.LogLevel)
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	var cache reference.Cache
+	if out == "" {
+		if cfg.RedisAddr == "" {
+			return fmt.Errorf("fred: REDIS_ADDR (or --redis-addr) is required without --out")
+		}
+		cache = store.NewRedis(cfg.RedisAddr)
+	}
+	refresher := fred.NewRefresher(fred.NewClient(), reference.New(cache, reference.Embedded(), log), log)
+
+	if out == "" {
+		return refresher.Refresh(ctx)
+	}
+	ds, err := refresher.Build(ctx)
+	if err != nil {
+		return err
+	}
+	b, err := json.MarshalIndent(ds, "", "  ")
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(out, append(b, '\n'), 0o644); err != nil {
+		return err
+	}
+	fmt.Printf("fred: wrote %s end=%s countries=%d\n", out, ds.End, len(ds.Rows))
 	return nil
 }
 

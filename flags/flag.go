@@ -37,6 +37,9 @@ type Config struct {
 	// from the ingest dead-man so a missed sweep pages on its own. Empty
 	// disables the ping.
 	HealthchecksSweepURL string
+	// HealthchecksReferenceURL is the Atlas reference fetchers' healthchecks.io
+	// check (FRED today; ECB and World Bank join it). Empty disables the ping.
+	HealthchecksReferenceURL string
 	// Consumer names this instance in the ticks:raw consumer group. Empty
 	// falls back to aggregate.New's hostname-pid default, correct for
 	// today's single-aggregator deployment; ADR-003's revisit trigger (a

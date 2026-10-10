@@ -15,8 +15,10 @@ import (
 	"github.com/AkashJam/ticker/flags"
 	"github.com/AkashJam/ticker/internal/aggregate"
 	"github.com/AkashJam/ticker/internal/api"
+	"github.com/AkashJam/ticker/internal/fred"
 	"github.com/AkashJam/ticker/internal/indicators"
 	"github.com/AkashJam/ticker/internal/ingest"
+	"github.com/AkashJam/ticker/internal/reference"
 	"github.com/AkashJam/ticker/internal/source"
 	"github.com/AkashJam/ticker/internal/sse"
 	"github.com/AkashJam/ticker/internal/store"
@@ -46,6 +48,7 @@ type Server struct {
 	producer   *ingest.Producer
 	deadman    *ingest.DeadMan
 	sweeper    *sweep.Scheduler // nil when no FINNHUB_API_KEY is set
+	reference  *reference.Scheduler
 	aggregator *aggregate.Aggregator
 	httpServer *http.Server
 
@@ -118,10 +121,20 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 		sweeper = sweep.NewScheduler(runner, leader, sweep.NewPinger(cfg.HealthchecksSweepURL, log), log)
 	}
 
+	// The Atlas reference fetchers (portfolio.md §15 Phase 10) are keyless, so
+	// unlike the sweep they always run; only the leader fetches.
+	refStore := reference.New(redis, reference.Embedded(), log)
+	fredRefresher := fred.NewRefresher(fred.NewClient(), refStore, log)
+	refScheduler := reference.NewScheduler([]reference.Job{{
+		Name:  "fred",
+		Run:   fredRefresher.Refresh,
+		Stale: func(ctx context.Context) bool { return fredRefresher.Stale(ctx, 24*time.Hour) },
+	}}, leader, sweep.NewPinger(cfg.HealthchecksReferenceURL, log), log)
+
 	return &Server{
 		cfg: cfg, log: log,
 		pool: pool, redis: redis, ts: ts,
-		src: src, leader: leader, producer: producer, deadman: deadman, sweeper: sweeper, aggregator: aggregator,
+		src: src, leader: leader, producer: producer, deadman: deadman, sweeper: sweeper, reference: refScheduler, aggregator: aggregator,
 		httpServer: &http.Server{Addr: cfg.Addr, Handler: router},
 	}, nil
 }
@@ -163,7 +176,8 @@ func (s *Server) Run(ctx context.Context) error {
 		return fmt.Errorf("server: subscribe: %w", err)
 	}
 
-	s.wg.Add(4)
+	s.wg.Add(5)
+	go func() { defer s.wg.Done(); s.reference.Run(pipeCtx) }()
 	if s.sweeper != nil {
 		s.wg.Add(1)
 		go func() { defer s.wg.Done(); s.sweeper.Run(pipeCtx) }()
