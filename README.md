@@ -129,6 +129,31 @@ Every setting is a CLI flag, an environment variable, or both — precedence is
 | `--finnhub-api-key` | `FINNHUB_API_KEY` | — (optional) | Finnhub API key; required with `--source finnhub` and by the daily-bar sweep. Production reads it from SSM |
 | `--healthchecks-sweep-url` | `HEALTHCHECKS_SWEEP_URL` | — (optional) | A second healthchecks.io URL, for the daily-bar sweep only; empty disables it |
 
+### The daily-bar sweep
+
+Separate from the live feed (portfolio.md §15 Phase 8). Finnhub's free tier
+cannot backfill daily candles, so after each US close the ticker takes one
+`/quote` snapshot per symbol for the 28 real symbols in
+`internal/source/universe.go` and stores it as that session's `1d` bar. The
+bars have no volume (`/quote` carries none), stored as NULL and omitted from
+the API.
+
+- **When:** `serve` runs it at 16:15 New York time on weekdays, on the leader
+  only, and once at start-up if the last completed session has no bar. It is
+  off, with a warning in the log, when `FINNHUB_API_KEY` is unset.
+- **Holidays:** nothing is written when the quote's session is not today's.
+  The session date comes from the quote's own timestamp, so there is no
+  holiday table to maintain.
+- **Pace:** one call a second (about 28 seconds in all); Finnhub allows
+  60 a minute.
+- **Monitoring:** its own healthchecks.io check (`HEALTHCHECKS_SWEEP_URL`).
+  A full sweep or a holiday pings success; any unwritten symbol pings `/fail`
+  naming it.
+- **Manually:** `ticker sweep` writes the last completed session, whether or
+  not a bar exists (safe to repeat), and does not ping.
+- The symbols are seeded into the `symbols` table with `tracked = false`, so
+  `/symbols` and `/market` do not list them until Phase 14.
+
 ## HTTP API
 
 Internal-only — reached exclusively by the `portfolio` container over the
@@ -152,11 +177,12 @@ it). See [`internal/api/router.go`](internal/api/router.go).
 ## Project layout
 
 ```text
-cmd/                   entry point — serve | migrate | version
+cmd/                   entry point — serve | migrate | sweep | version
 server/                wires source → ingest → aggregate → API/SSE; owns startup + shutdown
 flags/                 typed Config, loaded from CLI flags / env / .env
 internal/source/       MarketSource interface, sim feed, cost-of-living data
 internal/ingest/       normalize, leader election, producer, dead-man switch
+internal/sweep/        post-close daily-bar sweep: Finnhub /quote client, runner, scheduler
 internal/aggregate/    Redis Stream consumer → OHLCV candles → Timescale
 internal/indicators/   EMA, Wilder RSI(14), Redis-backed cache
 internal/store/        Timescale/Meta/Redis repositories (thin, mockable)

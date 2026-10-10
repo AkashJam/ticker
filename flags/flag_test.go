@@ -15,6 +15,28 @@ func validConfig() Config {
 	}
 }
 
+func TestValidateSweep(t *testing.T) {
+	tests := []struct {
+		name    string
+		mutate  func(*Config)
+		wantErr bool
+	}{
+		{"key and DSN present", func(c *Config) { c.FinnhubAPIKey = "k" }, false},
+		{"no key", func(*Config) {}, true},
+		{"no DSN", func(c *Config) { c.FinnhubAPIKey = "k"; c.TimescaleDSN = "" }, true},
+		{"Redis is not needed", func(c *Config) { c.FinnhubAPIKey = "k"; c.RedisAddr = "" }, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := validConfig()
+			tt.mutate(&c)
+			if err := c.ValidateSweep(); (err != nil) != tt.wantErr {
+				t.Fatalf("ValidateSweep() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
 func TestValidate(t *testing.T) {
 	tests := []struct {
 		name    string

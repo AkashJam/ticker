@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"log/slog"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -138,8 +139,8 @@ func TestAggregator_OHLCVCorrectness(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected an upserted 1m candle")
 	}
-	want := source.Candle{Time: base, Symbol: "SIM:TEST", Interval: "1m", Open: 100, High: 105, Low: 98, Close: 98, Volume: 45}
-	if got != want {
+	want := source.Candle{Time: base, Symbol: "SIM:TEST", Interval: "1m", Open: 100, High: 105, Low: 98, Close: 98, Volume: vol(45)}
+	if !sameCandle(got, want) {
 		t.Errorf("candle = %+v, want %+v", got, want)
 	}
 }
@@ -162,8 +163,8 @@ func TestAggregator_CandleClose(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected the closed bucket's candle to remain in the store")
 	}
-	wantClosed := source.Candle{Time: base, Symbol: "SIM:TEST", Interval: "1m", Open: 100, High: 110, Low: 100, Close: 110, Volume: 10}
-	if closed != wantClosed {
+	wantClosed := source.Candle{Time: base, Symbol: "SIM:TEST", Interval: "1m", Open: 100, High: 110, Low: 100, Close: 110, Volume: vol(10)}
+	if !sameCandle(closed, wantClosed) {
 		t.Errorf("closed candle = %+v, want %+v", closed, wantClosed)
 	}
 
@@ -171,8 +172,8 @@ func TestAggregator_CandleClose(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected the new bucket's candle to exist")
 	}
-	wantOpened := source.Candle{Time: next.Truncate(time.Minute), Symbol: "SIM:TEST", Interval: "1m", Open: 90, High: 90, Low: 90, Close: 90, Volume: 7}
-	if opened != wantOpened {
+	wantOpened := source.Candle{Time: next.Truncate(time.Minute), Symbol: "SIM:TEST", Interval: "1m", Open: 90, High: 90, Low: 90, Close: 90, Volume: vol(7)}
+	if !sameCandle(opened, wantOpened) {
 		t.Errorf("new candle = %+v, want a fresh bar seeded from the closing tick: %+v", opened, wantOpened)
 	}
 
@@ -198,7 +199,7 @@ func TestAggregator_UpsertIdempotency(t *testing.T) {
 	// is a separate claim, covered by TestAggregator_DuplicateTickIsSkipped.
 	ts := newFakeCandleStore()
 	ctx := context.Background()
-	c := source.Candle{Symbol: "SIM:TEST", Interval: "1m", Time: time.Unix(0, 0).UTC(), Open: 100, High: 105, Low: 98, Close: 102, Volume: 40}
+	c := source.Candle{Symbol: "SIM:TEST", Interval: "1m", Time: time.Unix(0, 0).UTC(), Open: 100, High: 105, Low: 98, Close: 102, Volume: vol(40)}
 
 	must(t, ts.UpsertCandle(ctx, c))
 	must(t, ts.UpsertCandle(ctx, c)) // repeat write of the identical state
@@ -210,7 +211,7 @@ func TestAggregator_UpsertIdempotency(t *testing.T) {
 		t.Errorf("expected exactly one stored row for the (symbol,interval,time) key, got %d", len(ts.latest))
 	}
 	got, ok := ts.get(c.Symbol, c.Interval, c.Time)
-	if !ok || got != c {
+	if !ok || !sameCandle(got, c) {
 		t.Errorf("stored candle = %+v, want %+v", got, c)
 	}
 }
@@ -240,8 +241,8 @@ func TestAggregator_DuplicateTickIsSkipped(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected an upserted 1m candle")
 	}
-	if got.Volume != tick.Volume {
-		t.Errorf("volume = %v, want %v (duplicate delivery must not double-count)", got.Volume, tick.Volume)
+	if got.Volume == nil || *got.Volume != tick.Volume {
+		t.Errorf("volume = %v, want %v (duplicate delivery must not double-count)", fmtVol(got.Volume), tick.Volume)
 	}
 }
 
@@ -265,4 +266,28 @@ func TestAggregator_Flush(t *testing.T) {
 			t.Errorf("Flush: expected a persisted candle for %s/1m", sym)
 		}
 	}
+}
+
+// vol returns a pointer to v — source.Candle.Volume is nil-able.
+func vol(v float64) *float64 { return &v }
+
+// sameCandle compares by value: Candle.Volume is a pointer, so == would
+// compare addresses.
+func sameCandle(a, b source.Candle) bool {
+	av, bv := a.Volume, b.Volume
+	a.Volume, b.Volume = nil, nil
+	if a != b {
+		return false
+	}
+	if av == nil || bv == nil {
+		return av == bv
+	}
+	return *av == *bv
+}
+
+func fmtVol(p *float64) string {
+	if p == nil {
+		return "nil"
+	}
+	return strconv.FormatFloat(*p, 'g', -1, 64)
 }

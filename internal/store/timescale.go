@@ -84,6 +84,18 @@ func (t *Timescale) UpsertCandle(ctx context.Context, c source.Candle) error {
 	return nil
 }
 
+// HasCandle reports whether a candle already exists at exactly
+// (symbol, interval, time) — the sweep's start-up catch-up uses it to decide
+// whether the last completed session still needs its bar.
+func (t *Timescale) HasCandle(ctx context.Context, symbol, interval string, at time.Time) (bool, error) {
+	const q = `SELECT EXISTS (SELECT 1 FROM candles WHERE symbol = $1 AND interval = $2 AND time = $3)`
+	var exists bool
+	if err := t.pool.QueryRow(ctx, q, symbol, interval, at).Scan(&exists); err != nil {
+		return false, fmt.Errorf("store: has candle: %w", err)
+	}
+	return exists, nil
+}
+
 // defaultCandleLimit bounds an unbounded from/to query — this is reached
 // indirectly via a public SSR fetch (§8), so an unbounded result set is a
 // real (if minor) resource-exhaustion surface worth defending against by

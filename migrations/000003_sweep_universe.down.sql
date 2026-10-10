@@ -1,0 +1,1 @@
+DELETE FROM symbols WHERE symbol IN ('RY', 'ITUB', 'AMX', 'BCH', 'CIB', 'BAP', 'LYG', 'MUFG', 'KB', 'HDB', 'TLK', 'TKC', 'ING', 'NVDA', 'AAPL', 'XOM', 'JPM', 'CAT', 'IXN', 'IXP', 'RXI', 'IXG', 'IXJ', 'IXC', 'KXI', 'EXI', 'MXI', 'JXI') AND tracked = false;

@@ -15,10 +15,14 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "time/tzdata" // the runtime image has no zoneinfo; the sweep schedules in America/New_York
 
 	"github.com/urfave/cli/v3"
 
 	"github.com/AkashJam/ticker/flags"
+	"github.com/AkashJam/ticker/internal/source"
+	"github.com/AkashJam/ticker/internal/store"
+	"github.com/AkashJam/ticker/internal/sweep"
 	"github.com/AkashJam/ticker/migrations"
 	"github.com/AkashJam/ticker/server"
 
@@ -81,6 +85,14 @@ func main() {
 				},
 			},
 			{
+				Name:  "sweep",
+				Usage: "write the last completed session's daily bars for the 28 sweep symbols, then exit",
+				Flags: sharedFlags,
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					return runSweep(ctx, configFromCmd(cmd))
+				},
+			},
+			{
 				Name:  "version",
 				Usage: "print the build version",
 				Action: func(_ context.Context, _ *cli.Command) error {
@@ -116,6 +128,41 @@ func runServe(ctx context.Context, cfg flags.Config) error {
 		return err
 	}
 	return srv.Run(ctx)
+}
+
+// runSweep is a manual run of the daily-bar sweep: the last completed
+// session, written whether or not a bar already exists (the upsert is
+// idempotent). It does not ping healthchecks.io — that check watches the
+// scheduled run.
+func runSweep(ctx context.Context, cfg flags.Config) error {
+	if err := cfg.ValidateSweep(); err != nil {
+		return err
+	}
+	log := newLogger(cfg.LogLevel)
+
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	loc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		return fmt.Errorf("sweep: load America/New_York: %w", err)
+	}
+	pool, err := store.NewPool(ctx, cfg.TimescaleDSN)
+	if err != nil {
+		return fmt.Errorf("sweep: %w", err)
+	}
+	defer pool.Close()
+
+	runner := sweep.NewRunner(sweep.NewFinnhubClient(cfg.FinnhubAPIKey), store.NewTimescale(pool), source.SweepSymbolCodes(), loc, log)
+	res, err := runner.Run(ctx, sweep.ModeManual)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("sweep: %s session=%s written=%d failed=%v\n", res.State, res.Session.Format(time.DateOnly), res.Written, res.Failed)
+	if res.State == sweep.StateFailed {
+		return fmt.Errorf("sweep: %d symbol(s) not written", len(res.Failed))
+	}
+	return nil
 }
 
 // runMigrate applies the embedded migrations (migrations/embed.go) against

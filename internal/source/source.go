@@ -16,6 +16,7 @@ const (
 	AssetTypeStock  AssetType = "stock"
 	AssetTypeCrypto AssetType = "crypto"
 	AssetTypeForex  AssetType = "forex"
+	AssetTypeETF    AssetType = "etf"
 )
 
 // NormalizedTick is the common shape every MarketSource emits, regardless of
@@ -52,7 +53,11 @@ type Candle struct {
 	High     float64 `json:"high"`
 	Low      float64 `json:"low"`
 	Close    float64 `json:"close"`
-	Volume   float64 `json:"volume"`
+	// Volume is nil when the bar has no measured volume — the daily sweep's
+	// /quote carries none (portfolio.md §15 Phase 8), and absent is honest
+	// where a stored 0 would read as a real zero-volume day. Omitted from
+	// JSON when nil.
+	Volume *float64 `json:"volume,omitempty"`
 }
 
 // PubSubMessage envelopes a quote or candle update published to

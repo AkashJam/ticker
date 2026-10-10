@@ -20,6 +20,7 @@ import (
 	"github.com/AkashJam/ticker/internal/source"
 	"github.com/AkashJam/ticker/internal/sse"
 	"github.com/AkashJam/ticker/internal/store"
+	"github.com/AkashJam/ticker/internal/sweep"
 )
 
 // sseMaxConns is the connection cap resolved during planning (§13):
@@ -44,6 +45,7 @@ type Server struct {
 	leader     *ingest.Leader
 	producer   *ingest.Producer
 	deadman    *ingest.DeadMan
+	sweeper    *sweep.Scheduler // nil when no FINNHUB_API_KEY is set
 	aggregator *aggregate.Aggregator
 	httpServer *http.Server
 
@@ -99,10 +101,27 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 	handlers := api.NewHandlers(meta, ts, redis, cache, nil, log)
 	router := api.NewRouter(handlers, hub)
 
+	// The daily-bar sweep (portfolio.md §15 Phase 8) is independent of
+	// --source: it reads Finnhub's /quote for the 28 real symbols whatever
+	// the live feed is. Without a key it is off, loudly, so dev and CI (which
+	// have none) keep working.
+	var sweeper *sweep.Scheduler
+	if cfg.FinnhubAPIKey == "" {
+		log.Warn("server: daily-bar sweep disabled — FINNHUB_API_KEY is not set")
+	} else {
+		loc, err := time.LoadLocation("America/New_York")
+		if err != nil {
+			pool.Close()
+			return nil, fmt.Errorf("server: sweep: load America/New_York: %w", err)
+		}
+		runner := sweep.NewRunner(sweep.NewFinnhubClient(cfg.FinnhubAPIKey), ts, source.SweepSymbolCodes(), loc, log)
+		sweeper = sweep.NewScheduler(runner, leader, sweep.NewPinger(cfg.HealthchecksSweepURL, log), log)
+	}
+
 	return &Server{
 		cfg: cfg, log: log,
 		pool: pool, redis: redis, ts: ts,
-		src: src, leader: leader, producer: producer, deadman: deadman, aggregator: aggregator,
+		src: src, leader: leader, producer: producer, deadman: deadman, sweeper: sweeper, aggregator: aggregator,
 		httpServer: &http.Server{Addr: cfg.Addr, Handler: router},
 	}, nil
 }
@@ -145,6 +164,10 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 
 	s.wg.Add(4)
+	if s.sweeper != nil {
+		s.wg.Add(1)
+		go func() { defer s.wg.Done(); s.sweeper.Run(pipeCtx) }()
+	}
 	go func() { defer s.wg.Done(); s.leader.Run(pipeCtx) }()
 	go func() { defer s.wg.Done(); s.producer.Run(pipeCtx, ticks) }()
 	go func() { defer s.wg.Done(); s.deadman.Run(pipeCtx, s.healthy) }()

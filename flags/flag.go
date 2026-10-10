@@ -44,6 +44,18 @@ type Config struct {
 	Consumer string
 }
 
+// ValidateSweep is Validate plus what the daily-bar sweep needs, for the
+// `sweep` subcommand: the key, because without it every call is a 401.
+func (c Config) ValidateSweep() error {
+	if c.TimescaleDSN == "" {
+		return fmt.Errorf("flags: TIMESCALE_DSN (or --db-dsn) is required")
+	}
+	if c.FinnhubAPIKey == "" {
+		return fmt.Errorf("flags: FINNHUB_API_KEY (or --finnhub-api-key) is required to sweep")
+	}
+	return nil
+}
+
 // Validate fails fast on anything that would otherwise surface as a
 // confusing runtime error deep in startup.
 func (c Config) Validate() error {

@@ -86,9 +86,10 @@ type openCandle struct {
 }
 
 func (oc *openCandle) toCandle(symbol, interval string) source.Candle {
+	volume := oc.volume
 	return source.Candle{
 		Time: oc.bucketStart, Symbol: symbol, Interval: interval,
-		Open: oc.open, High: oc.high, Low: oc.low, Close: oc.close, Volume: oc.volume,
+		Open: oc.open, High: oc.high, Low: oc.low, Close: oc.close, Volume: &volume,
 	}
 }
 
