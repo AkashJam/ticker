@@ -21,6 +21,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/AkashJam/ticker/flags"
+	"github.com/AkashJam/ticker/internal/ecb"
 	"github.com/AkashJam/ticker/internal/fred"
 	"github.com/AkashJam/ticker/internal/reference"
 	"github.com/AkashJam/ticker/internal/source"
@@ -103,6 +104,14 @@ func main() {
 				Flags: append([]cli.Flag{&cli.StringFlag{Name: "out", Usage: "write JSON here instead of Redis; this is how embedded/fred.json is made"}}, sharedFlags...),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					return runFred(ctx, configFromCmd(cmd), cmd.String("out"))
+				},
+			},
+			{
+				Name:  "ecb",
+				Usage: "fetch the ECB reference rates and write the dataset to --out, or to Redis without it, then exit",
+				Flags: append([]cli.Flag{&cli.StringFlag{Name: "out", Usage: "write JSON here instead of Redis; this is how embedded/ecb.json is made"}}, sharedFlags...),
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					return runECB(ctx, configFromCmd(cmd), cmd.String("out"))
 				},
 			},
 			{
@@ -210,7 +219,47 @@ func runFred(ctx context.Context, cfg flags.Config, out string) error {
 	if err := os.WriteFile(out, append(b, '\n'), 0o644); err != nil {
 		return err
 	}
-	fmt.Printf("fred: wrote %s end=%s countries=%d\n", out, ds.End, len(ds.Rows))
+	fmt.Printf("fred: wrote %s countries=%d\n", out, len(ds.Rows))
+	return nil
+}
+
+// runECB is a manual run of the ECB fetcher. With --out it seeds from the full
+// history zip and writes the dataset to a file, which is how the embedded
+// snapshot is generated and refreshed; without it the dataset goes to Redis.
+// It does not ping healthchecks.io: that check watches the scheduled run.
+func runECB(ctx context.Context, cfg flags.Config, out string) error {
+	log := newLogger(cfg.LogLevel)
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	var cache reference.Cache
+	if out == "" {
+		if cfg.RedisAddr == "" {
+			return fmt.Errorf("ecb: REDIS_ADDR (or --redis-addr) is required without --out")
+		}
+		cache = store.NewRedis(cfg.RedisAddr)
+	}
+	refresher := ecb.NewRefresher(ecb.NewClient(), fred.NewClient(), reference.New(cache, reference.Embedded(), log), log)
+
+	if out == "" {
+		return refresher.Refresh(ctx)
+	}
+	st, err := refresher.Build(ctx)
+	if err != nil {
+		return err
+	}
+	ds, err := refresher.Compute(ctx, st)
+	if err != nil {
+		return err
+	}
+	b, err := json.MarshalIndent(ds, "", "  ")
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(out, append(b, '\n'), 0o644); err != nil {
+		return err
+	}
+	fmt.Printf("ecb: wrote %s asOf=%s currencies=%d\n", out, ds.AsOf, len(ds.Currencies))
 	return nil
 }
 

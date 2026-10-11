@@ -8,25 +8,20 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AkashJam/ticker/internal/change"
 	"github.com/AkashJam/ticker/internal/reference"
 )
 
 // DatasetName is the reference-store key and embedded file for this fetcher.
 const DatasetName = "fred"
 
-var (
-	// Windows are the start years of the three change windows, longest last.
-	Windows = []string{"2021", "2016", "2010"}
-	// Waypoints are the trail years between the 2010 origin and the end.
-	Waypoints = []int{2014, 2018, 2022}
-)
-
-// Measure is one index for one country: change over each window, never a level.
+// Measure is one index for one country as a stored series. The route turns it
+// into change over a window and per year at the common end (internal/change);
+// no level is ever served.
 type Measure struct {
-	Source string              `json:"source"`
-	AsOf   string              `json:"asOf"`
-	Change map[string]*float64 `json:"change"`
-	Trail  []TrailPoint        `json:"trail"`
+	Source string        `json:"source"`
+	AsOf   string        `json:"asOf"`
+	Series change.Series `json:"series"`
 }
 
 type Row struct {
@@ -38,8 +33,6 @@ type Row struct {
 // schemas in step 5.
 type Dataset struct {
 	GeneratedAt string         `json:"generatedAt"`
-	Windows     []string       `json:"windows"`
-	End         string         `json:"end"` // the latest quarter common to all countries
 	Rows        map[string]Row `json:"rows"`
 }
 
@@ -89,11 +82,9 @@ type countries struct {
 	} `json:"rows"`
 }
 
-type fetched struct{ shares, housing []Obs }
-
-// Build fetches every series and computes the dataset. It is all or nothing:
-// the common end needs every country, so one failed series fails the build
-// and the caller keeps whatever it already had.
+// Build fetches every series and builds the dataset. It is all or nothing: a
+// partial blob would leave countries on different ends, so one failed series
+// fails the build and the caller keeps whatever it already had.
 func (r *Refresher) Build(ctx context.Context) (Dataset, error) {
 	var cs countries
 	if _, err := r.Store.Get(ctx, "countries", &cs); err != nil {
@@ -103,66 +94,47 @@ func (r *Refresher) Build(ctx context.Context) (Dataset, error) {
 		return Dataset{}, errors.New("fred: no countries")
 	}
 
-	data := make(map[string]fetched, len(cs.Rows))
+	ds := Dataset{GeneratedAt: r.Now().UTC().Format(time.RFC3339), Rows: make(map[string]Row, len(cs.Rows))}
 	var failed []string
-	var ends []Quarter
 	first := true
 	for _, c := range cs.Rows {
-		var f fetched
-		for _, s := range []struct {
-			id  string
-			dst *[]Obs
-			f   Freq
-		}{{SharesID(c.Code), &f.shares, Monthly}, {HousingID(c.Code), &f.housing, Quarterly}} {
+		var row Row
+		for _, m := range []struct {
+			id     string
+			source string
+			step   int
+			dst    *Measure
+		}{
+			{SharesID(c.Code), "OECD via FRED " + SharesID(c.Code), 1, &row.Shares},
+			{HousingID(c.Code), "BIS via FRED " + HousingID(c.Code), 3, &row.Housing},
+		} {
 			if !first {
 				if err := r.Sleep(ctx, r.Gap); err != nil {
 					return Dataset{}, err
 				}
 			}
 			first = false
-			obs, err := r.fetch(ctx, s.id)
+			obs, err := r.fetch(ctx, m.id)
+			if err == nil {
+				var s change.Series
+				if s, err = ToSeries(obs, m.step); err == nil {
+					*m.dst = Measure{Source: m.source, AsOf: s.AsOf(), Series: s}
+				}
+			}
 			if err != nil {
 				if ctx.Err() != nil {
 					return Dataset{}, ctx.Err()
 				}
-				r.Log.Warn("fred: series failed", "id", s.id, "error", err)
-				failed = append(failed, s.id)
-				continue
+				r.Log.Warn("fred: series failed", "id", m.id, "error", err)
+				failed = append(failed, m.id)
 			}
-			*s.dst = obs
-			ends = append(ends, LastCompleteQuarter(obs, s.f))
 		}
-		data[c.Code] = f
+		ds.Rows[c.Code] = row
 	}
 	if len(failed) > 0 {
 		return Dataset{}, fmt.Errorf("fred: %d series failed: %s", len(failed), strings.Join(failed, ","))
 	}
-
-	end := CommonEnd(ends)
-	ds := Dataset{
-		GeneratedAt: r.Now().UTC().Format(time.RFC3339),
-		Windows:     Windows,
-		End:         end.String(),
-		Rows:        make(map[string]Row, len(data)),
-	}
-	for code, f := range data {
-		ds.Rows[code] = Row{
-			Shares:  measure("OECD via FRED "+SharesID(code), f.shares, Monthly, end),
-			Housing: measure("BIS via FRED "+HousingID(code), f.housing, Quarterly, end),
-		}
-	}
 	return ds, nil
-}
-
-func measure(source string, obs []Obs, f Freq, end Quarter) Measure {
-	m := Measure{Source: source, AsOf: end.String(), Change: map[string]*float64{}}
-	for _, w := range Windows {
-		var y int
-		_, _ = fmt.Sscanf(w, "%d", &y)
-		m.Change[w] = Window(obs, f, y, end)
-	}
-	m.Trail = Trail(obs, f, Waypoints, end)
-	return m
 }
 
 // Refresh builds the dataset and, only if that succeeded, stores it.
@@ -174,7 +146,7 @@ func (r *Refresher) Refresh(ctx context.Context) error {
 	if err := r.Store.Put(ctx, DatasetName, ds); err != nil {
 		return err
 	}
-	r.Log.Info("fred: refreshed", "end", ds.End, "countries", len(ds.Rows))
+	r.Log.Info("fred: refreshed", "countries", len(ds.Rows))
 	return nil
 }
 

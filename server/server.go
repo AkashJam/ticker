@@ -15,6 +15,7 @@ import (
 	"github.com/AkashJam/ticker/flags"
 	"github.com/AkashJam/ticker/internal/aggregate"
 	"github.com/AkashJam/ticker/internal/api"
+	"github.com/AkashJam/ticker/internal/ecb"
 	"github.com/AkashJam/ticker/internal/fred"
 	"github.com/AkashJam/ticker/internal/indicators"
 	"github.com/AkashJam/ticker/internal/ingest"
@@ -125,11 +126,19 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 	// unlike the sweep they always run; only the leader fetches.
 	refStore := reference.New(redis, reference.Embedded(), log)
 	fredRefresher := fred.NewRefresher(fred.NewClient(), refStore, log)
-	refScheduler := reference.NewScheduler([]reference.Job{{
-		Name:  "fred",
-		Run:   fredRefresher.Refresh,
-		Stale: func(ctx context.Context) bool { return fredRefresher.Stale(ctx, 24*time.Hour) },
-	}}, leader, sweep.NewPinger(cfg.HealthchecksReferenceURL, log), log)
+	ecbRefresher := ecb.NewRefresher(ecb.NewClient(), fred.NewClient(), refStore, log)
+	refScheduler := reference.NewScheduler([]reference.Job{
+		{
+			Name:  "fred",
+			Run:   fredRefresher.Refresh,
+			Stale: func(ctx context.Context) bool { return fredRefresher.Stale(ctx, 24*time.Hour) },
+		},
+		{
+			Name:  "ecb",
+			Run:   ecbRefresher.Refresh,
+			Stale: func(ctx context.Context) bool { return ecbRefresher.Stale(ctx, 24*time.Hour) },
+		},
+	}, leader, sweep.NewPinger(cfg.HealthchecksReferenceURL, log), log)
 
 	return &Server{
 		cfg: cfg, log: log,

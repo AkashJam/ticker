@@ -70,44 +70,34 @@ func TestSeriesIDs(t *testing.T) {
 	}
 }
 
-func TestLastCompleteQuarterAndCommonEnd(t *testing.T) {
-	// A monthly series that stops in August has not finished Q3.
-	if q := LastCompleteQuarter([]Obs{{Date: d(2026, 8)}}, Monthly); q != (Quarter{2026, 2}) {
-		t.Errorf("August monthly = %v, want 2026-Q2", q)
+func TestToSeries(t *testing.T) {
+	var obs []Obs
+	for m := 0; m < 30; m++ { // October 2009 to March 2012, monthly
+		obs = append(obs, Obs{Date: d(2009, 10).AddDate(0, m, 0), Value: float64(m)})
 	}
-	if q := LastCompleteQuarter([]Obs{{Date: d(2026, 9)}}, Monthly); q != (Quarter{2026, 3}) {
-		t.Errorf("September monthly = %v, want 2026-Q3", q)
+	s, err := ToSeries(obs, 1)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if q := LastCompleteQuarter([]Obs{{Date: d(2026, 2)}}, Monthly); q != (Quarter{2025, 4}) {
-		t.Errorf("February monthly = %v, want 2025-Q4", q)
+	if s.Start != "2010-01" || len(s.Values) != 27 || s.Values[0] != 3 || s.AsOf() != "2012-03" {
+		t.Errorf("series = %+v asOf %s, want it to start at 2010-01 (the third observation)", s, s.AsOf())
 	}
-	if q := LastCompleteQuarter([]Obs{{Date: d(2026, 1)}}, Quarterly); q != (Quarter{2026, 1}) {
-		t.Errorf("January quarterly = %v, want 2026-Q1", q)
-	}
-	// Japan's BIS series runs a quarter behind and sets the end for everyone.
-	if got := CommonEnd([]Quarter{{2026, 1}, {2025, 4}, {2026, 1}}); got.String() != "2025-Q4" {
-		t.Errorf("common end = %v", got)
+
+	q := []Obs{{d(2010, 1), 1}, {d(2010, 4), 2}, {d(2010, 7), 3}, {d(2010, 10), 4}}
+	if s, err := ToSeries(q, 3); err != nil || s.AsOf() != "2010-Q4" {
+		t.Errorf("quarterly = %+v err = %v", s, err)
 	}
 }
 
-func TestWindowAndTrail(t *testing.T) {
-	// Quarterly: 100 in Jan 2010, 150 in Jan 2014, 200 in Oct 2025.
-	h := []Obs{{d(2010, 1), 100}, {d(2014, 1), 150}, {d(2025, 10), 200}}
-	end := Quarter{2025, 4}
-	if v := Window(h, Quarterly, 2010, end); v == nil || *v != 100 {
-		t.Errorf("2010 window = %v, want +100", v)
+func TestToSeriesRejectsWhatItCannotServeHonestly(t *testing.T) {
+	if _, err := ToSeries([]Obs{{d(2010, 4), 1}, {d(2010, 7), 2}}, 3); err == nil {
+		t.Error("a series that starts after January 2010 was accepted")
 	}
-	if v := Window(h, Quarterly, 2016, end); v != nil {
-		t.Errorf("2016 window = %v, want nil (no January 2016 observation)", *v)
+	if _, err := ToSeries([]Obs{{d(2010, 1), 1}, {d(2010, 2), 2}, {d(2010, 4), 3}}, 1); err == nil {
+		t.Error("a series with a gap was accepted")
 	}
-	// Monthly: the end point is the last month of the quarter, December.
-	s := []Obs{{d(2010, 1), 50}, {d(2025, 12), 100}}
-	if v := Window(s, Monthly, 2010, end); v == nil || *v != 100 {
-		t.Errorf("monthly 2010 window = %v, want +100", v)
-	}
-	tr := Trail(h, Quarterly, []int{2014, 2018}, end)
-	if len(tr) != 3 || tr[0].At != "2014" || *tr[0].Change != 50 || tr[1].Change != nil || tr[2].At != "2025-Q4" || *tr[2].Change != 100 {
-		t.Errorf("trail = %+v", tr)
+	if _, err := ToSeries([]Obs{{d(2009, 1), 1}}, 1); err == nil {
+		t.Error("a series that ends before 2010 was accepted")
 	}
 }
 
@@ -155,18 +145,35 @@ func testRefresher(src SeriesSource) (*Refresher, *memCache) {
 	return r, cache
 }
 
+// monthlyObs and quarterlyObs build contiguous series from January 2010.
+func monthlyObs(n int, base float64) []Obs {
+	var o []Obs
+	for i := 0; i < n; i++ {
+		o = append(o, Obs{Date: d(2010, 1).AddDate(0, i, 0), Value: base + float64(i)})
+	}
+	return o
+}
+
+func quarterlyObs(n int, base float64) []Obs {
+	var o []Obs
+	for i := 0; i < n; i++ {
+		o = append(o, Obs{Date: d(2010, 1).AddDate(0, 3*i, 0), Value: base + float64(i)})
+	}
+	return o
+}
+
 func goodSeries() map[string][]Obs {
 	m := map[string][]Obs{}
 	for _, cc := range []string{"IT", "JP"} {
-		m[SharesID(cc)] = []Obs{{d(2010, 1), 100}, {d(2021, 1), 200}, {d(2025, 12), 300}, {d(2026, 8), 320}}
-		m[HousingID(cc)] = []Obs{{d(2010, 1), 100}, {d(2021, 1), 100}, {d(2025, 10), 110}, {d(2026, 1), 120}}
+		m[SharesID(cc)] = monthlyObs(200, 100)
+		m[HousingID(cc)] = quarterlyObs(60, 100)
 	}
 	// Japan's BIS series runs one quarter behind.
-	m[HousingID("JP")] = m[HousingID("JP")][:3]
+	m[HousingID("JP")] = m[HousingID("JP")][:59]
 	return m
 }
 
-func TestRefreshBuildsCommonEndAndStores(t *testing.T) {
+func TestRefreshStoresEachCountrysOwnSeries(t *testing.T) {
 	r, cache := testRefresher(&fakeSource{series: goodSeries()})
 	if err := r.Refresh(context.Background()); err != nil {
 		t.Fatal(err)
@@ -178,19 +185,18 @@ func TestRefreshBuildsCommonEndAndStores(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ds.End != "2025-Q4" {
-		t.Errorf("end = %s, want 2025-Q4 (Japan's housing lags a quarter)", ds.End)
+	// Each series keeps its own end; the cut at the common year is the route's.
+	it, jp := ds.Rows["IT"], ds.Rows["JP"]
+	if it.Shares.AsOf != "2026-08" || it.Housing.AsOf != "2024-Q4" || jp.Housing.AsOf != "2024-Q3" {
+		t.Errorf("asOf: IT shares %s, IT housing %s, JP housing %s", it.Shares.AsOf, it.Housing.AsOf, jp.Housing.AsOf)
 	}
-	it := ds.Rows["IT"]
-	if v := it.Shares.Change["2010"]; v == nil || *v != 200 {
-		t.Errorf("IT shares 2010 = %v, want +200", v)
+	if w := it.Shares.Series.Window(2010, 2024); w == nil || *w != 179 {
+		// 100 in January 2010, 279 in December 2024 (index 179).
+		t.Errorf("IT shares 2010-2024 = %v, want +179", w)
 	}
-	if v := it.Housing.Change["2021"]; v == nil || *v != 10 {
-		t.Errorf("IT housing 2021 = %v, want +10", v)
-	}
-	for _, m := range []Measure{it.Shares, it.Housing} {
-		if m.Source == "" || m.AsOf != "2025-Q4" {
-			t.Errorf("measure lacks source or as-of: %+v", m)
+	for _, m := range []Measure{it.Shares, it.Housing, jp.Shares, jp.Housing} {
+		if m.Source == "" || m.AsOf == "" || m.Series.Validate() != nil {
+			t.Errorf("measure lacks source, as-of or a valid series: %+v", m)
 		}
 	}
 }
