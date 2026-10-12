@@ -94,9 +94,16 @@ func main() {
 			{
 				Name:  "sweep",
 				Usage: "write the last completed session's daily bars for the 28 sweep symbols, then exit",
-				Flags: sharedFlags,
+				Flags: append(append([]cli.Flag{}, sharedFlags...),
+					&cli.BoolFlag{Name: "dry-run", Usage: "fetch real quotes and decide, but write nothing"},
+					&cli.StringFlag{Name: "mode", Value: "manual", Usage: "manual (default) | scheduled (the 16:15 decision, so holidays show) | catch-up (the start-up check)"},
+				),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return runSweep(ctx, configFromCmd(cmd))
+					mode, err := sweep.ParseMode(cmd.String("mode"))
+					if err != nil {
+						return err
+					}
+					return runSweep(ctx, configFromCmd(cmd), mode, cmd.Bool("dry-run"))
 				},
 			},
 			{
@@ -161,11 +168,13 @@ func runServe(ctx context.Context, cfg flags.Config) error {
 	return srv.Run(ctx)
 }
 
-// runSweep is a manual run of the daily-bar sweep: the last completed
-// session, written whether or not a bar already exists (the upsert is
-// idempotent). It does not ping healthchecks.io — that check watches the
-// scheduled run.
-func runSweep(ctx context.Context, cfg flags.Config) error {
+// runSweep runs the daily-bar sweep once. In the default manual mode it
+// writes the last completed session whether or not a bar already exists (the
+// upsert is idempotent). It never pings healthchecks.io: that check watches
+// the scheduled run. With dryRun it makes the same quote calls and decisions
+// but cannot write (sweep.ReadOnly), so --mode scheduled shows what the 16:15
+// run would do right now, including "holiday" on a weekend.
+func runSweep(ctx context.Context, cfg flags.Config, mode sweep.Mode, dryRun bool) error {
 	if err := cfg.ValidateSweep(); err != nil {
 		return err
 	}
@@ -184,12 +193,19 @@ func runSweep(ctx context.Context, cfg flags.Config) error {
 	}
 	defer pool.Close()
 
-	runner := sweep.NewRunner(sweep.NewFinnhubClient(cfg.FinnhubAPIKey), store.NewTimescale(pool), source.SweepSymbolCodes(), loc, log)
-	res, err := runner.Run(ctx, sweep.ModeManual)
+	var st sweep.Store = store.NewTimescale(pool)
+	label := "sweep"
+	if dryRun {
+		st = sweep.ReadOnly(st)
+		label = fmt.Sprintf("sweep (dry run, mode=%s)", mode)
+	}
+	runner := sweep.NewRunner(sweep.NewFinnhubClient(cfg.FinnhubAPIKey), st, source.SweepSymbolCodes(), loc, log)
+	res, err := runner.Run(ctx, mode)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("sweep: %s session=%s written=%d failed=%v\n", res.State, res.Session.Format(time.DateOnly), res.Written, res.Failed)
+	fmt.Printf("%s: %s session=%s written=%d failed=%v\n", label, res.State, res.Session.Format(time.DateOnly), res.Written, res.Failed)
+	fmt.Println(sweep.Explain(res, dryRun))
 	if res.State == sweep.StateFailed {
 		return fmt.Errorf("sweep: %d symbol(s) not written", len(res.Failed))
 	}

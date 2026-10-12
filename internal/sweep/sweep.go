@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/AkashJam/ticker/internal/source"
@@ -40,6 +41,32 @@ const (
 	// or not a bar exists. Safe to repeat — the upsert is idempotent.
 	ModeManual
 )
+
+// String is the name ParseMode accepts.
+func (m Mode) String() string {
+	switch m {
+	case ModeScheduled:
+		return "scheduled"
+	case ModeCatchUp:
+		return "catch-up"
+	case ModeManual:
+		return "manual"
+	}
+	return fmt.Sprintf("mode(%d)", int(m))
+}
+
+// ParseMode reads a --mode value, ignoring case and surrounding space.
+func ParseMode(s string) (Mode, error) {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "scheduled":
+		return ModeScheduled, nil
+	case "catch-up":
+		return ModeCatchUp, nil
+	case "manual":
+		return ModeManual, nil
+	}
+	return 0, fmt.Errorf("sweep: unknown mode %q (want manual, scheduled or catch-up)", s)
+}
 
 // State is the outcome of a Run.
 type State string
