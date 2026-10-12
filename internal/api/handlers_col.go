@@ -11,13 +11,13 @@ import (
 // GetCostOfLiving handles GET /col (§8) — the sim source's Cost-of-Living
 // family, computed fresh on every read (§6.3: not a table).
 func (h *Handlers) GetCostOfLiving(c *gin.Context) {
-	c.JSON(http.StatusOK, source.CostOfLiving())
+	c.JSON(http.StatusOK, source.CostOfLiving(c.Request.Context(), h.CPI))
 }
 
 // GetCostOfLivingCity handles GET /col/{city} (§8).
 func (h *Handlers) GetCostOfLivingCity(c *gin.Context) {
 	city := c.Param("city")
-	detail, ok := source.CostOfLivingByCity(city)
+	detail, ok := source.CostOfLivingByCity(c.Request.Context(), h.CPI, city)
 	if !ok {
 		c.JSON(http.StatusNotFound, gin.H{"error": "unknown city"})
 		return

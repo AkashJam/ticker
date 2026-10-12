@@ -24,6 +24,9 @@ type Handlers struct {
 	Cache *indicators.Cache
 	Ready func() error // aggregate readiness check (§8: GET /ready) — see server.go
 	Log   *slog.Logger
+	// CPI carries /col's survey baselines forward on real CPI (Phase 10).
+	// Nil serves them as published. Phase 14 deletes /col and this with it.
+	CPI source.CPIFunc
 }
 
 func NewHandlers(meta *store.Meta, ts *store.Timescale, redis *store.Redis, cache *indicators.Cache, ready func() error, log *slog.Logger) *Handlers {

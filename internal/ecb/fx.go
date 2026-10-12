@@ -21,7 +21,10 @@ type DailyWindow struct {
 	Rates []float64 `json:"rates"`
 }
 
-// Sum accumulates a month's daily rates for its average.
+// Sum accumulates a month's published rates for its average. Only days the ECB
+// actually published count, so the averages are the ECB's own definition and
+// match the annual averages it publishes; carry-forward fills the daily window
+// and nothing else.
 type Sum struct {
 	Sum  float64 `json:"sum"`
 	Days int     `json:"days"`
@@ -82,6 +85,9 @@ func (s *State) addDay(date time.Time, rates map[string]float64) {
 			w.Rates = append([]float64(nil), w.Rates[drop:]...)
 			w.Start = w.Start.AddDate(0, 0, drop)
 		}
+		if !published {
+			continue // a carried-forward day is not a publication
+		}
 		if s.Sums[c] == nil {
 			s.Sums[c] = map[string]Sum{}
 		}
@@ -130,18 +136,21 @@ func monthEnd(ym string) (time.Time, error) {
 	return t.AddDate(0, 1, -1), nil
 }
 
-func daysIn(ym string) int {
-	end, err := monthEnd(ym)
-	if err != nil {
-		return 0
+// publishedDays is how many days the ECB published in a month: the most any
+// wanted currency has. A currency with fewer was missing for part of it.
+func (s *State) publishedDays(ym string) int {
+	most := 0
+	for _, c := range s.Wanted {
+		most = max(most, s.Sums[c][ym].Days)
 	}
-	return end.Day()
+	return most
 }
 
 // monthly builds a currency's series of monthly averages, from its first full
 // month on or after January 2010 to the last complete month. A month is
-// complete once the state includes its last day. The ECB published no shekel
-// for 2010, so Israel's series starts in February 2011 and a window that needs
+// complete once the state includes its last day, and full for a currency once
+// it was published on every day the ECB published. The ECB published no shekel
+// for 2010, so Israel's series starts in January 2011 and a window that needs
 // 2010 is not served for it: a gap is never filled.
 func (s *State) monthly(code string) (change.Series, bool) {
 	sums := s.Sums[code]
@@ -154,7 +163,7 @@ func (s *State) monthly(code string) (change.Series, bool) {
 		}
 		sum, ok := sums[ym]
 		if len(out.Values) == 0 {
-			if !ok || sum.Days != daysIn(ym) {
+			if !ok || sum.Days == 0 || sum.Days < s.publishedDays(ym) {
 				continue // not yet a full month of data
 			}
 			out = change.Series{Start: ym, Step: 1}
@@ -191,7 +200,8 @@ func (s *State) annualAverages(code string) map[string]float64 {
 }
 
 // Compute builds the served dataset from the state. Rates are local units per
-// €1. The current year's average runs to the latest date only.
+// €1. Averages are over the days the ECB published; the current year's runs to
+// the latest date only.
 func (s *State) Compute(generatedAt time.Time) Dataset {
 	ds := Dataset{
 		GeneratedAt: generatedAt.UTC().Format(time.RFC3339),

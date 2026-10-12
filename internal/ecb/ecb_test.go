@@ -143,9 +143,10 @@ func TestCarryForwardAcrossWeekendAndAnnualAverage(t *testing.T) {
 	if len(got) != 4 || got[0] != want[0] || got[1] != want[1] || got[2] != want[2] || got[3] != want[3] {
 		t.Fatalf("window = %v, want %v", got, want)
 	}
-	// 4.3 over 4 calendar days, the current year to its latest date only.
-	if avg := st.annualAverages("USD")["2026"]; avg != 1.075 {
-		t.Errorf("2026 average = %v, want 1.075", avg)
+	// The ECB's own definition: the mean of the two days it published, not of the
+	// four calendar days. The carried-forward weekend does not count.
+	if avg := st.annualAverages("USD")["2026"]; avg != 1.15 {
+		t.Errorf("2026 average = %v, want 1.15", avg)
 	}
 }
 
@@ -164,13 +165,16 @@ func TestMonthlySeriesIsCompleteMonthsOnly(t *testing.T) {
 	}
 }
 
-func TestMonthlyAverageWeightsCalendarDays(t *testing.T) {
-	// Friday 1 Jan at 10, Monday 4 Jan at 20: the 2nd and 3rd carry 10, so
-	// January's first four days average (10+10+10+20)/4.
+func TestMonthlyAverageIsOverPublishedDays(t *testing.T) {
+	// Friday 1 Jan at 10, Monday 4 Jan at 20: the 2nd and 3rd are carried forward
+	// for the daily window but are not publications, so January is (10+20)/2.
 	st := NewState([]string{"USD"})
 	st.Append([]Day{day(2010, 1, 1, map[string]float64{"USD": 10}), day(2010, 1, 4, map[string]float64{"USD": 20})})
-	if m := st.Sums["USD"]["2010-01"]; m.Days != 4 || m.Sum != 50 {
-		t.Errorf("January = %+v, want 4 days summing 50", m)
+	if m := st.Sums["USD"]["2010-01"]; m.Days != 2 || m.Sum != 30 {
+		t.Errorf("January = %+v, want 2 published days summing 30", m)
+	}
+	if got := st.Window["USD"].Rates; len(got) != 4 {
+		t.Errorf("daily window = %v, want 4 calendar days", got)
 	}
 }
 
@@ -230,16 +234,36 @@ func TestViaUSD(t *testing.T) {
 }
 
 func TestFirstFullMonthStartsTheSeries(t *testing.T) {
-	// No rate until Monday 3 January 2011, as with the ECB's shekel: January is
-	// a partial month, so the series starts in February.
-	st := NewState([]string{"ILS"})
-	st.Append(weekdays(ymd(2011, 1, 3), ymd(2011, 4, 15), func(time.Time) map[string]float64 { return map[string]float64{"ILS": 5} }))
+	usd := func(time.Time) map[string]float64 { return map[string]float64{"USD": 1} }
+	// ILS is first published on Monday 3 January 2011, the ECB's first business
+	// day of the year (1 and 2 January are a weekend): January is a full month.
+	st := NewState([]string{"ILS", "USD"})
+	days := weekdays(ymd(2010, 12, 1), ymd(2011, 4, 15), usd)
+	for i := range days {
+		if !days[i].Date.Before(ymd(2011, 1, 3)) {
+			days[i].Rates["ILS"] = 5
+		}
+	}
+	st.Append(days)
 	s, ok := st.monthly("ILS")
-	if !ok || s.Start != "2011-02" || len(s.Values) != 2 || s.AsOf() != "2011-03" {
-		t.Fatalf("series = %+v ok = %v, want February and March 2011", s, ok)
+	if !ok || s.Start != "2011-01" || len(s.Values) != 3 || s.AsOf() != "2011-03" {
+		t.Fatalf("series = %+v ok = %v, want January to March 2011", s, ok)
 	}
 	if s.Window(2010, 2011) != nil {
 		t.Error("a window needing 2010 was served for a currency with no 2010 rate")
+	}
+
+	// Published only from the 17th: January is partial, so the series starts in February.
+	st = NewState([]string{"ILS", "USD"})
+	days = weekdays(ymd(2010, 12, 1), ymd(2011, 4, 15), func(time.Time) map[string]float64 { return map[string]float64{"USD": 1} })
+	for i := range days {
+		if !days[i].Date.Before(ymd(2011, 1, 17)) {
+			days[i].Rates["ILS"] = 5
+		}
+	}
+	st.Append(days)
+	if s, ok := st.monthly("ILS"); !ok || s.Start != "2011-02" {
+		t.Errorf("series = %+v ok = %v, want it to start in February 2011", s, ok)
 	}
 }
 

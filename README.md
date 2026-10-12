@@ -46,6 +46,7 @@ flowchart LR
 | Indicators | [`internal/indicators`](internal/indicators) | EMA and Wilder-smoothed RSI(14), computed on read from candle history and cached in Redis (full series, not just the latest point) |
 | Storage | [`internal/store`](internal/store) | Thin repositories over the shared Postgres pool and Redis client — `Timescale` (ticks/candles), `Meta` (symbols), `Redis` (stream/lock/pub-sub/cache primitives) — kept separate from the domain logic above so they're each swappable/mockable on their own |
 | API + SSE | [`internal/api`](internal/api), [`internal/sse`](internal/sse) | Gin REST API; an SSE `Hub` relays the `quotes:{symbol}` pub/sub channel as `event: quote` / `event: candle` / `event: heartbeat`, capped at 200 connections (reject-new) |
+| Reference data | [`internal/reference`](internal/reference), [`internal/fred`](internal/fred), [`internal/ecb`](internal/ecb), [`internal/change`](internal/change) | Atlas reference data, off the tick pipeline: JSON blobs in Redis via `CacheSet` with an embedded fallback (`reference.Store`), refreshed by one daily `reference.Scheduler`; FRED (share prices, house prices, Chile’s pesos per dollar) and ECB (euro reference rates) fetchers; `change` computes windows and per-year change from stored series |
 | Wiring | [`server`](server), [`cmd`](cmd), [`flags`](flags) | `server.New` wires source → ingest → aggregate → API/SSE; on `SIGTERM` it stops the HTTP server, cancels and awaits every pipeline goroutine, flushes in-flight candles, then releases the leader lock — in that order, so nothing races the flush |
 
 ### The pipeline
@@ -128,6 +129,7 @@ Every setting is a CLI flag, an environment variable, or both — precedence is
 | `--healthchecks-url` | `HEALTHCHECKS_URL` | — (optional) | A [healthchecks.io](https://healthchecks.io) URL for the ingestion loop's dead-man switch; empty disables it |
 | `--finnhub-api-key` | `FINNHUB_API_KEY` | — (optional) | Finnhub API key; required with `--source finnhub` and by the daily-bar sweep. Production reads it from SSM |
 | `--healthchecks-sweep-url` | `HEALTHCHECKS_SWEEP_URL` | — (optional) | A second healthchecks.io URL, for the daily-bar sweep only; empty disables it |
+| `--healthchecks-reference-url` | `HEALTHCHECKS_REFERENCE_URL` | — (optional) | A third healthchecks.io URL, shared by the reference fetchers; empty disables it |
 
 ### The daily-bar sweep
 
@@ -154,6 +156,19 @@ the API.
 - The symbols are seeded into the `symbols` table with `tracked = false`, so
   `/symbols` and `/market` do not list them until Phase 14.
 
+### Reference data (Atlas)
+
+Keyless, and not on the tick pipeline (portfolio.md §15 Phase 10, `phase10.md`).
+`serve` runs the FRED and ECB jobs daily at 06:00 UTC on the leader, with a
+start-up catch-up for any stale job; a failure fails the whole job and leaves the
+cached blob alone. With Redis down the embedded snapshots in
+`internal/reference/embedded/` answer instead.
+
+- **Manually:** `ticker fred [--out file]` and `ticker ecb [--out file]` run one
+  refresh; `--out` writes JSON instead of Redis, which is how the embedded
+  snapshots are made.
+- **Monitoring:** one shared check (`HEALTHCHECKS_REFERENCE_URL`); a failure names its job.
+
 ## HTTP API
 
 Internal-only — reached exclusively by the `portfolio` container over the
@@ -177,12 +192,16 @@ it). See [`internal/api/router.go`](internal/api/router.go).
 ## Project layout
 
 ```text
-cmd/                   entry point — serve | migrate | sweep | version
+cmd/                   entry point — serve | migrate | sweep | fred | ecb | version
 server/                wires source → ingest → aggregate → API/SSE; owns startup + shutdown
 flags/                 typed Config, loaded from CLI flags / env / .env
 internal/source/       MarketSource interface, sim feed, cost-of-living data
 internal/ingest/       normalize, leader election, producer, dead-man switch
 internal/sweep/        post-close daily-bar sweep: Finnhub /quote client, runner, scheduler
+internal/reference/    reference store (Redis + embedded fallback) and its daily scheduler
+internal/fred/         FRED CSV client: share prices, house prices, pesos per dollar
+internal/ecb/          ECB reference rates: history zip, daily XML, monthly series
+internal/change/       pure window and per-year change maths over stored series
 internal/aggregate/    Redis Stream consumer → OHLCV candles → Timescale
 internal/indicators/   EMA, Wilder RSI(14), Redis-backed cache
 internal/store/        Timescale/Meta/Redis repositories (thin, mockable)

@@ -15,6 +15,7 @@ import (
 	"github.com/AkashJam/ticker/flags"
 	"github.com/AkashJam/ticker/internal/aggregate"
 	"github.com/AkashJam/ticker/internal/api"
+	"github.com/AkashJam/ticker/internal/change"
 	"github.com/AkashJam/ticker/internal/ecb"
 	"github.com/AkashJam/ticker/internal/fred"
 	"github.com/AkashJam/ticker/internal/indicators"
@@ -24,6 +25,7 @@ import (
 	"github.com/AkashJam/ticker/internal/sse"
 	"github.com/AkashJam/ticker/internal/store"
 	"github.com/AkashJam/ticker/internal/sweep"
+	"github.com/AkashJam/ticker/internal/worldbank"
 )
 
 // sseMaxConns is the connection cap resolved during planning (§13):
@@ -127,6 +129,7 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 	refStore := reference.New(redis, reference.Embedded(), log)
 	fredRefresher := fred.NewRefresher(fred.NewClient(), refStore, log)
 	ecbRefresher := ecb.NewRefresher(ecb.NewClient(), fred.NewClient(), refStore, log)
+	wbRefresher := worldbank.NewRefresher(worldbank.NewClient(), refStore, log)
 	refScheduler := reference.NewScheduler([]reference.Job{
 		{
 			Name:  "fred",
@@ -138,7 +141,24 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 			Run:   ecbRefresher.Refresh,
 			Stale: func(ctx context.Context) bool { return ecbRefresher.Stale(ctx, 24*time.Hour) },
 		},
+		{ // after ecb: everyday spending converts at the ECB's annual average
+			Name:  "worldbank",
+			Run:   wbRefresher.Refresh,
+			Stale: func(ctx context.Context) bool { return wbRefresher.Stale(ctx, 24*time.Hour) },
+		},
 	}, leader, sweep.NewPinger(cfg.HealthchecksReferenceURL, log), log)
+
+	// /col carries its survey baselines on real CPI (Phase 10; Phase 14 deletes
+	// both). The reference store falls back to the embedded snapshot, so this
+	// works with Redis down.
+	handlers.CPI = func(ctx context.Context, code string) (change.Series, bool) {
+		var ds worldbank.Dataset
+		if _, err := refStore.Get(ctx, worldbank.DatasetName, &ds); err != nil {
+			return change.Series{}, false
+		}
+		row, ok := ds.Rows[code]
+		return row.Prices.Series, ok && row.Prices.Series.Validate() == nil
+	}
 
 	return &Server{
 		cfg: cfg, log: log,

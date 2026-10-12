@@ -1,62 +1,63 @@
 package source
 
 import (
-	"math"
+	"context"
 	"strings"
 	"time"
+
+	"github.com/AkashJam/ticker/internal/change"
 )
 
 // The Cost-of-Living family (portfolio.md §6.2) is deliberately not a
 // random walk like the SIM: symbols above — it's seeded from real official
-// surveys and drifted forward by each country's inflation, so "simulated"
-// here means "extrapolated from a real baseline," not "fabricated." It
+// surveys and carried forward by each country's real CPI (World Bank
+// FP.CPI.TOTL, Phase 10), so "simulated" here means "extrapolated from a
+// real baseline," not "fabricated." Phase 14 deletes this whole family. It
 // never flows through the tick/candle pipeline (§6.3: "col is served from
 // the sim family, not a table") — CostOfLiving/CostOfLivingDetail below are
 // computed fresh on every read.
 
-// colCity is the static per-city seed: the survey baseline plus an
-// illustrative annual inflation rate used to drift it forward. Values and
-// citations are exactly portfolio.md §6.2's table; FX rates are its dated
-// (4 Aug 2026) EUR-Lex mid-market rates. Inflation rates are simplified,
-// illustrative annual figures for this simulated demo dataset — not a live
-// economic feed — hence always `simulated: true` downstream.
+// colCity is the static per-city seed: the survey baseline, carried forward on
+// the country's CPI. Values and citations are exactly portfolio.md §6.2's
+// table; FX rates are its dated (4 Aug 2026) EUR-Lex mid-market rates. The FX
+// rate is not a live feed, hence always `simulated: true` downstream.
 type colCity struct {
 	City          string
 	Country       string
+	Code          string // ISO 3166 alpha-2, the key into the reference datasets
 	LocalCurrency string
 	LocalValue    float64 // survey-year baseline, in LocalCurrency
 	SurveyYear    int
 	Source        string
 	Method        string
 	FXToEUR       float64 // 1 unit of LocalCurrency in EUR
-	AnnualInflate float64 // illustrative annual drift rate, e.g. 0.02 = 2%/yr
 }
 
 var colSeed = []colCity{
 	{
-		City: "Milan", Country: "Italy", LocalCurrency: "EUR", LocalValue: 972,
+		City: "Milan", Country: "Italy", Code: "IT", LocalCurrency: "EUR", LocalValue: 972,
 		SurveyYear: 2024, Source: "ISTAT absolute-poverty basket",
-		Method: "Absolute poverty threshold", FXToEUR: 1.0, AnnualInflate: 0.020,
+		Method: "Absolute poverty threshold", FXToEUR: 1.0,
 	},
 	{
-		City: "Paris", Country: "France", LocalCurrency: "EUR", LocalValue: 1634,
+		City: "Paris", Country: "France", Code: "FR", LocalCurrency: "EUR", LocalValue: 1634,
 		SurveyYear: 2022, Source: "ONPES budget de référence",
-		Method: "Reference budget (budget de référence)", FXToEUR: 1.0, AnnualInflate: 0.025,
+		Method: "Reference budget (budget de référence)", FXToEUR: 1.0,
 	},
 	{
-		City: "London", Country: "United Kingdom", LocalCurrency: "GBP", LocalValue: 2333,
+		City: "London", Country: "United Kingdom", Code: "GB", LocalCurrency: "GBP", LocalValue: 2333,
 		SurveyYear: 2024, Source: "JRF / Loughborough — MIS",
-		Method: "Minimum Income Standard (MIS)", FXToEUR: 1.1677, AnnualInflate: 0.030,
+		Method: "Minimum Income Standard (MIS)", FXToEUR: 1.1677,
 	},
 	{
-		City: "Tokyo", Country: "Japan", LocalCurrency: "JPY", LocalValue: 130700,
+		City: "Tokyo", Country: "Japan", Code: "JP", LocalCurrency: "JPY", LocalValue: 130700,
 		SurveyYear: 2024, Source: "MHLW Seikatsu Hogo welfare std",
-		Method: "Livelihood protection standard (Seikatsu Hogo)", FXToEUR: 0.005517, AnnualInflate: 0.020,
+		Method: "Livelihood protection standard (Seikatsu Hogo)", FXToEUR: 0.005517,
 	},
 	{
-		City: "New York", Country: "United States", LocalCurrency: "USD", LocalValue: 4833,
+		City: "New York", Country: "United States", Code: "US", LocalCurrency: "USD", LocalValue: 4833,
 		SurveyYear: 2025, Source: "MIT living wage (pre-tax)",
-		Method: "Living wage calculator, pre-tax", FXToEUR: 0.8684, AnnualInflate: 0.030,
+		Method: "Living wage calculator, pre-tax", FXToEUR: 0.8684,
 	},
 }
 
@@ -111,53 +112,96 @@ type CostOfLivingDetail struct {
 	Basket  []CostOfLivingBasketItem  `json:"basket"`
 }
 
-// driftedValue compounds a survey-year baseline forward to `at` at the
-// city's illustrative annual inflation rate.
-func driftedValue(c colCity, at time.Time) float64 {
-	surveyStart := time.Date(c.SurveyYear, time.January, 1, 0, 0, 0, 0, time.UTC)
-	years := at.Sub(surveyStart).Hours() / (24 * 365.25)
-	if years < 0 {
-		years = 0
-	}
-	return c.LocalValue * math.Pow(1+c.AnnualInflate, years)
+// CPIFunc returns a country's annual CPI index (an annual change.Series from
+// 2010) for the given ISO code, or false when there is none. The server backs
+// it with the reference store, so it works with Redis down.
+type CPIFunc func(ctx context.Context, code string) (change.Series, bool)
+
+// carried is a baseline carried forward on a country's CPI.
+type carried struct {
+	index change.Series
+	ok    bool
 }
 
-// CostOfLiving returns every tracked city's current drifted snapshot.
-func CostOfLiving() []CostOfLivingSnapshot {
-	now := time.Now().UTC()
+func (k carried) at(year int) (float64, bool) {
+	if !k.ok {
+		return 0, false
+	}
+	return k.index.At(year, 1)
+}
+
+// latest is the last year the CPI covers.
+func (k carried) latest() int {
+	y, _ := k.index.Last()
+	return y
+}
+
+// value is the survey baseline carried to year on the CPI: baseline × CPI(year)
+// ÷ CPI(survey year). It is carried to the latest published CPI year and no
+// further, and never backwards past the survey (bearing.md #98); with no usable
+// CPI it is the baseline as published.
+func (k carried) value(c colCity, year int) float64 {
+	base, okBase := k.at(c.SurveyYear)
+	cur, okCur := k.at(year)
+	if !okBase || !okCur || year < c.SurveyYear || base <= 0 {
+		return c.LocalValue
+	}
+	return c.LocalValue * cur / base
+}
+
+// lastYear is the year to carry to: the latest CPI year, if the CPI reaches the
+// survey; otherwise the survey year itself.
+func (k carried) lastYear(c colCity) int {
+	if _, ok := k.at(c.SurveyYear); !ok || k.latest() < c.SurveyYear {
+		return c.SurveyYear
+	}
+	return k.latest()
+}
+
+func carriedFor(ctx context.Context, cpi CPIFunc, c colCity) carried {
+	if cpi == nil {
+		return carried{}
+	}
+	s, ok := cpi(ctx, c.Code)
+	return carried{index: s, ok: ok}
+}
+
+// CostOfLiving returns every tracked city's snapshot, carried on real CPI.
+func CostOfLiving(ctx context.Context, cpi CPIFunc) []CostOfLivingSnapshot {
 	out := make([]CostOfLivingSnapshot, 0, len(colSeed))
 	for _, c := range colSeed {
-		out = append(out, snapshotFor(c, now))
+		out = append(out, snapshotFor(c, carriedFor(ctx, cpi, c)))
 	}
 	return out
 }
 
-// CostOfLivingByCity returns one city's detail, including its drift series
-// and expense basket. ok is false if city doesn't match a tracked city.
-func CostOfLivingByCity(city string) (CostOfLivingDetail, bool) {
-	now := time.Now().UTC()
+// CostOfLivingByCity returns one city's detail, including its series and
+// expense basket. ok is false if city doesn't match a tracked city.
+func CostOfLivingByCity(ctx context.Context, cpi CPIFunc, city string) (CostOfLivingDetail, bool) {
 	for _, c := range colSeed {
 		if !strings.EqualFold(c.City, city) {
 			continue
 		}
-		snap := snapshotFor(c, now)
+		k := carriedFor(ctx, cpi, c)
+		snap := snapshotFor(c, k)
 		return CostOfLivingDetail{
 			CostOfLivingSnapshot: snap,
 			Method:               c.Method,
 			FXToEUR:              c.FXToEUR,
-			Series:               seriesFor(c, now),
+			Series:               seriesFor(c, k),
 			Basket:               basketFor(snap.LocalValue),
 		}, true
 	}
 	return CostOfLivingDetail{}, false
 }
 
-func snapshotFor(c colCity, now time.Time) CostOfLivingSnapshot {
-	local := driftedValue(c, now)
-	localOneYearAgo := driftedValue(c, now.AddDate(-1, 0, 0))
+func snapshotFor(c colCity, k carried) CostOfLivingSnapshot {
+	year := k.lastYear(c)
+	local := k.value(c, year)
 	changeYoY := 0.0
-	if localOneYearAgo > 0 {
-		changeYoY = (local - localOneYearAgo) / localOneYearAgo * 100
+	if prev, ok := k.at(year - 1); ok && year-1 >= c.SurveyYear && prev > 0 {
+		cur, _ := k.at(year)
+		changeYoY = (cur/prev - 1) * 100
 	}
 	return CostOfLivingSnapshot{
 		City:          c.City,
@@ -172,21 +216,16 @@ func snapshotFor(c colCity, now time.Time) CostOfLivingSnapshot {
 	}
 }
 
-// seriesFor generates one monthly point per month from the survey baseline
-// to now, so the city detail page can render a real (if illustrative)
-// trend line rather than a single current value.
-func seriesFor(c colCity, now time.Time) []CostOfLivingSeriesPoint {
-	surveyStart := time.Date(c.SurveyYear, time.January, 1, 0, 0, 0, 0, time.UTC)
-	// Non-nil for the same reason as the store layer's Candles/Symbols —
-	// the loop bound makes an empty result practically unreachable today
-	// (surveyStart is always in the past), but a nil slice here would
-	// still marshal to JSON `null` against the documented array contract
-	// if that ever stopped being true.
+// seriesFor is one point a year, from the survey year to the latest CPI year,
+// so the city detail page can render a trend rather than a single value.
+func seriesFor(c colCity, k carried) []CostOfLivingSeriesPoint {
+	// Non-nil for the same reason as the store layer's Candles/Symbols: a nil
+	// slice would marshal to JSON `null` against the documented array contract.
 	points := make([]CostOfLivingSeriesPoint, 0)
-	for t := surveyStart; !t.After(now); t = t.AddDate(0, 1, 0) {
+	for y := c.SurveyYear; y <= k.lastYear(c); y++ {
 		points = append(points, CostOfLivingSeriesPoint{
-			Time:  t,
-			Value: roundToCents(driftedValue(c, t)),
+			Time:  time.Date(y, time.January, 1, 0, 0, 0, 0, time.UTC),
+			Value: roundToCents(k.value(c, y)),
 		})
 	}
 	return points

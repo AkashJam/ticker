@@ -1,0 +1,1936 @@
+{
+  "generatedAt": "2026-10-12T07:55:36Z",
+  "rows": {
+    "AU": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            99.9999999999999,
+            103.30384784681,
+            105.124870505209,
+            107.700306290987,
+            110.379813789798,
+            112.044747614105,
+            113.475551934366,
+            115.686785436719,
+            117.898022686164,
+            119.797089761608,
+            120.811652194838,
+            124.271592622831,
+            132.466181470806,
+            139.880337389597,
+            144.309741509281,
+            148.457258197608
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 2491,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 69930,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 4.1,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 83.1,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 2.9,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 2.3,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 23.9,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 67.5,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 5.3,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2025"
+        }
+      }
+    },
+    "BR": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            100,
+            106.63644962213,
+            112.398549260783,
+            119.37210444145,
+            126.927212865611,
+            138.388614560102,
+            150.482594206407,
+            155.668786230017,
+            161.373814183905,
+            167.39786028006,
+            172.774291252888,
+            187.117425058295,
+            204.482120615774,
+            213.875135287719,
+            223.216054990026,
+            234.414252669967
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 501,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 22670,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 6,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 76,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 5,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 6.1,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 20.1,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 59.7,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 11.8,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2025"
+        }
+      }
+    },
+    "CA": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            99.9999999999999,
+            102.912135088723,
+            104.471951917572,
+            105.452203777905,
+            107.462793360045,
+            108.672009158557,
+            110.224670864338,
+            111.984831139095,
+            114.524899828277,
+            116.757298225529,
+            117.594447624499,
+            121.587006296508,
+            129.858328563251,
+            134.895535203205,
+            138.108185460789,
+            140.970234688036
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 2291,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 66820,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 6.9,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 82.1,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 2.1,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 1.9,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2022"
+        },
+        "industry": {
+          "value": 27.4,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2022"
+        },
+        "services": {
+          "value": 64.1,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2022"
+        },
+        "manufacturing": {
+          "value": 9.3,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2022"
+        }
+      }
+    },
+    "CL": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            100,
+            103.341223135789,
+            106.449156030142,
+            108.354123231828,
+            113.467001801662,
+            118.401423940769,
+            122.884332371416,
+            125.566547895994,
+            128.623957073294,
+            131.913576114248,
+            135.930990148538,
+            142.081279717614,
+            158.625034739426,
+            170.651469086145,
+            177.985460227304,
+            185.483881441426
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 753,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 35730,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 9,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 81.4,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 4.2,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 3.5,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 31.4,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 55.5,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 9,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2025"
+        }
+      }
+    },
+    "CN": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            99.9999999999999,
+            105.553898922574,
+            108.318908982373,
+            111.158001765191,
+            113.294060199837,
+            114.922122819495,
+            117.220567369673,
+            119.088050428681,
+            121.558877866113,
+            125.083154382074,
+            128.109443605623,
+            129.366216637456,
+            131.919356668534,
+            132.229151902431,
+            132.517581947783,
+            132.59651563686
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 409,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2024"
+      },
+      "gniPpp": {
+        "value": 29160,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 4.6,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 78,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 0.1,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 6.7,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 35.6,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 57.7,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 24.7,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2025"
+        }
+      }
+    },
+    "DE": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            99.9999999999999,
+            102.075172837358,
+            104.125341300199,
+            105.692139574571,
+            106.650549555163,
+            107.199187857463,
+            107.72633665683,
+            109.352460161939,
+            111.246629356348,
+            112.854877121191,
+            113.018378926344,
+            116.484275880085,
+            124.489744387368,
+            131.892448207043,
+            134.868598852104,
+            137.797658505945
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 2373,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 78140,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 3.7,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 80.8,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 2.2,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 0.9,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 25.2,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 64.5,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 17.6,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2025"
+        }
+      }
+    },
+    "FR": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            100,
+            102.108074745668,
+            104.10441408079,
+            105.002553952241,
+            105.535691482569,
+            105.578257353254,
+            105.772996211637,
+            106.861618354403,
+            108.84093134125,
+            110.045545481632,
+            110.571233984591,
+            112.385604222534,
+            118.25543778998,
+            124.026305708083,
+            126.503639381943,
+            127.697612054654
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 1955,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 65110,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 7.5,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 83,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 0.9,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 1.4,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 16.8,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 70.9,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 9.5,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2025"
+        }
+      }
+    },
+    "GB": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            100,
+            103.856112446828,
+            106.528574070649,
+            108.969853893101,
+            110.551137414462,
+            110.958017384871,
+            112.076937303495,
+            114.943591640466,
+            117.579064176068,
+            119.622711300166,
+            120.806362123173,
+            123.848714629184,
+            133.660070279267,
+            142.740891437026,
+            147.410763824671,
+            153.134825226558
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 2567,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 64210,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 4.7,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 81.4,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 3.9,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 0.6,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 16.5,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 73.1,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 7.7,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2025"
+        }
+      }
+    },
+    "ID": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            99.9999999999999,
+            105.356048491125,
+            109.864775619762,
+            116.909848400614,
+            124.38614999404,
+            132.300990742742,
+            136.965665065143,
+            142.182411367013,
+            146.729899050652,
+            151.176672788694,
+            154.079015876997,
+            156.48276998491,
+            163.069856850654,
+            169.053520242749,
+            172.741444317758,
+            176.046565851866
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 206,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 17190,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 3.2,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 71.3,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 1.9,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 13.1,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 38.7,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 43.9,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 19.1,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2025"
+        }
+      }
+    },
+    "IE": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            100,
+            102.548978302085,
+            104.286918053507,
+            104.824099431219,
+            105.024225826838,
+            104.676637876553,
+            104.697703812934,
+            105.07689066779,
+            105.57194017274,
+            106.562039182641,
+            106.214451232357,
+            108.7002317253,
+            117.210870023172,
+            124.594480724668,
+            127.227722772277,
+            130.040025279123
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 2447,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 106310,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 4.6,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 83,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 2.2,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 1.1,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 37.8,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 56.7,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 33.9,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2025"
+        }
+      }
+    },
+    "IL": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            99.9999999999999,
+            103.488372093023,
+            105.222358221134,
+            106.895144838841,
+            107.394940840473,
+            106.73194614443,
+            106.160750713994,
+            106.425948592411,
+            107.282741738066,
+            108.159934720522,
+            107.537739698082,
+            109.128926968584,
+            113.943288453692,
+            118.7576499388,
+            122.409220726234,
+            126.132190942472
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 2160,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 58870,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 3.5,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 83.2,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 3,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 1.3,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2024"
+        },
+        "industry": {
+          "value": 17.2,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2024"
+        },
+        "services": {
+          "value": 72.8,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2024"
+        },
+        "manufacturing": {
+          "value": 11.2,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2024"
+        }
+      }
+    },
+    "IN": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            100,
+            108.911793364833,
+            119.235538897083,
+            131.18041028234,
+            139.924446113916,
+            146.790501522573,
+            154.054013105393,
+            159.18119775209,
+            165.451068899504,
+            171.621576003377,
+            182.988822584425,
+            192.378724699014,
+            205.266241146234,
+            216.862025027426,
+            227.603278134168,
+            233.063138328863
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 113,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 11600,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 4.2,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 72.2,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 2.4,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 16.2,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 25.2,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 49.3,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 13.5,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2025"
+        }
+      }
+    },
+    "IT": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            100,
+            102.780574584442,
+            105.906503019611,
+            107.198556837873,
+            107.45696606346,
+            107.498646530142,
+            107.397526437499,
+            108.714788044791,
+            109.951403403692,
+            110.623480741826,
+            110.471144178632,
+            112.54113376692,
+            121.770958304559,
+            128.61715650361,
+            129.880659438397,
+            131.870007172766
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 1839,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 62870,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 6.4,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 84,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 1.5,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 2.1,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 22.6,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 64.5,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 15,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2025"
+        }
+      }
+    },
+    "JP": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            99.9999999999999,
+            99.7275443838987,
+            99.6835999296888,
+            100.017577781683,
+            102.777289506064,
+            103.594656354368,
+            103.462822991738,
+            103.963789769731,
+            104.992089998242,
+            105.484267885392,
+            105.457901212866,
+            105.211812269291,
+            107.839690631042,
+            111.364035858674,
+            114.41378098084,
+            118.043592898576
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 1381,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2024"
+      },
+      "gniPpp": {
+        "value": 58920,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 2.5,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 84,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 3.2,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 1,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2024"
+        },
+        "industry": {
+          "value": 26.8,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2024"
+        },
+        "services": {
+          "value": 71.4,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2024"
+        },
+        "manufacturing": {
+          "value": 18.8,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2024"
+        }
+      }
+    },
+    "KR": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            100,
+            104.02596500436,
+            106.301086763559,
+            107.684433346969,
+            109.057167004993,
+            109.82747242569,
+            110.894650313756,
+            113.050810827499,
+            114.719259179215,
+            115.158634290169,
+            115.777367840134,
+            118.66987241334,
+            124.709591769001,
+            129.195964772806,
+            132.195563411264,
+            135.002199769989
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 1283,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 64210,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 2.7,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 83.6,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 2.1,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 1.5,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 34.3,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 57.2,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 27.4,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2025"
+        }
+      }
+    },
+    "MX": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            99.9999999999999,
+            103.407378246057,
+            107.658982747634,
+            111.756904251933,
+            116.247985177591,
+            119.41067511672,
+            122.780095507214,
+            130.197802476746,
+            136.57664871233,
+            141.542522969974,
+            146.350487735058,
+            154.676672089174,
+            166.890369321443,
+            176.116003638577,
+            184.432651983998,
+            191.458760485976
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 719,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 25070,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 2.7,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 75.3,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 3.8,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 3.9,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 30.6,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 58.9,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 20,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2025"
+        }
+      }
+    },
+    "NL": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            99.9999999999999,
+            102.342086586231,
+            104.855485670933,
+            107.488803504564,
+            108.53258608453,
+            109.184797239421,
+            109.533540539879,
+            111.044761508528,
+            112.936540955923,
+            115.911260125792,
+            117.380876630527,
+            120.52813195957,
+            132.578742566261,
+            137.672842074349,
+            142.2799246225,
+            146.838060742517
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 2342,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 85480,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 3.9,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 82,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 3.2,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 1.7,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 17.7,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 70.4,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 10.1,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2025"
+        }
+      }
+    },
+    "NO": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            99.9999999999999,
+            101.30890052356,
+            102.006980802792,
+            104.17601595612,
+            106.320119670905,
+            108.613812016953,
+            112.465719272002,
+            114.609822986786,
+            117.75118424333,
+            120.306656694091,
+            121.864871603091,
+            126.0907504363,
+            133.370730491149,
+            140.700573423086,
+            145.175766641735,
+            149.588631264023
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 2967,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 107770,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 4.6,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 83.2,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 3,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 1.6,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 34.5,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 55,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 6.1,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2025"
+        }
+      }
+    },
+    "NZ": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            100,
+            104.02790667392,
+            105.130512172271,
+            106.323136529614,
+            107.628261011102,
+            107.943293912264,
+            108.640866961892,
+            110.65157873712,
+            112.420119642595,
+            114.240911764413,
+            116.19964268334,
+            120.779210747308,
+            129.441767205657,
+            136.86287449004,
+            140.863099606157,
+            144.863324722274
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 2168,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2024"
+      },
+      "gniPpp": {
+        "value": 53600,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 5.1,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 82,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 2.8,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 4,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2023"
+        },
+        "industry": {
+          "value": 19.4,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2023"
+        },
+        "services": {
+          "value": 68.2,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2023"
+        },
+        "manufacturing": {
+          "value": 8.3,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2023"
+        }
+      }
+    },
+    "PL": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            99.9999999999999,
+            104.239401496259,
+            107.950711456652,
+            109.021563737714,
+            109.080240575032,
+            108.126741968607,
+            107.407950711456,
+            109.637670529558,
+            111.625348393721,
+            114.111779375091,
+            117.962446824116,
+            123.925480416605,
+            141.807246589408,
+            158.156080387267,
+            164.151158966994,
+            170.412204782162
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 1214,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 52290,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 3,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 78.4,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 3.8,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 2.5,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 25.8,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 59.7,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 15,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2025"
+        }
+      }
+    },
+    "TR": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            100,
+            106.471882025672,
+            115.938903470924,
+            124.626308847994,
+            135.661434967243,
+            146.067827226905,
+            157.424795838701,
+            174.968700774107,
+            203.545425593489,
+            234.437127372377,
+            263.223567934211,
+            314.806155349376,
+            542.438803206937,
+            834.593133556954,
+            1322.88394140871,
+            1784.32133830282
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 750,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 44630,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 8.5,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 77.4,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 34.9,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 5.2,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 24,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 59.4,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 16.8,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2024"
+        }
+      }
+    },
+    "US": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2024",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            100,
+            103.156841568622,
+            105.291504532867,
+            106.833848874866,
+            108.566932118963,
+            108.695721960693,
+            110.067008934269,
+            112.411557302307,
+            115.15730322479,
+            117.244195476228,
+            118.690501577197,
+            124.266413825837,
+            134.21120616846,
+            139.735793563259,
+            143.857336014607
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 4505,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2024"
+      },
+      "gniPpp": {
+        "value": 89490,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 4.2,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 78.9,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 2.9,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2024"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 0.9,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2021"
+        },
+        "industry": {
+          "value": 17.6,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2021"
+        },
+        "services": {
+          "value": 76.3,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2021"
+        },
+        "manufacturing": {
+          "value": 10.5,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2021"
+        }
+      }
+    },
+    "ZA": {
+      "prices": {
+        "source": "World Bank FP.CPI.TOTL, annual average",
+        "asOf": "2025",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            100,
+            105.00085338795,
+            111.025772316094,
+            117.443249701314,
+            124.645844000682,
+            130.278204471752,
+            138.880355009387,
+            146.082949308755,
+            152.671104284007,
+            158.934971838197,
+            164.072367298173,
+            171.650452295613,
+            183.734425669909,
+            194.89674005803,
+            203.396484041645,
+            209.916367980884
+          ]
+        }
+      },
+      "everydaySpendingEur": {
+        "value": 320,
+        "unit": "EUR/person/month",
+        "source": "World Bank NE.CON.PRVT.CD ÷ SP.POP.TOTL, ECB annual average",
+        "asOf": "2025"
+      },
+      "gniPpp": {
+        "value": 15600,
+        "unit": "USD PPP/person",
+        "source": "World Bank NY.GNP.PCAP.PP.CD",
+        "asOf": "2025"
+      },
+      "unemployment": {
+        "value": 32.4,
+        "unit": "%",
+        "source": "World Bank SL.UEM.TOTL.ZS",
+        "asOf": "2025"
+      },
+      "lifeExpectancy": {
+        "value": 66.3,
+        "unit": "years",
+        "source": "World Bank SP.DYN.LE00.IN",
+        "asOf": "2024"
+      },
+      "inflation": {
+        "value": 3.2,
+        "unit": "%",
+        "source": "World Bank FP.CPI.TOTL.ZG",
+        "asOf": "2025"
+      },
+      "composition": {
+        "agriculture": {
+          "value": 2.8,
+          "unit": "% of GDP",
+          "source": "World Bank NV.AGR.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "industry": {
+          "value": 24.1,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "services": {
+          "value": 63.1,
+          "unit": "% of GDP",
+          "source": "World Bank NV.SRV.TOTL.ZS",
+          "asOf": "2025"
+        },
+        "manufacturing": {
+          "value": 12.3,
+          "unit": "% of GDP",
+          "source": "World Bank NV.IND.MANF.ZS",
+          "asOf": "2025"
+        }
+      }
+    }
+  }
+}

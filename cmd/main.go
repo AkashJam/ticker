@@ -27,6 +27,7 @@ import (
 	"github.com/AkashJam/ticker/internal/source"
 	"github.com/AkashJam/ticker/internal/store"
 	"github.com/AkashJam/ticker/internal/sweep"
+	"github.com/AkashJam/ticker/internal/worldbank"
 	"github.com/AkashJam/ticker/migrations"
 	"github.com/AkashJam/ticker/server"
 
@@ -112,6 +113,14 @@ func main() {
 				Flags: append([]cli.Flag{&cli.StringFlag{Name: "out", Usage: "write JSON here instead of Redis; this is how embedded/ecb.json is made"}}, sharedFlags...),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					return runECB(ctx, configFromCmd(cmd), cmd.String("out"))
+				},
+			},
+			{
+				Name:  "worldbank",
+				Usage: "fetch the World Bank series and write the dataset to --out, or to Redis without it, then exit",
+				Flags: append([]cli.Flag{&cli.StringFlag{Name: "out", Usage: "write JSON here instead of Redis; this is how embedded/worldbank.json is made"}}, sharedFlags...),
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					return runWorldBank(ctx, configFromCmd(cmd), cmd.String("out"))
 				},
 			},
 			{
@@ -260,6 +269,43 @@ func runECB(ctx context.Context, cfg flags.Config, out string) error {
 		return err
 	}
 	fmt.Printf("ecb: wrote %s asOf=%s currencies=%d\n", out, ds.AsOf, len(ds.Currencies))
+	return nil
+}
+
+// runWorldBank is a manual run of the World Bank fetcher. With --out it writes
+// the dataset to a file, which is how the embedded snapshot is generated and
+// refreshed; without it the dataset goes to Redis. Everyday spending reads the
+// ECB's annual averages from the store, so run `ticker ecb` first. It does not
+// ping healthchecks.io: that check watches the scheduled run.
+func runWorldBank(ctx context.Context, cfg flags.Config, out string) error {
+	log := newLogger(cfg.LogLevel)
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	var cache reference.Cache
+	if out == "" {
+		if cfg.RedisAddr == "" {
+			return fmt.Errorf("worldbank: REDIS_ADDR (or --redis-addr) is required without --out")
+		}
+		cache = store.NewRedis(cfg.RedisAddr)
+	}
+	refresher := worldbank.NewRefresher(worldbank.NewClient(), reference.New(cache, reference.Embedded(), log), log)
+
+	if out == "" {
+		return refresher.Refresh(ctx)
+	}
+	ds, err := refresher.Build(ctx)
+	if err != nil {
+		return err
+	}
+	b, err := json.MarshalIndent(ds, "", "  ")
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(out, append(b, '\n'), 0o644); err != nil {
+		return err
+	}
+	fmt.Printf("worldbank: wrote %s countries=%d\n", out, len(ds.Rows))
 	return nil
 }
 
