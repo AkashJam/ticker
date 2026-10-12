@@ -176,3 +176,11 @@ func TestValidate(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestEndLabel(t *testing.T) {
+	for step, want := range map[int]string{1: "2024-12", 3: "2024-Q4", 12: "2024"} {
+		if got := (Series{Start: "2010-01", Step: step}).EndLabel(2024); got != want {
+			t.Errorf("step %d: %s, want %s", step, got, want)
+		}
+	}
+}

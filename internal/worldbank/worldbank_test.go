@@ -171,7 +171,7 @@ func testRefresher(api IndicatorSource) (*Refresher, *memCache) {
 	cache := &memCache{data: map[string]string{}}
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	fsys := fstest.MapFS{
-		"countries.json": {Data: []byte(`{"rows":[{"code":"IT"},{"code":"US"}]}`)},
+		"countries.json": {Data: []byte(`{"rows":[{"code":"IT","atlas":true},{"code":"US","atlas":true},{"code":"CO","atlas":false}]}`)},
 		"ecb.json":       {Data: []byte(ecbJSON)},
 	}
 	r := NewRefresher(api, reference.New(cache, fsys, log), log)

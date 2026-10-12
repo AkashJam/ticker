@@ -151,6 +151,7 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 	// /col carries its survey baselines on real CPI (Phase 10; Phase 14 deletes
 	// both). The reference store falls back to the embedded snapshot, so this
 	// works with Redis down.
+	handlers.Ref = refStore
 	handlers.CPI = func(ctx context.Context, code string) (change.Series, bool) {
 		var ds worldbank.Dataset
 		if _, err := refStore.Get(ctx, worldbank.DatasetName, &ds); err != nil {

@@ -7,6 +7,7 @@ import (
 	"github.com/AkashJam/ticker/internal/change"
 	"github.com/AkashJam/ticker/internal/ecb"
 	"github.com/AkashJam/ticker/internal/fred"
+	"github.com/AkashJam/ticker/internal/reference"
 	"github.com/AkashJam/ticker/internal/worldbank"
 )
 
@@ -24,8 +25,8 @@ func annualTo(year int) change.Series {
 }
 
 // fixture: Italy (euro) and the US, both complete to 2025 except the US CPI.
-func fixture() ([]Country, fred.Dataset, ecb.Dataset, worldbank.Dataset) {
-	cs := []Country{{"IT", nil}, {"US", str("USD")}}
+func fixture() ([]reference.Country, fred.Dataset, ecb.Dataset, worldbank.Dataset) {
+	cs := []reference.Country{{Code: "IT"}, {Code: "US", Currency: str("USD")}}
 	row := fred.Row{
 		Shares:  fred.Measure{Series: monthly(12*16 + 8)},  // to 2026-08
 		Housing: fred.Measure{Series: quarterly(4*16 + 1)}, // to 2026-Q1
@@ -67,7 +68,7 @@ func TestIncompleteYearsDoNotCount(t *testing.T) {
 
 func TestEuroRowsAndStaleChileAreSkipped(t *testing.T) {
 	cs, f, e, w := fixture()
-	cs = append(cs, Country{"CL", str("CLP")})
+	cs = append(cs, reference.Country{Code: "CL", Currency: str("CLP")})
 	f.Rows["CL"], w.Rows["CL"] = f.Rows["US"], w.Rows["US"]
 	e.Currencies["CLP"] = ecb.Currency{Reason: "stale"}
 	if got, err := CommonEnd(cs, f, e, w); err != nil || got != 2024 {

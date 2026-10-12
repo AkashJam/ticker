@@ -8,6 +8,7 @@ import (
 	"math"
 
 	"github.com/AkashJam/ticker/internal/indicators"
+	"github.com/AkashJam/ticker/internal/reference"
 	"github.com/AkashJam/ticker/internal/source"
 	"github.com/AkashJam/ticker/internal/store"
 )
@@ -27,6 +28,10 @@ type Handlers struct {
 	// CPI carries /col's survey baselines forward on real CPI (Phase 10).
 	// Nil serves them as published. Phase 14 deletes /col and this with it.
 	CPI source.CPIFunc
+	// Ref serves /atlas/cities from the reference datasets, falling back to the
+	// embedded snapshots when Redis cannot answer.
+	Ref   *reference.Store
+	atlas atlasMemo
 }
 
 func NewHandlers(meta *store.Meta, ts *store.Timescale, redis *store.Redis, cache *indicators.Cache, ready func() error, log *slog.Logger) *Handlers {

@@ -151,39 +151,86 @@ type countries struct {
 	Rows   []countryRow `json:"rows"`
 }
 
-// The twenty-three live in the mockups, the docs and this snapshot, and
-// nothing else would notice them drifting.
-func TestEmbeddedCountries(t *testing.T) {
-	var c countries
-	src, err := New(nil, Embedded(), nil).Get(context.Background(), "countries", &c)
-	if err != nil || src != SourceEmbedded {
-		t.Fatalf("src=%q err=%v", src, err)
+// The table is read by /atlas, /market, the home band and ⌘K (bearing.md #95).
+// The 23 Atlas rows live in the mockups, the docs and this table, and nothing
+// else would notice them drifting.
+func TestCountryTable(t *testing.T) {
+	st := New(nil, Embedded(), nil)
+	all, err := st.Countries(context.Background())
+	if err != nil {
+		t.Fatal(err)
 	}
-	if len(c.Rows) != 23 {
-		t.Fatalf("countries.json has %d rows, want 23", len(c.Rows))
+	atlasRows, err := st.AtlasCountries(context.Background())
+	if err != nil {
+		t.Fatal(err)
 	}
+	if len(all) != 25 || len(atlasRows) != 23 {
+		t.Fatalf("table has %d rows and %d Atlas rows, want 25 and 23 (Colombia and Peru carry a sensor but no Atlas row)", len(all), len(atlasRows))
+	}
+
 	universe := map[string]bool{}
 	for _, s := range source.SweepUniverse {
 		universe[s.Symbol] = true
 	}
-	codes, cities, sensors := map[string]bool{}, map[string]bool{}, 0
-	for _, r := range c.Rows {
-		if codes[r.Code] || cities[r.City] {
-			t.Errorf("duplicate row %s/%s", r.City, r.Code)
+	regions := map[string]int{"americas": 1, "europe": 2, "asia-pacific": 3, "middle-east": 4, "africa": 5}
+	slugs, codes := map[string]bool{}, map[string]bool{}
+	var sensors, atlasSensors int
+	thin := map[string]bool{}
+	for _, c := range all {
+		if slugs[c.Slug] || codes[c.Code] || c.Slug == "" {
+			t.Errorf("duplicate or empty slug/code: %q %q", c.Slug, c.Code)
 		}
-		codes[r.Code], cities[r.City] = true, true
-		if r.EuroArea != (r.Currency == nil) {
-			t.Errorf("%s: euroArea=%v but currency=%v; euro-area rows carry a null currency", r.City, r.EuroArea, r.Currency)
+		slugs[c.Slug], codes[c.Code] = true, true
+		if c.EuroArea != (c.Currency == nil && c.Atlas) {
+			t.Errorf("%s: euroArea=%v but currency=%v; euro-area rows carry a null currency", c.Slug, c.EuroArea, c.Currency)
 		}
-		if r.Sensor != nil {
+		if order, ok := regions[c.Region]; !ok || c.RegionOrder != order {
+			t.Errorf("%s: region %q order %d", c.Slug, c.Region, c.RegionOrder)
+		}
+		if c.HasCityPage {
+			t.Errorf("%s: hasCityPage is true, but no city page has shipped (bearing.md #101)", c.Slug)
+		}
+		if c.Atlas != (c.City != nil) {
+			t.Errorf("%s: atlas=%v but city=%v", c.Slug, c.Atlas, c.City)
+		}
+		if c.Sensor != nil {
 			sensors++
-			if !universe[*r.Sensor] {
-				t.Errorf("%s: sensor %s is not in source.SweepUniverse", r.City, *r.Sensor)
+			if c.Atlas {
+				atlasSensors++
+			}
+			if !universe[*c.Sensor] {
+				t.Errorf("%s: sensor %s is not in source.SweepUniverse", c.Slug, *c.Sensor)
+			}
+		}
+		if c.Liquidity != nil {
+			if *c.Liquidity != "thin" || c.Sensor == nil {
+				t.Errorf("%s: liquidity %q", c.Slug, *c.Liquidity)
+			} else {
+				thin[*c.Sensor] = true
+			}
+		}
+		if c.NewsTopic != nil {
+			t.Errorf("%s: newsTopic is Phase 15's to fill", c.Slug)
+		}
+	}
+	if sensors != 13 || atlasSensors != 11 {
+		t.Errorf("%d sensors, %d with an Atlas row; want 13 and 11", sensors, atlasSensors)
+	}
+	if len(thin) != 4 || !thin["KB"] || !thin["BCH"] || !thin["TKC"] || !thin["TLK"] {
+		t.Errorf("thin listings = %v, want KB, BCH, TKC and TLK", thin)
+	}
+	for _, off := range []string{"colombia", "peru"} {
+		for _, c := range atlasRows {
+			if c.Slug == off {
+				t.Errorf("%s has an Atlas row but no OECD series", off)
 			}
 		}
 	}
-	if sensors != 11 {
-		t.Errorf("%d rows carry a sensor, want 11 (twelve say they have none)", sensors)
+	// The mock's row ids are the Atlas slugs.
+	for _, want := range []string{"italy", "korea", "turkiye", "united-kingdom", "south-africa", "new-zealand", "united-states"} {
+		if !slugs[want] {
+			t.Errorf("no row with slug %q", want)
+		}
 	}
 }
 

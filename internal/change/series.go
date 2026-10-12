@@ -109,6 +109,18 @@ func (s Series) LastCompleteYear() int {
 	return y - 1
 }
 
+// EndLabel names the closing observation of a year, the point a window ends at:
+// "2024-12", "2024-Q4" or "2024".
+func (s Series) EndLabel(year int) string {
+	switch s.Step {
+	case 3:
+		return fmt.Sprintf("%d-Q4", year)
+	case 12:
+		return strconv.Itoa(year)
+	}
+	return fmt.Sprintf("%d-12", year)
+}
+
 // Invert returns 1/v for every value. The ECB quotes local currency per €1, so
 // the inverse is the euro value of the local currency, and a rise in it means
 // the local currency strengthened.

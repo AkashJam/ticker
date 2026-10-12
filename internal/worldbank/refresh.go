@@ -131,25 +131,19 @@ func round(v float64, places int) float64 {
 	return math.Round(v*p) / p
 }
 
-type countries struct {
-	Rows []struct {
-		Code string `json:"code"`
-	} `json:"rows"`
-}
-
 // Build fetches every indicator and assembles the dataset. It is all or
 // nothing: one failed call fails the build and the caller keeps whatever it
 // already had. A country that merely lacks a value is a null with a reason.
 func (r *Refresher) Build(ctx context.Context) (Dataset, error) {
-	var cs countries
-	if _, err := r.Store.Get(ctx, "countries", &cs); err != nil {
+	cs, err := r.Store.AtlasCountries(ctx)
+	if err != nil {
 		return Dataset{}, err
 	}
-	if len(cs.Rows) == 0 {
+	if len(cs) == 0 {
 		return Dataset{}, errors.New("worldbank: no countries")
 	}
-	codes := make([]string, len(cs.Rows))
-	for i, c := range cs.Rows {
+	codes := make([]string, len(cs))
+	for i, c := range cs {
 		codes[i] = c.Code
 	}
 

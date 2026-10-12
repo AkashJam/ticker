@@ -355,7 +355,7 @@ func (m *memCache) CacheSet(_ context.Context, k, v string, _ time.Duration) err
 	return nil
 }
 
-const countriesJSON = `{"rows":[{"currency":null},{"currency":"USD"},{"currency":"CLP"},{"currency":"USD"}]}`
+const countriesJSON = `{"rows":[{"currency":null,"atlas":true},{"currency":"USD","atlas":true},{"currency":"CLP","atlas":true},{"currency":"USD","atlas":true},{"currency":"COP","atlas":false}]}`
 
 func testRefresher(feed Feed, pesos Pesos) (*Refresher, *memCache) {
 	cache := &memCache{data: map[string]string{}}
@@ -516,7 +516,7 @@ func TestRefreshReseedsWhenCurrencySetChanges(t *testing.T) {
 	if err := r.Refresh(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	r.Store = reference.New(cache, fstest.MapFS{"countries.json": {Data: []byte(`{"rows":[{"currency":"USD"},{"currency":"JPY"}]}`)}}, nil)
+	r.Store = reference.New(cache, fstest.MapFS{"countries.json": {Data: []byte(`{"rows":[{"currency":"USD","atlas":true},{"currency":"JPY","atlas":true}]}`)}}, nil)
 	if err := r.Refresh(context.Background()); err != nil {
 		t.Fatal(err)
 	}

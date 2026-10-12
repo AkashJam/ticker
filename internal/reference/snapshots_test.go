@@ -17,10 +17,7 @@ import (
 // fred and ecb import reference.
 
 type countryRows struct {
-	Rows []struct {
-		Code     string  `json:"code"`
-		Currency *string `json:"currency"`
-	} `json:"rows"`
+	Rows []reference.Country
 }
 
 func load(t *testing.T) (countryRows, fred.Dataset, ecb.Dataset) {
@@ -31,12 +28,16 @@ func load(t *testing.T) (countryRows, fred.Dataset, ecb.Dataset) {
 
 func loadAll(t *testing.T) (countryRows, fred.Dataset, ecb.Dataset, worldbank.Dataset) {
 	t.Helper()
-	var c countryRows
 	var f fred.Dataset
 	var e ecb.Dataset
 	var w worldbank.Dataset
 	s := reference.New(nil, reference.Embedded(), nil)
-	for name, v := range map[string]any{"countries": &c, "fred": &f, "ecb": &e, "worldbank": &w} {
+	rows, err := s.AtlasCountries(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := countryRows{Rows: rows}
+	for name, v := range map[string]any{"fred": &f, "ecb": &e, "worldbank": &w} {
 		if src, err := s.Get(context.Background(), name, v); err != nil || src != reference.SourceEmbedded {
 			t.Fatalf("%s: src=%q err=%v", name, src, err)
 		}
@@ -236,11 +237,7 @@ func TestWorldBankReproducesThePublishedFigures(t *testing.T) {
 // change measures: 2024, because the World Bank has no US CPI for 2025.
 func TestCommonEndIs2024(t *testing.T) {
 	c, f, e, w := loadAll(t)
-	var cs []atlas.Country
-	for _, r := range c.Rows {
-		cs = append(cs, atlas.Country{Code: r.Code, Currency: r.Currency})
-	}
-	if end, err := atlas.CommonEnd(cs, f, e, w); err != nil || end != 2024 {
+	if end, err := atlas.CommonEnd(c.Rows, f, e, w); err != nil || end != 2024 {
 		t.Errorf("end = %d err = %v, want 2024", end, err)
 	}
 }

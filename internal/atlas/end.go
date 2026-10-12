@@ -9,15 +9,9 @@ import (
 
 	"github.com/AkashJam/ticker/internal/ecb"
 	"github.com/AkashJam/ticker/internal/fred"
+	"github.com/AkashJam/ticker/internal/reference"
 	"github.com/AkashJam/ticker/internal/worldbank"
 )
-
-// Country is the part of the country table CommonEnd needs: the row's code and
-// its currency, nil for the euro area.
-type Country struct {
-	Code     string
-	Currency *string
-}
 
 // CommonEnd is the latest year every country has published for all four change
 // measures (shares, housing, prices and currency): the end of every window on
@@ -32,7 +26,7 @@ type Country struct {
 // derived series is stale (bearing.md #85), which is a stated gap and not a
 // reason to hold every window back. Any other missing series is an error: a
 // window must never be cut at a year one country cannot reach.
-func CommonEnd(countries []Country, f fred.Dataset, e ecb.Dataset, w worldbank.Dataset) (int, error) {
+func CommonEnd(countries []reference.Country, f fred.Dataset, e ecb.Dataset, w worldbank.Dataset) (int, error) {
 	if len(countries) == 0 {
 		return 0, errors.New("atlas: no countries")
 	}

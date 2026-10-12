@@ -76,28 +76,22 @@ func sleepCtx(ctx context.Context, d time.Duration) error {
 	}
 }
 
-type countries struct {
-	Rows []struct {
-		Code string `json:"code"`
-	} `json:"rows"`
-}
-
 // Build fetches every series and builds the dataset. It is all or nothing: a
 // partial blob would leave countries on different ends, so one failed series
 // fails the build and the caller keeps whatever it already had.
 func (r *Refresher) Build(ctx context.Context) (Dataset, error) {
-	var cs countries
-	if _, err := r.Store.Get(ctx, "countries", &cs); err != nil {
+	cs, err := r.Store.AtlasCountries(ctx)
+	if err != nil {
 		return Dataset{}, err
 	}
-	if len(cs.Rows) == 0 {
+	if len(cs) == 0 {
 		return Dataset{}, errors.New("fred: no countries")
 	}
 
-	ds := Dataset{GeneratedAt: r.Now().UTC().Format(time.RFC3339), Rows: make(map[string]Row, len(cs.Rows))}
+	ds := Dataset{GeneratedAt: r.Now().UTC().Format(time.RFC3339), Rows: make(map[string]Row, len(cs))}
 	var failed []string
 	first := true
-	for _, c := range cs.Rows {
+	for _, c := range cs {
 		var row Row
 		for _, m := range []struct {
 			id     string

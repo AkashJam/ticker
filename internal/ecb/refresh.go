@@ -70,20 +70,16 @@ func sleepCtx(ctx context.Context, d time.Duration) error {
 	}
 }
 
-// wanted is every non-euro currency in countries.json, sorted. The euro-area
+// wanted is every non-euro currency of an Atlas country, sorted. The euro-area
 // rows have no currency of their own to compare.
 func (r *Refresher) wanted(ctx context.Context) ([]string, error) {
-	var cs struct {
-		Rows []struct {
-			Currency *string `json:"currency"`
-		} `json:"rows"`
-	}
-	if _, err := r.Store.Get(ctx, "countries", &cs); err != nil {
+	cs, err := r.Store.AtlasCountries(ctx)
+	if err != nil {
 		return nil, err
 	}
 	seen := map[string]bool{}
 	var out []string
-	for _, row := range cs.Rows {
+	for _, row := range cs {
 		if row.Currency != nil && !seen[*row.Currency] {
 			seen[*row.Currency] = true
 			out = append(out, *row.Currency)

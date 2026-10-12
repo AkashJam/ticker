@@ -133,7 +133,7 @@ func (m *memCache) CacheSet(_ context.Context, k, v string, _ time.Duration) err
 	return nil
 }
 
-const twoCountries = `{"source":"t","asOf":"t","rows":[{"code":"IT"},{"code":"JP"}]}`
+const twoCountries = `{"source":"t","asOf":"t","rows":[{"code":"IT","atlas":true},{"code":"JP","atlas":true},{"code":"CO","atlas":false}]}`
 
 func testRefresher(src SeriesSource) (*Refresher, *memCache) {
 	cache := &memCache{data: map[string]string{}}
