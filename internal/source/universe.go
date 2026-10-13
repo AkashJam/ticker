@@ -54,3 +54,27 @@ func SweepSymbolCodes() []string {
 	}
 	return codes
 }
+
+// StreamUniverse is the symbols the Finnhub WebSocket streams: the 18 stocks
+// (13 country sensors and 5 global), not the ten sector ETFs, which are
+// daily-close only (portfolio.md §15 Phase 13). Eighteen sits well under
+// Finnhub's 50-symbol WebSocket cap.
+func StreamUniverse() []SymbolInfo {
+	var out []SymbolInfo
+	for _, s := range SweepUniverse {
+		if s.Type == AssetTypeStock {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// StreamSymbolCodes returns StreamUniverse's tickers in order.
+func StreamSymbolCodes() []string {
+	u := StreamUniverse()
+	codes := make([]string, len(u))
+	for i, s := range u {
+		codes[i] = s.Symbol
+	}
+	return codes
+}

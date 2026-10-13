@@ -47,6 +47,7 @@ type Server struct {
 	ts    *store.Timescale
 
 	src        source.MarketSource
+	symbols    []string // what src is asked to stream
 	leader     *ingest.Leader
 	producer   *ingest.Producer
 	deadman    *ingest.DeadMan
@@ -82,14 +83,16 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 	meta := store.NewMeta(pool)
 
 	var src source.MarketSource
+	var symbols []string
 	switch cfg.Source {
 	case "sim":
 		src = source.NewSim()
+		symbols = symbolCodes()
 	case "finnhub":
-		// §16.1 — deferred. Fails loudly at startup rather than silently
-		// falling back to sim, so selecting it is never a silent no-op.
-		pool.Close()
-		return nil, errors.New(`server: --source finnhub is not implemented yet (portfolio.md §16.1) — use "sim"`)
+		// Dev only until Phase 14 promotes it (portfolio.md §15). The 18
+		// streamed stocks, not the sim's list and not the ten daily-only ETFs.
+		src = source.NewFinnhub(cfg.FinnhubAPIKey, source.StreamUniverse(), log)
+		symbols = source.StreamSymbolCodes()
 	default:
 		pool.Close()
 		return nil, fmt.Errorf("server: unknown source %q", cfg.Source)
@@ -164,7 +167,7 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 	return &Server{
 		cfg: cfg, log: log,
 		pool: pool, redis: redis, ts: ts,
-		src: src, leader: leader, producer: producer, deadman: deadman, sweeper: sweeper, reference: refScheduler, aggregator: aggregator,
+		src: src, symbols: symbols, leader: leader, producer: producer, deadman: deadman, sweeper: sweeper, reference: refScheduler, aggregator: aggregator,
 		httpServer: &http.Server{Addr: cfg.Addr, Handler: router},
 	}, nil
 }
@@ -200,8 +203,7 @@ func (s *Server) Run(ctx context.Context) error {
 	pipeCtx, cancel := context.WithCancel(ctx)
 	s.cancelPipe = cancel
 
-	symbols := symbolCodes()
-	ticks, err := s.src.Subscribe(pipeCtx, symbols)
+	ticks, err := s.src.Subscribe(pipeCtx, s.symbols)
 	if err != nil {
 		return fmt.Errorf("server: subscribe: %w", err)
 	}

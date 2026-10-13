@@ -20,9 +20,9 @@ const maxClockSkew = 5 * time.Second
 
 // Normalize validates a tick at the pipeline boundary. In v1 the sim
 // source already emits the NormalizedTick shape directly, so this is
-// purely a validation pass — but it's the same seam a future Finnhub
-// adapter's raw-format conversion would plug into (§16.1), so it exists
-// now rather than being inlined into the producer.
+// purely a validation pass — but it's the same seam the Finnhub adapter's
+// bars pass through, so it exists as its own step rather than being inlined
+// into the producer.
 func Normalize(tick source.NormalizedTick) (source.NormalizedTick, error) {
 	if tick.Symbol == "" {
 		return tick, fmt.Errorf("ingest: normalize: empty symbol")
@@ -39,5 +39,33 @@ func Normalize(tick source.NormalizedTick) (source.NormalizedTick, error) {
 	if tick.Timestamp.After(time.Now().Add(maxClockSkew)) {
 		return tick, fmt.Errorf("ingest: normalize: %s: timestamp too far in the future: %s", tick.Symbol, tick.Timestamp)
 	}
+	if err := checkBar(tick); err != nil {
+		return tick, err
+	}
 	return tick, nil
+}
+
+// checkBar validates the optional Open/High/Low of a coalesced 1-second bar:
+// all three or none, High >= Low, and Open and Price (the close) inside them.
+// A single-price tick (the sim) leaves all three zero and passes.
+func checkBar(tick source.NormalizedTick) error {
+	set := 0
+	for _, v := range []float64{tick.Open, tick.High, tick.Low} {
+		if v != 0 {
+			set++
+		}
+	}
+	switch {
+	case set == 0:
+		return nil
+	case set != 3:
+		return fmt.Errorf("ingest: normalize: %s: partial bar (open %v, high %v, low %v)", tick.Symbol, tick.Open, tick.High, tick.Low)
+	case tick.Open <= 0 || tick.High <= 0 || tick.Low <= 0:
+		return fmt.Errorf("ingest: normalize: %s: non-positive bar (open %v, high %v, low %v)", tick.Symbol, tick.Open, tick.High, tick.Low)
+	case tick.High < tick.Low:
+		return fmt.Errorf("ingest: normalize: %s: bar high %v below low %v", tick.Symbol, tick.High, tick.Low)
+	case tick.Open < tick.Low || tick.Open > tick.High || tick.Price < tick.Low || tick.Price > tick.High:
+		return fmt.Errorf("ingest: normalize: %s: bar open %v or close %v outside [%v, %v]", tick.Symbol, tick.Open, tick.Price, tick.Low, tick.High)
+	}
+	return nil
 }

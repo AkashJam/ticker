@@ -335,16 +335,13 @@ func (a *Aggregator) applyTick(tick source.NormalizedTick) applied {
 			out.closed = append(out.closed, oc.toCandle(tick.Symbol, label))
 			exists = false
 		}
+		open, high, low := tickBounds(tick)
 		if !exists {
-			oc = &openCandle{bucketStart: bucket, open: tick.Price, high: tick.Price, low: tick.Price, close: tick.Price, volume: tick.Volume}
+			oc = &openCandle{bucketStart: bucket, open: open, high: high, low: low, close: tick.Price, volume: tick.Volume}
 			a.state[k] = oc
 		} else {
-			if tick.Price > oc.high {
-				oc.high = tick.Price
-			}
-			if tick.Price < oc.low {
-				oc.low = tick.Price
-			}
+			oc.high = max(oc.high, high)
+			oc.low = min(oc.low, low)
 			oc.close = tick.Price
 			oc.volume += tick.Volume
 		}
@@ -354,6 +351,15 @@ func (a *Aggregator) applyTick(tick source.NormalizedTick) applied {
 		}
 	}
 	return out
+}
+
+// tickBounds is a tick's open, high and low: the 1-second bar's own when the
+// feed coalesced one (Finnhub), otherwise its single price.
+func tickBounds(tick source.NormalizedTick) (open, high, low float64) {
+	if tick.High == 0 {
+		return tick.Price, tick.Price, tick.Price
+	}
+	return tick.Open, tick.High, tick.Low
 }
 
 // writeClosed persists candles whose bucket has closed, then invalidates each

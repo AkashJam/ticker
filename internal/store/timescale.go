@@ -43,7 +43,7 @@ func NewTimescale(pool *pgxpool.Pool) *Timescale {
 }
 
 // InsertTick appends one raw tick — the `ticks` hypertable, 7-day retention
-// (ADR-004) — keyed by (time, streamID) so it doubles as the dedupe gate for
+// (ADR-004; a Finnhub bar also stores its open/high/low) — keyed by (time, streamID) so it doubles as the dedupe gate for
 // Redis Streams' at-least-once delivery (content/REVIEW.md's central
 // design): a redelivered stream entry has the same time and streamID, so
 // ON CONFLICT DO NOTHING makes the second insert a no-op. inserted reports
@@ -51,14 +51,24 @@ func NewTimescale(pool *pgxpool.Pool) *Timescale {
 // processed this stream entry and must skip accumulating it again.
 func (t *Timescale) InsertTick(ctx context.Context, tick source.NormalizedTick, streamID string) (inserted bool, err error) {
 	const q = `
-		INSERT INTO ticks (time, symbol, price, volume, simulated, stream_id)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO ticks (time, symbol, price, volume, simulated, stream_id, open, high, low)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		ON CONFLICT (time, stream_id) DO NOTHING`
-	tag, err := t.pool.Exec(ctx, q, tick.Timestamp, tick.Symbol, tick.Price, tick.Volume, tick.Simulated, streamID)
+	tag, err := t.pool.Exec(ctx, q, tick.Timestamp, tick.Symbol, tick.Price, tick.Volume, tick.Simulated, streamID,
+		nullIfZero(tick.Open), nullIfZero(tick.High), nullIfZero(tick.Low))
 	if err != nil {
 		return false, fmt.Errorf("store: insert tick: %w", err)
 	}
 	return tag.RowsAffected() > 0, nil
+}
+
+// nullIfZero stores an absent bar field (zero) as NULL, so single-price ticks
+// leave open/high/low empty rather than repeating the price.
+func nullIfZero(v float64) any {
+	if v == 0 {
+		return nil
+	}
+	return v
 }
 
 // UpsertCandle writes the current state of one (symbol, interval, time)

@@ -447,3 +447,42 @@ func fmtVol(p *float64) string {
 	}
 	return strconv.FormatFloat(*p, 'g', -1, 64)
 }
+
+func TestAggregator_BarTicksKeepIntraSecondExtremes(t *testing.T) {
+	ts := newFakeCandleStore()
+	agg := newTestAggregator(&fakeRedis{}, ts)
+	ctx := context.Background()
+
+	base := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	// Two 1-second bars from a real feed: the second has a wider range than
+	// either bar's close, so a close-only build would miss 108 and 94.
+	must(t, agg.processTick(ctx, source.NormalizedTick{Symbol: "AAPL", Price: 101, Open: 100, High: 103, Low: 99, Volume: 40, Timestamp: base.Add(time.Second)}))
+	must(t, agg.processTick(ctx, source.NormalizedTick{Symbol: "AAPL", Price: 97, Open: 102, High: 108, Low: 94, Volume: 60, Timestamp: base.Add(2 * time.Second)}))
+	must(t, agg.Flush(ctx))
+
+	got, ok := ts.get("AAPL", "1m", base)
+	if !ok {
+		t.Fatalf("expected a 1m candle")
+	}
+	want := source.Candle{Time: base, Symbol: "AAPL", Interval: "1m", Open: 100, High: 108, Low: 94, Close: 97, Volume: vol(100)}
+	if !sameCandle(got, want) {
+		t.Errorf("candle = %+v, want %+v", got, want)
+	}
+}
+
+func TestAggregator_SinglePriceTicksAreUnchanged(t *testing.T) {
+	ts := newFakeCandleStore()
+	agg := newTestAggregator(&fakeRedis{}, ts)
+	ctx := context.Background()
+
+	base := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	for i, p := range []float64{100, 105, 98} {
+		must(t, agg.processTick(ctx, source.NormalizedTick{Symbol: "SIM:TEST", Price: p, Volume: 1, Timestamp: base.Add(time.Duration(i) * time.Second)}))
+	}
+	must(t, agg.Flush(ctx))
+
+	got, _ := ts.get("SIM:TEST", "1m", base)
+	if got.Open != 100 || got.High != 105 || got.Low != 98 || got.Close != 98 {
+		t.Errorf("candle = %+v, want O100 H105 L98 C98", got)
+	}
+}

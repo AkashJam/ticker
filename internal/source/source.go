@@ -26,11 +26,21 @@ const (
 // internal-to-this-repo contracts, not a versioned public API, so one type
 // serving both is intentional rather than premature reuse.
 type NormalizedTick struct {
-	Symbol    string    `json:"symbol"`
+	Symbol string `json:"symbol"`
+	// Price is the tick's price; for a coalesced bar (Finnhub) it is the
+	// close, and Open/High/Low carry the rest of the bar.
 	Price     float64   `json:"price"`
 	Volume    float64   `json:"volume"`
 	Timestamp time.Time `json:"time"`
 	AssetType AssetType `json:"assetType"`
+	// Open, High and Low are set only when the tick is a 1-second bar built
+	// from many trades (ADR-004's amendment at Phase 13), so candles built
+	// from bars keep the intra-second extremes. Zero means absent — the sim's
+	// single-price ticks leave them empty and the aggregator falls back to
+	// Price.
+	Open float64 `json:"open,omitempty"`
+	High float64 `json:"high,omitempty"`
+	Low  float64 `json:"low,omitempty"`
 	// Simulated is true when the tick was produced by the sim source, never
 	// a live feed. Carried end-to-end through storage and the API so the
 	// UI can flag it — it must never be able to masquerade as real market
@@ -69,9 +79,9 @@ type PubSubMessage struct {
 	Payload json.RawMessage `json:"payload"`
 }
 
-// MarketSource is the seam every feed implementation satisfies — v1 ships
-// only Sim (this package); Finnhub (§16.1) is a drop-in second
-// implementation behind the same interface, never a fork of the pipeline.
+// MarketSource is the seam every feed implementation satisfies — Sim and
+// Finnhub (finnhub.go) are drop-in implementations behind the same interface,
+// never a fork of the pipeline.
 type MarketSource interface {
 	// Subscribe streams normalized ticks for the given symbols until ctx is
 	// canceled, at which point the returned channel is closed.

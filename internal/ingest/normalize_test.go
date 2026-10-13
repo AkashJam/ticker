@@ -73,3 +73,32 @@ func TestNormalize_TimestampWithinClockSkew(t *testing.T) {
 		t.Errorf("Normalize: unexpected error for a timestamp within tolerated clock skew: %v", err)
 	}
 }
+
+func TestNormalize_Bar(t *testing.T) {
+	bar := func(open, high, low, close float64) source.NormalizedTick {
+		tick := validTick()
+		tick.Open, tick.High, tick.Low, tick.Price = open, high, low, close
+		return tick
+	}
+	cases := []struct {
+		name    string
+		tick    source.NormalizedTick
+		wantErr bool
+	}{
+		{"single price (sim), no bar fields", validTick(), false},
+		{"valid bar", bar(100, 103, 99, 101), false},
+		{"flat bar", bar(100, 100, 100, 100), false},
+		{"partial: high only", func() source.NormalizedTick { t := validTick(); t.High = 101; return t }(), true},
+		{"partial: no low", bar(100, 103, 0, 101), true},
+		{"high below low", bar(100, 98, 99, 99), true},
+		{"open above high", bar(104, 103, 99, 101), true},
+		{"close below low", bar(100, 103, 99, 98), true},
+		{"negative bar", bar(-1, 103, 99, 101), true},
+	}
+	for _, c := range cases {
+		_, err := Normalize(c.tick)
+		if (err != nil) != c.wantErr {
+			t.Errorf("%s: error = %v, wantErr %v", c.name, err, c.wantErr)
+		}
+	}
+}
