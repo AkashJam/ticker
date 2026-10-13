@@ -3,6 +3,7 @@ package aggregate
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"strconv"
@@ -34,6 +35,8 @@ type fakeCandleStore struct {
 	latest map[candleKey]source.Candle
 	calls  int
 	ticks  map[tickKey]bool
+	// failures is how many UpsertCandle calls fail before writes succeed.
+	failures int
 }
 
 func newFakeCandleStore() *fakeCandleStore {
@@ -44,6 +47,10 @@ func (f *fakeCandleStore) UpsertCandle(_ context.Context, c source.Candle) error
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.calls++
+	if f.failures > 0 {
+		f.failures--
+		return errors.New("fake store: write failed")
+	}
 	f.latest[candleKey{c.Symbol, c.Interval, c.Time}] = c
 	return nil
 }
@@ -134,14 +141,23 @@ func TestAggregator_OHLCVCorrectness(t *testing.T) {
 	for _, tick := range ticks {
 		must(t, agg.processTick(ctx, tick))
 	}
+	if ts.calls != 0 {
+		t.Fatalf("open bucket was written %d times, want 0 until it closes", ts.calls)
+	}
+
+	// A tick in the next minute closes the bucket and writes it once.
+	must(t, agg.processTick(ctx, source.NormalizedTick{Symbol: "SIM:TEST", Price: 1, Volume: 1, Timestamp: base.Add(time.Minute)}))
 
 	got, ok := ts.get("SIM:TEST", "1m", base)
 	if !ok {
-		t.Fatalf("expected an upserted 1m candle")
+		t.Fatalf("expected the closed 1m candle to be written")
 	}
 	want := source.Candle{Time: base, Symbol: "SIM:TEST", Interval: "1m", Open: 100, High: 105, Low: 98, Close: 98, Volume: vol(45)}
 	if !sameCandle(got, want) {
 		t.Errorf("candle = %+v, want %+v", got, want)
+	}
+	if ts.calls != 1 {
+		t.Errorf("UpsertCandle calls = %d, want 1 (only the 1m bucket closed)", ts.calls)
 	}
 }
 
@@ -161,20 +177,15 @@ func TestAggregator_CandleClose(t *testing.T) {
 
 	closed, ok := ts.get("SIM:TEST", "1m", base)
 	if !ok {
-		t.Fatalf("expected the closed bucket's candle to remain in the store")
+		t.Fatalf("expected the closed bucket's candle in the store")
 	}
 	wantClosed := source.Candle{Time: base, Symbol: "SIM:TEST", Interval: "1m", Open: 100, High: 110, Low: 100, Close: 110, Volume: vol(10)}
 	if !sameCandle(closed, wantClosed) {
 		t.Errorf("closed candle = %+v, want %+v", closed, wantClosed)
 	}
 
-	opened, ok := ts.get("SIM:TEST", "1m", next.Truncate(time.Minute))
-	if !ok {
-		t.Fatalf("expected the new bucket's candle to exist")
-	}
-	wantOpened := source.Candle{Time: next.Truncate(time.Minute), Symbol: "SIM:TEST", Interval: "1m", Open: 90, High: 90, Low: 90, Close: 90, Volume: vol(7)}
-	if !sameCandle(opened, wantOpened) {
-		t.Errorf("new candle = %+v, want a fresh bar seeded from the closing tick: %+v", opened, wantOpened)
+	if _, ok := ts.get("SIM:TEST", "1m", next.Truncate(time.Minute)); ok {
+		t.Errorf("the new, still-open bucket must not be written until it closes")
 	}
 
 	redis.mu.Lock()
@@ -194,7 +205,7 @@ func TestAggregator_CandleClose(t *testing.T) {
 func TestAggregator_UpsertIdempotency(t *testing.T) {
 	// SQL-level idempotency only: candle upsert is idempotent by
 	// (symbol, interval, time) — writing the same candle state repeatedly
-	// (as processTick does on every tick within a still-open bucket) must
+	// (as a retry or a flush after a close would) must
 	// never produce more than one stored row for that key. Redelivery safety
 	// is a separate claim, covered by TestAggregator_DuplicateTickIsSkipped.
 	ts := newFakeCandleStore()
@@ -237,9 +248,10 @@ func TestAggregator_DuplicateTickIsSkipped(t *testing.T) {
 	must(t, agg.handleMessage(ctx, msg))
 	must(t, agg.handleMessage(ctx, msg)) // redelivery of the same stream entry
 
+	must(t, agg.Flush(ctx)) // open buckets are only written on close or flush
 	got, ok := ts.get("SIM:TEST", "1m", base)
 	if !ok {
-		t.Fatalf("expected an upserted 1m candle")
+		t.Fatalf("expected a flushed 1m candle")
 	}
 	if got.Volume == nil || *got.Volume != tick.Volume {
 		t.Errorf("volume = %v, want %v (duplicate delivery must not double-count)", fmtVol(got.Volume), tick.Volume)
@@ -255,16 +267,160 @@ func TestAggregator_Flush(t *testing.T) {
 	must(t, agg.processTick(ctx, source.NormalizedTick{Symbol: "SIM:A", Price: 50, Volume: 1, Timestamp: base}))
 	must(t, agg.processTick(ctx, source.NormalizedTick{Symbol: "SIM:B", Price: 60, Volume: 1, Timestamp: base}))
 
-	callsBefore := ts.calls
+	if ts.calls != 0 {
+		t.Fatalf("expected no writes before Flush, got %d", ts.calls)
+	}
 	must(t, agg.Flush(ctx))
-	if ts.calls <= callsBefore {
-		t.Errorf("expected Flush to issue additional upserts: calls before=%d after=%d", callsBefore, ts.calls)
+	if ts.calls == 0 {
+		t.Errorf("expected Flush to write the open candles")
 	}
 
 	for _, sym := range []string{"SIM:A", "SIM:B"} {
 		if _, ok := ts.get(sym, "1m", base); !ok {
 			t.Errorf("Flush: expected a persisted candle for %s/1m", sym)
 		}
+	}
+}
+
+func TestAggregator_SweepClosesExpiredBuckets(t *testing.T) {
+	ts := newFakeCandleStore()
+	redis := &fakeRedis{}
+	agg := newTestAggregator(redis, ts)
+	ctx := context.Background()
+
+	base := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	must(t, agg.processTick(ctx, source.NormalizedTick{Symbol: "SIM:TEST", Price: 100, Volume: 5, Timestamp: base.Add(10 * time.Second)}))
+
+	// The 1m bucket ends at 12:01:00; it stays open through the grace period.
+	agg.sweepExpired(ctx, base.Add(time.Minute+sweepGrace-time.Second))
+	if ts.calls != 0 {
+		t.Fatalf("swept before end+grace: %d writes", ts.calls)
+	}
+
+	agg.sweepExpired(ctx, base.Add(time.Minute+sweepGrace))
+	got, ok := ts.get("SIM:TEST", "1m", base)
+	if !ok {
+		t.Fatalf("expected the expired 1m bucket to be written with no further tick")
+	}
+	if got.Open != 100 || got.Close != 100 {
+		t.Errorf("swept candle = %+v", got)
+	}
+	// 5m, 15m and 1h are still inside their windows.
+	for _, iv := range []string{"5m", "15m", "1h"} {
+		if _, ok := ts.get("SIM:TEST", iv, base); ok {
+			t.Errorf("%s bucket written before it ended", iv)
+		}
+	}
+
+	// A second sweep must not rewrite it, and the cache is invalidated once.
+	calls := ts.calls
+	agg.sweepExpired(ctx, base.Add(2*time.Minute))
+	if ts.calls != calls {
+		t.Errorf("an already-swept bucket was written again")
+	}
+	redis.mu.Lock()
+	defer redis.mu.Unlock()
+	if len(redis.invalidated) != 1 {
+		t.Errorf("cache invalidations = %v, want one for the swept 1m bucket", redis.invalidated)
+	}
+}
+
+func TestAggregator_LateTickDoesNotReopenSweptBucket(t *testing.T) {
+	ts := newFakeCandleStore()
+	agg := newTestAggregator(&fakeRedis{}, ts)
+	ctx := context.Background()
+
+	base := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	must(t, agg.processTick(ctx, source.NormalizedTick{Symbol: "SIM:TEST", Price: 100, Volume: 5, Timestamp: base}))
+	agg.sweepExpired(ctx, base.Add(time.Minute+sweepGrace))
+
+	must(t, agg.processTick(ctx, source.NormalizedTick{Symbol: "SIM:TEST", Price: 50, Volume: 99, Timestamp: base.Add(30 * time.Second)}))
+	must(t, agg.Flush(ctx))
+
+	got, _ := ts.get("SIM:TEST", "1m", base)
+	if got.Low != 100 || (got.Volume != nil && *got.Volume != 5) {
+		t.Errorf("late tick altered a closed bar: %+v", got)
+	}
+}
+
+func TestAggregator_FailedWriteIsRetriedBySweep(t *testing.T) {
+	ts := newFakeCandleStore()
+	agg := newTestAggregator(&fakeRedis{}, ts)
+	ctx := context.Background()
+
+	base := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	must(t, agg.processTick(ctx, source.NormalizedTick{Symbol: "SIM:TEST", Price: 100, Volume: 5, Timestamp: base}))
+
+	ts.failures = upsertMaxAttempts // every attempt for the closing write fails
+	must(t, agg.processTick(ctx, source.NormalizedTick{Symbol: "SIM:TEST", Price: 90, Volume: 1, Timestamp: base.Add(time.Minute)}))
+	if _, ok := ts.get("SIM:TEST", "1m", base); ok {
+		t.Fatalf("write should have failed")
+	}
+
+	agg.sweepExpired(ctx, base.Add(time.Minute)) // store healthy again; nothing newly expired
+	got, ok := ts.get("SIM:TEST", "1m", base)
+	if !ok || got.Close != 100 {
+		t.Errorf("failed close write was lost: got %+v, found=%v", got, ok)
+	}
+}
+
+func TestAggregator_FlushWritesPending(t *testing.T) {
+	ts := newFakeCandleStore()
+	agg := newTestAggregator(&fakeRedis{}, ts)
+	ctx := context.Background()
+
+	base := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	must(t, agg.processTick(ctx, source.NormalizedTick{Symbol: "SIM:TEST", Price: 100, Volume: 5, Timestamp: base}))
+	ts.failures = upsertMaxAttempts
+	must(t, agg.processTick(ctx, source.NormalizedTick{Symbol: "SIM:TEST", Price: 90, Volume: 1, Timestamp: base.Add(time.Minute)}))
+
+	must(t, agg.Flush(ctx))
+	if _, ok := ts.get("SIM:TEST", "1m", base); !ok {
+		t.Errorf("Flush did not write the candle parked after a failed close")
+	}
+	if _, ok := ts.get("SIM:TEST", "1m", base.Add(time.Minute)); !ok {
+		t.Errorf("Flush did not write the open bucket")
+	}
+}
+
+func TestAggregator_DailyBarOnlyForSimulatedSymbols(t *testing.T) {
+	ts := newFakeCandleStore()
+	agg := newTestAggregator(&fakeRedis{}, ts)
+	ctx := context.Background()
+
+	base := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	must(t, agg.processTick(ctx, source.NormalizedTick{Symbol: "SIM:TEST", Price: 100, Volume: 1, Timestamp: base, Simulated: true}))
+	must(t, agg.processTick(ctx, source.NormalizedTick{Symbol: "AAPL", Price: 200, Volume: 1, Timestamp: base, Simulated: false}))
+	must(t, agg.Flush(ctx))
+
+	day := base.Truncate(24 * time.Hour)
+	if _, ok := ts.get("SIM:TEST", "1d", day); !ok {
+		t.Errorf("simulated symbol should keep its aggregator 1d bar")
+	}
+	if _, ok := ts.get("AAPL", "1d", day); ok {
+		t.Errorf("real symbol must not get an aggregator 1d bar: the daily sweep owns it")
+	}
+	for _, iv := range []string{"1m", "5m", "15m", "1h"} {
+		if _, ok := ts.get("AAPL", iv, base.Truncate(map[string]time.Duration{"1m": time.Minute, "5m": 5 * time.Minute, "15m": 15 * time.Minute, "1h": time.Hour}[iv])); !ok {
+			t.Errorf("real symbol should still get its %s bar", iv)
+		}
+	}
+}
+
+func TestAggregator_PublishesFinestEveryTick(t *testing.T) {
+	ts := newFakeCandleStore()
+	redis := &fakeRedis{}
+	agg := newTestAggregator(redis, ts)
+	ctx := context.Background()
+
+	base := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	for i := range 3 {
+		must(t, agg.processTick(ctx, source.NormalizedTick{Symbol: "SIM:TEST", Price: 100 + float64(i), Volume: 1, Timestamp: base.Add(time.Duration(i) * time.Second)}))
+	}
+	redis.mu.Lock()
+	defer redis.mu.Unlock()
+	if len(redis.published) != 3 {
+		t.Errorf("published %d candle events, want one per tick (3) with no DB write in between", len(redis.published))
 	}
 }
 
