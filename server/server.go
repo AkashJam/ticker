@@ -47,7 +47,9 @@ type Server struct {
 	ts    *store.Timescale
 
 	src        source.MarketSource
-	symbols    []string // what src is asked to stream
+	symbols    []string           // what src is asked to stream
+	gate       *ingest.MarketGate // nil for sim, whose ticks never stop
+	now        func() time.Time
 	leader     *ingest.Leader
 	producer   *ingest.Producer
 	deadman    *ingest.DeadMan
@@ -84,6 +86,7 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 
 	var src source.MarketSource
 	var symbols []string
+	var gate *ingest.MarketGate
 	switch cfg.Source {
 	case "sim":
 		src = source.NewSim()
@@ -93,6 +96,19 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 		// streamed stocks, not the sim's list and not the ten daily-only ETFs.
 		src = source.NewFinnhub(cfg.FinnhubAPIKey, source.StreamUniverse(), log)
 		symbols = source.StreamSymbolCodes()
+		// The US market is the only tick source, so silence overnight, at
+		// weekends and on holidays is expected, and the dead-man check must
+		// be able to tell it from a stuck feed. The sim never goes quiet.
+		loc, err := time.LoadLocation("America/New_York")
+		if err != nil {
+			pool.Close()
+			return nil, fmt.Errorf("server: market gate: load America/New_York: %w", err)
+		}
+		finnhub := sweep.NewFinnhubClient(cfg.FinnhubAPIKey)
+		gate = ingest.NewMarketGate(func(ctx context.Context) (ingest.MarketState, error) {
+			st, err := finnhub.MarketStatus(ctx, "US")
+			return ingest.MarketState{Open: st.IsOpen, Session: st.Session, Holiday: st.Holiday}, err
+		}, loc, log)
 	default:
 		pool.Close()
 		return nil, fmt.Errorf("server: unknown source %q", cfg.Source)
@@ -167,7 +183,7 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 	return &Server{
 		cfg: cfg, log: log,
 		pool: pool, redis: redis, ts: ts,
-		src: src, symbols: symbols, leader: leader, producer: producer, deadman: deadman, sweeper: sweeper, reference: refScheduler, aggregator: aggregator,
+		src: src, symbols: symbols, gate: gate, now: time.Now, leader: leader, producer: producer, deadman: deadman, sweeper: sweeper, reference: refScheduler, aggregator: aggregator,
 		httpServer: &http.Server{Addr: cfg.Addr, Handler: router},
 	}, nil
 }
@@ -181,6 +197,14 @@ const maxTickAge = 30 * time.Minute
 // reachable on every replica, and the leader must also have ingested
 // recently. A leader that hasn't ticked since startup is measured from
 // startedAt, so a fresh deploy doesn't false-alert.
+//
+// With the Finnhub source, silence is only a fault while the US market is
+// open (Phase 13 step 3). The gate is consulted solely when the last tick is
+// already stale, so a trading day makes no call. A closed answer skips the
+// age check but not the Redis and leader checks above it, so a process that
+// died overnight still stops pinging. Tick age is also measured from the
+// moment a closed window ended, so the first check after the open does not
+// count the night against the new session.
 func (s *Server) healthy(ctx context.Context) bool {
 	if err := s.redis.Ping(ctx); err != nil {
 		return false
@@ -192,7 +216,7 @@ func (s *Server) healthy(ctx context.Context) bool {
 	if last.IsZero() {
 		last = s.startedAt
 	}
-	return time.Since(last) < maxTickAge
+	return ingest.TickFresh(ctx, s.now(), last, maxTickAge, s.gate)
 }
 
 // Run starts the pipeline and the HTTP server, blocking until ctx is

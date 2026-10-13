@@ -84,3 +84,60 @@ func TestClient_StatusErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestClient_MarketStatusParsesOpenAndHoliday(t *testing.T) {
+	var gotPath, gotExchange string
+	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath, gotExchange = r.URL.Path, r.URL.Query().Get("exchange")
+		if got := r.Header.Get("X-Finnhub-Token"); got != "secret-key" {
+			t.Errorf("X-Finnhub-Token = %q, want the key", got)
+		}
+		if strings.Contains(r.URL.String(), "secret-key") {
+			t.Errorf("the key must never be in the URL, got %s", r.URL)
+		}
+		if r.URL.Query().Get("exchange") == "HOL" {
+			_, _ = w.Write([]byte(`{"exchange":"US","holiday":"Thanksgiving Day","isOpen":false,"session":null,"t":1795737600,"timezone":"America/New_York"}`))
+			return
+		}
+		// The shape recorded from the live endpoint on 2026-10-13.
+		_, _ = w.Write([]byte(`{"exchange":"US","holiday":null,"isOpen":true,"session":"regular","t":1791918238,"timezone":"America/New_York"}`))
+	})
+
+	st, err := c.MarketStatus(context.Background(), "US")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotPath != "/stock/market-status" || gotExchange != "US" {
+		t.Errorf("request = %s exchange=%s", gotPath, gotExchange)
+	}
+	if !st.IsOpen || st.Session != "regular" || st.Holiday != "" || !st.At.Equal(time.Unix(1791918238, 0)) {
+		t.Errorf("open status = %+v", st)
+	}
+
+	st, err = c.MarketStatus(context.Background(), "HOL")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st.IsOpen || st.Session != "" || st.Holiday != "Thanksgiving Day" {
+		t.Errorf("holiday status = %+v (null session and a holiday name expected)", st)
+	}
+}
+
+func TestClient_MarketStatusEmptyAndErrors(t *testing.T) {
+	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Query().Get("exchange") {
+		case "EMPTY":
+			_, _ = w.Write([]byte(`{}`))
+		default:
+			w.WriteHeader(http.StatusForbidden)
+		}
+	})
+	if _, err := c.MarketStatus(context.Background(), "EMPTY"); err == nil {
+		t.Error("an empty response must be an error, not \"closed\"")
+	}
+	_, err := c.MarketStatus(context.Background(), "US")
+	var se *StatusError
+	if !errors.As(err, &se) || se.Code != http.StatusForbidden || se.Retryable() {
+		t.Errorf("403 error = %v, want a non-retryable StatusError", err)
+	}
+}
