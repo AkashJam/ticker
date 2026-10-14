@@ -141,6 +141,11 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 		}
 		runner := sweep.NewRunner(sweep.NewFinnhubClient(cfg.FinnhubAPIKey), ts, source.SweepSymbolCodes(), loc, log)
 		sweeper = sweep.NewScheduler(runner, leader, sweep.NewPinger(cfg.HealthchecksSweepURL, log), log)
+		// An empty URL makes every ping a silent no-op, so in production the
+		// sweep would run unwatched (phase8.md, gate).
+		if cfg.HealthchecksSweepURL == "" && cfg.Env == "prod" {
+			log.Warn("server: daily-bar sweep is unmonitored — HEALTHCHECKS_SWEEP_URL is not set")
+		}
 	}
 
 	// The Atlas reference fetchers (portfolio.md §15 Phase 10) are keyless, so

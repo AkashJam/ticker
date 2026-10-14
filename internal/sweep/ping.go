@@ -66,4 +66,10 @@ func (p *HTTPPinger) send(ctx context.Context, target, body string) {
 		return
 	}
 	_ = resp.Body.Close()
+	// healthchecks.io answers an unknown UUID with a 404 rather than a
+	// transport error, so a wrong URL would otherwise fail silently while the
+	// check times out (phase8.md, gate). The URL is a secret: log the status only.
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		p.log.Warn("sweep: ping rejected", "status", resp.StatusCode)
+	}
 }
