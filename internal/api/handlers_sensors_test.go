@@ -97,3 +97,64 @@ func TestSensorsMatchTheSweepUniverseAndCountryTable(t *testing.T) {
 		t.Errorf("%d global sensors, want 5", globals)
 	}
 }
+
+// "Thin" is the country table's word and the figure behind it is stored with
+// the sensor. They have to agree both ways, or a row would say thin with no
+// number, or carry a number with no tag (bearing.md #93).
+func TestThinListingsCarryTheirFigureAndDate(t *testing.T) {
+	ref := reference.New(nil, reference.Embedded(), nil)
+	sensors, err := ref.Sensors(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := map[string]float64{}
+	for _, s := range sensors {
+		thin := s.Liquidity != nil && *s.Liquidity == "thin"
+		hasFigure := s.LiquidityUsdM != nil
+		if thin != hasFigure {
+			t.Errorf("%s: thin=%v but figure present=%v", s.Symbol, thin, hasFigure)
+		}
+		if hasFigure {
+			if *s.LiquidityUsdM <= 0 || s.LiquidityAsOf == nil || *s.LiquidityAsOf == "" {
+				t.Errorf("%s: figure %v, as-of %v", s.Symbol, *s.LiquidityUsdM, s.LiquidityAsOf)
+			}
+			got[s.Symbol] = *s.LiquidityUsdM
+		} else if s.LiquidityAsOf != nil {
+			t.Errorf("%s: a date with no figure", s.Symbol)
+		}
+	}
+	// The 3-month averages measured on 9 October 2026 (phase8.md), as the mock shows them.
+	want := map[string]float64{"KB": 25, "BCH": 13, "TKC": 12, "TLK": 11}
+	if len(got) != len(want) {
+		t.Fatalf("thin sensors with a figure: %v, want %v", got, want)
+	}
+	for sym, v := range want {
+		if got[sym] != v {
+			t.Errorf("%s: %v, want %v", sym, got[sym], v)
+		}
+	}
+}
+
+func TestSensorNotesAreOnlyWhereTheTableNeedsThem(t *testing.T) {
+	ref := reference.New(nil, reference.Embedded(), nil)
+	sensors, err := ref.Sensors(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]string{}
+	for _, s := range sensors {
+		if s.Note != nil {
+			got[s.Symbol] = *s.Note
+		}
+	}
+	want := map[string]string{"AMX": "telecom", "TKC": "telecom", "TLK": "telecom", "CIB": "was Bancolombia", "BAP": "files in Bermuda"}
+	if len(got) != len(want) {
+		t.Fatalf("notes %v, want %v", got, want)
+	}
+	for k, v := range want {
+		if got[k] != v {
+			t.Errorf("%s: %q, want %q", k, got[k], v)
+		}
+	}
+}

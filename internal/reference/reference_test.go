@@ -172,7 +172,7 @@ func TestCountryTable(t *testing.T) {
 	for _, s := range source.SweepUniverse {
 		universe[s.Symbol] = true
 	}
-	regions := map[string]int{"americas": 1, "europe": 2, "asia-pacific": 3, "middle-east": 4, "africa": 5}
+	regions := map[string]bool{"americas": true, "europe": true, "asia-pacific": true, "middle-east": true, "africa": true}
 	slugs, codes := map[string]bool{}, map[string]bool{}
 	var sensors, atlasSensors int
 	thin := map[string]bool{}
@@ -184,8 +184,8 @@ func TestCountryTable(t *testing.T) {
 		if c.EuroArea != (c.Currency == nil && c.Atlas) {
 			t.Errorf("%s: euroArea=%v but currency=%v; euro-area rows carry a null currency", c.Slug, c.EuroArea, c.Currency)
 		}
-		if order, ok := regions[c.Region]; !ok || c.RegionOrder != order {
-			t.Errorf("%s: region %q order %d", c.Slug, c.Region, c.RegionOrder)
+		if !regions[c.Region] {
+			t.Errorf("%s: unknown region %q", c.Slug, c.Region)
 		}
 		if c.HasCityPage {
 			t.Errorf("%s: hasCityPage is true, but no city page has shipped (bearing.md #101)", c.Slug)

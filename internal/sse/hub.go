@@ -127,6 +127,12 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	heartbeat := time.NewTicker(heartbeatInterval)
 	defer heartbeat.Stop()
 
+	// A connection that has just been accepted is alive, and a client that has
+	// been showing "feed interrupted" should learn that now, not up to 15 s
+	// later. It matters most on symbols that rarely trade: a quote may not come
+	// for hours, and the heartbeat is then the only proof of life.
+	h.sendHeartbeat(w, flusher)
+
 	msgs := pubsub.Channel()
 	for {
 		select {

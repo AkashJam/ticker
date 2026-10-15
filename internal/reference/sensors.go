@@ -21,7 +21,16 @@ type Sensor struct {
 	Country   *string `json:"country"`
 	Theme     *string `json:"theme"`     // global sensors only
 	Region    *string `json:"region"`    // from the country table; nil for global
-	Liquidity *string `json:"liquidity"` // "thin" for the four thin ADR listings
+	Liquidity *string `json:"liquidity"` // "thin" for the four thin ADR listings, from the country table
+	// Note qualifies the company where the table must, e.g. "telecom" or "was
+	// Bancolombia".
+	Note *string `json:"note"`
+	// LiquidityUsdM and LiquidityAsOf are the measured figure behind "thin": the
+	// 3-month average daily traded value of the US listing, in $ millions, and
+	// the date it was measured (phase8.md, bearing.md #93). Only the four thin
+	// sensors carry them.
+	LiquidityUsdM *float64 `json:"liquidityUsdM"`
+	LiquidityAsOf *string  `json:"liquidityAsOf"`
 	// Order is the fixed display order, 1 to 18. It is a field and not derived
 	// from region: Türkiye sits between the Netherlands and India, and Canada
 	// comes before Mexico (bearing.md #102).
@@ -29,11 +38,14 @@ type Sensor struct {
 }
 
 type sensorRow struct {
-	Symbol string  `json:"symbol"`
-	Name   string  `json:"name"`
-	Group  string  `json:"group"`
-	Theme  *string `json:"theme"`
-	Order  int     `json:"order"`
+	Symbol        string   `json:"symbol"`
+	Name          string   `json:"name"`
+	Group         string   `json:"group"`
+	Theme         *string  `json:"theme"`
+	Note          *string  `json:"note"`
+	LiquidityUsdM *float64 `json:"liquidityUsdM"`
+	LiquidityAsOf *string  `json:"liquidityAsOf"`
+	Order         int      `json:"order"`
 }
 
 // Sensors returns the eighteen in display order. Country, region and liquidity
@@ -59,7 +71,10 @@ func (s *Store) Sensors(ctx context.Context) ([]Sensor, error) {
 
 	out := make([]Sensor, 0, len(t.Rows))
 	for _, r := range t.Rows {
-		sn := Sensor{Symbol: r.Symbol, Name: r.Name, Group: r.Group, Theme: r.Theme, Order: r.Order}
+		sn := Sensor{
+			Symbol: r.Symbol, Name: r.Name, Group: r.Group, Theme: r.Theme, Note: r.Note,
+			LiquidityUsdM: r.LiquidityUsdM, LiquidityAsOf: r.LiquidityAsOf, Order: r.Order,
+		}
 		if r.Group == "country" {
 			c, ok := bySensor[r.Symbol]
 			if !ok {

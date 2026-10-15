@@ -15,10 +15,9 @@ type Country struct {
 	Sensor      *string `json:"sensor"` // market-sensor symbol, if any
 	Atlas       bool    `json:"atlas"`  // false for a sensor country with no OECD series
 	HasCityPage bool    `json:"hasCityPage"`
-	Region      string  `json:"region"`      // americas | europe | asia-pacific | africa | middle-east
-	RegionOrder int     `json:"regionOrder"` // the fixed order regions are listed in
-	Liquidity   *string `json:"liquidity"`   // "thin" for the four thin ADR listings
-	NewsTopic   *string `json:"newsTopic"`   // Phase 15 fills this
+	Region      string  `json:"region"`    // americas | europe | asia-pacific | africa | middle-east; geography only, the sensors' display order is sensors.json
+	Liquidity   *string `json:"liquidity"` // "thin" for the four thin ADR listings
+	NewsTopic   *string `json:"newsTopic"` // Phase 15 fills this
 }
 
 // CountriesName is the dataset the table is stored and embedded as.
