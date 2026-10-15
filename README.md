@@ -199,6 +199,7 @@ it). See [`internal/api/router.go`](internal/api/router.go).
 | GET | `/symbols/:symbol/candles` | OHLCV history — `?interval=1m\|5m\|15m\|1h\|1d&from=&to=` |
 | GET | `/symbols/:symbol/indicators` | EMA/RSI — `?set=ema,rsi&interval=1h&series=true` |
 | GET | `/market/movers` | Top-5 gainers and losers |
+| GET | `/market/state` | The ingest feed's state for the page's Market indicator: `live`, `closed` (silent, as expected), `stale` or `down`. The dead-man switch's own verdict, outcomes kept apart |
 | GET | `/atlas/cities` | The `/atlas` comparison: 23 rows, eight measures, every value with source and as-of; answers from the embedded snapshots with Redis down |
 | GET | `/sensors` | The eighteen market sensors in their fixed display order; answers from the embedded snapshot with Redis down |
 | GET | `/stream` | SSE — `?symbols=SIM:NOVA,SIM:HELIX`, emits `quote` / `candle` / `heartbeat` |

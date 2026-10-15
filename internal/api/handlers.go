@@ -28,11 +28,14 @@ type Handlers struct {
 	// Source is the ticker's --source, "sim" or "finnhub". It decides whether
 	// SIM: symbols exist at all: only the simulator serves them (ADR-006).
 	Source string
-	TS     *store.Timescale
-	Redis  *store.Redis
-	Cache  *indicators.Cache
-	Ready  func() error // aggregate readiness check (§8: GET /ready) — see server.go
-	Log    *slog.Logger
+	// Feed reports the ingest feed's state for GET /market/state: "live",
+	// "closed", "stale" or "down". Nil answers "down".
+	Feed  func(ctx context.Context) string
+	TS    *store.Timescale
+	Redis *store.Redis
+	Cache *indicators.Cache
+	Ready func() error // aggregate readiness check (§8: GET /ready) — see server.go
+	Log   *slog.Logger
 	// Ref serves /atlas/cities from the reference datasets, falling back to the
 	// embedded snapshots when Redis cannot answer.
 	Ref   *reference.Store

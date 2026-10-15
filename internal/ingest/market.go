@@ -156,21 +156,41 @@ func (g *MarketGate) nextOpen(now time.Time) time.Time {
 	panic("ingest: no weekday within 8 days") // unreachable
 }
 
-// TickFresh is the dead-man check's verdict on the feed: true when the last
-// tick is younger than maxAge, or when the silence is expected because the
-// market is closed. gate is nil for a feed that never goes quiet (the sim), in
-// which case this is plain tick age. A stale feed with a gate asks Finnhub
-// once (see Closed) and otherwise makes no call.
+// The feed's three states as the market indicator reports them. Live means
+// ticks are flowing now; closed means they are not and that is expected; stale
+// means they are not and it is not.
+const (
+	FeedLive   = "live"
+	FeedClosed = "closed"
+	FeedStale  = "stale"
+)
+
+// FeedState says which of the three the feed is in. gate is nil for a feed that
+// never goes quiet (the sim), which is therefore never closed. A stale feed with
+// a gate asks Finnhub once (see Closed) and otherwise makes no call, and a
+// failed lookup is not "closed", so a feed that cannot be vouched for reads
+// stale.
 //
 // Tick age is measured from no earlier than the end of a cached closed window,
 // so the first check after the open does not count the night against the new
 // session.
-func TickFresh(ctx context.Context, now, lastTick time.Time, maxAge time.Duration, gate *MarketGate) bool {
+func FeedState(ctx context.Context, now, lastTick time.Time, maxAge time.Duration, gate *MarketGate) string {
 	if gate != nil && gate.ResumeFloor(now).After(lastTick) {
 		lastTick = gate.ResumeFloor(now)
 	}
 	if now.Sub(lastTick) < maxAge {
-		return true
+		return FeedLive
 	}
-	return gate != nil && gate.Closed(ctx, now)
+	if gate != nil && gate.Closed(ctx, now) {
+		return FeedClosed
+	}
+	return FeedStale
+}
+
+// TickFresh is the dead-man check's verdict on the feed: true unless it is
+// stale, that is, when the last tick is younger than maxAge or the silence is
+// expected because the market is closed. The indicator and the pager share
+// FeedState, so they cannot disagree about what dead means.
+func TickFresh(ctx context.Context, now, lastTick time.Time, maxAge time.Duration, gate *MarketGate) bool {
+	return FeedState(ctx, now, lastTick, maxAge, gate) != FeedStale
 }
