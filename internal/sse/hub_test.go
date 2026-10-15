@@ -12,8 +12,8 @@ func TestFanoutLatency(t *testing.T) {
 	stamp := time.Date(2026, 9, 25, 12, 0, 0, 0, time.UTC)
 	now := stamp.Add(4 * time.Millisecond)
 
-	quote := func(simulated bool) []byte {
-		b, err := json.Marshal(source.NormalizedTick{Symbol: "SIM:NOVA", Price: 1, Timestamp: stamp, Simulated: simulated})
+	quote := func(symbol string) []byte {
+		b, err := json.Marshal(source.QuoteEvent{Symbol: symbol, Price: 1, Timestamp: stamp})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -21,14 +21,14 @@ func TestFanoutLatency(t *testing.T) {
 	}
 
 	t.Run("sim quote", func(t *testing.T) {
-		seconds, label, ok := fanoutLatency(quote(true), now)
+		seconds, label, ok := fanoutLatency(quote("SIM:NOVA"), now)
 		if !ok || label != "sim" || seconds != 0.004 {
 			t.Fatalf("got (%v, %q, %v), want (0.004, \"sim\", true)", seconds, label, ok)
 		}
 	})
 
 	t.Run("live quote", func(t *testing.T) {
-		if _, label, ok := fanoutLatency(quote(false), now); !ok || label != "live" {
+		if _, label, ok := fanoutLatency(quote("RY"), now); !ok || label != "live" {
 			t.Fatalf("got (%q, %v), want (\"live\", true)", label, ok)
 		}
 	})

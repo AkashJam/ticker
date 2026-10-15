@@ -2,8 +2,10 @@ package ingest
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"log/slog"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,20 +20,26 @@ type fakeProducerRedis struct {
 	xaddCalls    int
 	publishCalls int
 	cacheCalls   int
+	xaddData     any    // the stream entry's "data"
+	published    []byte // the SSE envelope
+	cached       string
 }
 
-func (f *fakeProducerRedis) XAdd(_ context.Context, _ string, _ map[string]any) error {
+func (f *fakeProducerRedis) XAdd(_ context.Context, _ string, values map[string]any) error {
 	f.xaddCalls++
+	f.xaddData = values["data"]
 	return nil
 }
 
-func (f *fakeProducerRedis) Publish(_ context.Context, _ string, _ []byte) error {
+func (f *fakeProducerRedis) Publish(_ context.Context, _ string, payload []byte) error {
 	f.publishCalls++
+	f.published = payload
 	return nil
 }
 
-func (f *fakeProducerRedis) CacheSet(_ context.Context, _, _ string, _ time.Duration) error {
+func (f *fakeProducerRedis) CacheSet(_ context.Context, _, value string, _ time.Duration) error {
 	f.cacheCalls++
+	f.cached = value
 	return nil
 }
 
@@ -67,6 +75,29 @@ func TestProducer_LeaderIngests(t *testing.T) {
 	}
 	if redis.cacheCalls != 1 {
 		t.Errorf("expected exactly 1 CacheSet call, got %d", redis.cacheCalls)
+	}
+}
+
+// The stream entry and the quote cache keep the pipeline's flag; the SSE
+// payload readers get must not carry it (ADR-006).
+func TestProducer_PublishedQuoteHasNoSimulatedFlag(t *testing.T) {
+	p, redis := newTestProducer(true)
+	tick := validTick()
+	tick.Simulated = true
+	p.handle(context.Background(), tick)
+
+	var env source.PubSubMessage
+	if err := json.Unmarshal(redis.published, &env); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(env.Payload), "simulated") {
+		t.Errorf("SSE payload carries the flag: %s", env.Payload)
+	}
+	stream, _ := redis.xaddData.([]byte)
+	for name, got := range map[string]string{"stream entry": string(stream), "quote cache": redis.cached} {
+		if !strings.Contains(got, `"simulated":true`) {
+			t.Errorf("%s lost the flag the aggregator needs: %s", name, got)
+		}
 	}
 }
 
