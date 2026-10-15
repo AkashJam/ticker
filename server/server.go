@@ -182,6 +182,7 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 	}
 	// Wired after construction: the indicator reads the server's own verdict.
 	handlers.Feed = srv.feedState
+	handlers.Session = srv.session
 	return srv, nil
 }
 
@@ -232,6 +233,15 @@ func (s *Server) feedState(ctx context.Context) string {
 		last = s.startedAt
 	}
 	return ingest.FeedState(ctx, s.now(), last, maxTickAge, s.gate)
+}
+
+// session is what GET /market/state reports about the regular session. The
+// simulator has no gate: its ticks never stop, so it is always open.
+func (s *Server) session(ctx context.Context) (closed bool, opensAt time.Time) {
+	if s.gate == nil {
+		return false, time.Time{}
+	}
+	return s.gate.Session(ctx, s.now())
 }
 
 // Run starts the pipeline and the HTTP server, blocking until ctx is

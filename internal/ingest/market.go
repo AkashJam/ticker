@@ -47,10 +47,13 @@ type MarketState struct {
 type StatusFunc func(ctx context.Context) (MarketState, error)
 
 // MarketGate tells the dead-man health check whether silence from the feed is
-// expected (portfolio.md §15 Phase 13 step 3). It does not poll. While ticks
-// flow it is never consulted; it is asked only when the last tick is already
-// stale, and a "closed" answer is cached until the next weekday's open, so a
-// night, a weekend or a holiday costs one call. Holidays and early closes come
+// expected (portfolio.md §15 Phase 13 step 3). It does not poll. The health
+// check consults it only when the last tick is already stale, and a "closed"
+// answer is cached until the next weekday's open, so a night, a weekend or a
+// holiday costs one call. GET /market/state also asks it (Phase 14 step 7), so
+// the page can say the session is closed and when it opens: that asks at most
+// once every openRecheck while the session is open and someone has a page open,
+// and nothing while a cached closed answer holds. Holidays and early closes come
 // from the answer, not from a table.
 //
 // Errors fail toward alerting: a call that fails is "not known closed", because
@@ -123,6 +126,23 @@ func (g *MarketGate) Closed(ctx context.Context, now time.Time) bool {
 	marketClosed.Set(1)
 	g.log.Info("market: closed, tick-age check paused", "holiday", st.Holiday, "session", st.Session, "until", g.closedUntil)
 	return true
+}
+
+// Session reports whether the regular session is closed and, if so, when it
+// next opens: the cached resume time, so a closed answer costs no call after
+// the first. It is Closed with the time attached. An open market, and a status
+// lookup that failed (which Closed treats as open), return the zero time.
+func (g *MarketGate) Session(ctx context.Context, now time.Time) (closed bool, opensAt time.Time) {
+	if !g.Closed(ctx, now) {
+		return false, time.Time{}
+	}
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.rollover(now)
+	if g.closedUntil.IsZero() {
+		return false, time.Time{} // the window ended between the two locks
+	}
+	return true, g.closedUntil
 }
 
 // rollover ends a cached closed window once its resume time has passed.

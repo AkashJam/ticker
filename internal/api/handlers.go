@@ -9,6 +9,7 @@ import (
 	"math"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -30,12 +31,15 @@ type Handlers struct {
 	Source string
 	// Feed reports the ingest feed's state for GET /market/state: "live",
 	// "closed", "stale" or "down". Nil answers "down".
-	Feed  func(ctx context.Context) string
-	TS    *store.Timescale
-	Redis *store.Redis
-	Cache *indicators.Cache
-	Ready func() error // aggregate readiness check (§8: GET /ready) — see server.go
-	Log   *slog.Logger
+	Feed func(ctx context.Context) string
+	// Session reports whether the regular session is closed and, if so, when it
+	// next opens. Nil reads open.
+	Session func(ctx context.Context) (closed bool, opensAt time.Time)
+	TS      *store.Timescale
+	Redis   *store.Redis
+	Cache   *indicators.Cache
+	Ready   func() error // aggregate readiness check (§8: GET /ready) — see server.go
+	Log     *slog.Logger
 	// Ref serves /atlas/cities from the reference datasets, falling back to the
 	// embedded snapshots when Redis cannot answer.
 	Ref   *reference.Store
