@@ -19,6 +19,9 @@ type candlesResponse struct {
 // (§8). interval defaults to "1m"; from/to are RFC3339, both optional.
 func (h *Handlers) GetCandles(c *gin.Context) {
 	symbol := c.Param("symbol")
+	if !h.requireSymbol(c, symbol) {
+		return
+	}
 	interval := c.DefaultQuery("interval", "1m")
 
 	from, ok := parseOptionalTime(c, "from")

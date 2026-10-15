@@ -194,14 +194,13 @@ it). See [`internal/api/router.go`](internal/api/router.go).
 | GET | `/healthy` | Liveness — is the process up |
 | GET | `/ready` | Readiness — pings Timescale and Redis |
 | GET | `/metrics` | Prometheus exposition |
-| GET | `/symbols` | List tracked symbols |
-| GET | `/symbols/:symbol` | Latest snapshot (price, change, day range) |
+| GET | `/symbols` | List tracked symbols (`SIM:` rows only with `--source sim`) |
+| GET | `/symbols/:symbol` | Latest snapshot (price, change, day range, `asOf`); 404 for an unknown symbol, or a `SIM:` symbol off the simulator |
 | GET | `/symbols/:symbol/candles` | OHLCV history — `?interval=1m\|5m\|15m\|1h\|1d&from=&to=` |
 | GET | `/symbols/:symbol/indicators` | EMA/RSI — `?set=ema,rsi&interval=1h&series=true` |
 | GET | `/market/movers` | Top-5 gainers and losers |
 | GET | `/atlas/cities` | The `/atlas` comparison: 23 rows, eight measures, every value with source and as-of; answers from the embedded snapshots with Redis down |
-| GET | `/col` | Simulated cost-of-living family (5 cities) |
-| GET | `/col/:city` | One city's detail, with a basket breakdown |
+| GET | `/sensors` | The eighteen market sensors in their fixed display order; answers from the embedded snapshot with Redis down |
 | GET | `/stream` | SSE — `?symbols=SIM:NOVA,SIM:HELIX`, emits `quote` / `candle` / `heartbeat` |
 
 ## Project layout

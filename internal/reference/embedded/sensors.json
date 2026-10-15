@@ -1,0 +1,24 @@
+{
+  "source": "portfolio.md §15 Phase 14 step 2 (bearing.md #95, #102); mockups/market-v2/market-launch.html for the names and themes",
+  "asOf": "2026-10-15",
+  "rows": [
+    {"symbol": "RY",   "name": "Royal Bank of Canada", "group": "country", "order": 1},
+    {"symbol": "AMX",  "name": "América Móvil",        "group": "country", "order": 2},
+    {"symbol": "CIB",  "name": "Grupo Cibest",         "group": "country", "order": 3},
+    {"symbol": "BAP",  "name": "Credicorp",            "group": "country", "order": 4},
+    {"symbol": "ITUB", "name": "Itaú Unibanco",        "group": "country", "order": 5},
+    {"symbol": "BCH",  "name": "Banco de Chile",       "group": "country", "order": 6},
+    {"symbol": "LYG",  "name": "Lloyds Banking Group", "group": "country", "order": 7},
+    {"symbol": "ING",  "name": "ING Groep",            "group": "country", "order": 8},
+    {"symbol": "TKC",  "name": "Turkcell",             "group": "country", "order": 9},
+    {"symbol": "HDB",  "name": "HDFC Bank",            "group": "country", "order": 10},
+    {"symbol": "TLK",  "name": "Telkom Indonesia",     "group": "country", "order": 11},
+    {"symbol": "KB",   "name": "KB Financial Group",   "group": "country", "order": 12},
+    {"symbol": "MUFG", "name": "Mitsubishi UFJ",       "group": "country", "order": 13},
+    {"symbol": "NVDA", "name": "NVIDIA",               "group": "global", "theme": "Semiconductors",   "order": 14},
+    {"symbol": "AAPL", "name": "Apple",                "group": "global", "theme": "China supply",     "order": 15},
+    {"symbol": "XOM",  "name": "Exxon Mobil",          "group": "global", "theme": "Oil",              "order": 16},
+    {"symbol": "JPM",  "name": "JPMorgan Chase",       "group": "global", "theme": "Global credit",    "order": 17},
+    {"symbol": "CAT",  "name": "Caterpillar",          "group": "global", "theme": "Industrial cycle", "order": 18}
+  ]
+}

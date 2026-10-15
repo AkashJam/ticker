@@ -21,6 +21,17 @@ func NewMeta(pool *pgxpool.Pool) *Meta {
 	return &Meta{pool: pool}
 }
 
+// Exists reports whether symbol is in the table at all, tracked or not: the 28
+// sweep symbols are rows with tracked = false until the release promotes them,
+// and their pages and daily bars are served from the start.
+func (m *Meta) Exists(ctx context.Context, symbol string) (bool, error) {
+	var ok bool
+	if err := m.pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM symbols WHERE symbol = $1)`, symbol).Scan(&ok); err != nil {
+		return false, fmt.Errorf("store: symbol exists: %w", err)
+	}
+	return ok, nil
+}
+
 // Symbols returns every tracked symbol — the shape GET /symbols serves.
 func (m *Meta) Symbols(ctx context.Context) ([]source.SymbolInfo, error) {
 	const q = `

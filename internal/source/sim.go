@@ -56,10 +56,8 @@ const (
 	maxTickInterval = 3 * time.Second
 )
 
-// Sim is the v1 MarketSource — SIM: regime symbols (this file) plus the
-// Cost-of-Living family (cost_of_living.go). It is the sole source in v1
-// (ADR-005); Finnhub (§16.1) is a future second implementation of the same
-// interface, not a change to this one.
+// Sim is the simulator MarketSource: four SIM: regime symbols. It is for dev
+// and CI only (ADR-006); production runs the Finnhub adapter.
 type Sim struct{}
 
 func NewSim() *Sim { return &Sim{} }
