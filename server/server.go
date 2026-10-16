@@ -93,7 +93,12 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 	case "finnhub":
 		// Dev only until Phase 14 promotes it (portfolio.md §15). The 18
 		// streamed stocks, not the sim's list and not the ten daily-only ETFs.
-		src = source.NewFinnhub(cfg.FinnhubAPIKey, source.StreamUniverse(), log)
+		src = source.NewFinnhub(cfg.FinnhubAPIKey, source.StreamUniverse(), log).
+			// A socket that pings and delivers no trades during the session is dead
+			// (2026-10-16). The gate is built below; the closure reads it when called.
+			WithSession(func(ctx context.Context, now time.Time) (bool, time.Time) {
+				return !gate.Closed(ctx, now), gate.ResumeFloor(now)
+			})
 		symbols = source.StreamSymbolCodes()
 		// The US market is the only tick source, so silence overnight, at
 		// weekends and on holidays is expected, and the dead-man check must

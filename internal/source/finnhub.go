@@ -40,6 +40,14 @@ const (
 	// ping frame about every ten seconds, so silence this long is a dead
 	// connection, not a quiet market.
 	readIdle = 90 * time.Second
+	// tradeIdle is how long a live session may go without a single trade, across
+	// all the symbols, before the connection is treated as dead and replaced. Pings
+	// satisfy readIdle, so a socket that stays up and delivers nothing (seen on
+	// 2026-10-16: after a reconnect at 08:30 ET it sent pings and no trades until
+	// a restart) is invisible to it. Eighteen names, two of them mega-caps trading
+	// several times a second: three quiet minutes in the regular session is a dead
+	// feed, not a quiet market.
+	tradeIdle = 3 * time.Minute
 	// readLimit is above the library's 32 KiB default: one frame carries every
 	// trade since the last push, and a busy symbol's can be large.
 	readLimit = 1 << 20
@@ -54,11 +62,25 @@ var (
 		Name: "ticker_finnhub_late_trades_total",
 		Help: "Trades dropped because their one-second bar had already been emitted.",
 	})
+	finnhubIdleReconnects = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "ticker_finnhub_idle_reconnects_total",
+		Help: "Connections replaced because the market was open and no trade arrived for tradeIdle, though the socket was still answering.",
+	})
 	finnhubConnects = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "ticker_finnhub_connects_total",
 		Help: "Successful Finnhub WebSocket connections, including reconnects.",
 	})
 )
+
+// errNoTrades ends a session whose socket is alive but silent during the regular
+// session. run treats it like any other drop and reconnects.
+var errNoTrades = errors.New("finnhub: no trades while the market is open")
+
+// SessionFunc says whether the regular session is open at now and, if so, since
+// when: the earliest time silence counts against the feed, so the first minutes
+// after the open are not judged by the night before. It is injected, not imported,
+// so this package does not depend on ingest.
+type SessionFunc func(ctx context.Context, now time.Time) (open bool, since time.Time)
 
 // ErrUnauthorized is returned when Finnhub rejects the API key (HTTP 401 or
 // 403 on the upgrade). It is not retried: a bad key does not heal.
@@ -78,6 +100,11 @@ type Finnhub struct {
 	assets map[string]AssetType
 	log    *slog.Logger
 	now    func() time.Time
+
+	// sessionOpen and idle are the quiet-socket check; nil sessionOpen turns it off, as
+	// in dev and tests that do not model a market.
+	sessionOpen SessionFunc
+	idle        time.Duration
 }
 
 // NewFinnhub returns a Finnhub source for the given key. universe supplies
@@ -87,7 +114,14 @@ func NewFinnhub(key string, universe []SymbolInfo, log *slog.Logger) *Finnhub {
 	for _, s := range universe {
 		assets[s.Symbol] = s.Type
 	}
-	return &Finnhub{key: key, wsURL: finnhubWSURL, assets: assets, log: log, now: time.Now}
+	return &Finnhub{key: key, wsURL: finnhubWSURL, assets: assets, log: log, now: time.Now, idle: tradeIdle}
+}
+
+// WithSession turns on the quiet-socket check: while fn says the regular session is
+// open, a connection that delivers no trade for tradeIdle is replaced.
+func (f *Finnhub) WithSession(fn SessionFunc) *Finnhub {
+	f.sessionOpen = fn
+	return f
 }
 
 func (f *Finnhub) Name() string { return "finnhub" }
@@ -193,6 +227,7 @@ func (f *Finnhub) session(ctx context.Context, conn *websocket.Conn, symbols []s
 	}
 	f.log.Info("finnhub: connected", "symbols", len(symbols))
 
+	lastTrade := f.now()
 	for {
 		rctx, cancel := context.WithTimeout(ctx, readIdle)
 		_, data, err := conn.Read(rctx)
@@ -200,8 +235,35 @@ func (f *Finnhub) session(ctx context.Context, conn *websocket.Conn, symbols []s
 		if err != nil {
 			return err
 		}
-		f.handleFrame(data, co)
+		if f.handleFrame(data, co) > 0 {
+			lastTrade = f.now()
+		}
+		if f.quiet(ctx, lastTrade) {
+			return errNoTrades
+		}
 	}
+}
+
+// quiet reports whether the socket has been silent for too long to be a quiet
+// market: no trade for f.idle, the regular session open, and open for at least
+// that long. The market gate is asked only once the idle time has passed, and it
+// caches, so a night or a weekend costs nothing per ping.
+func (f *Finnhub) quiet(ctx context.Context, lastTrade time.Time) bool {
+	if f.sessionOpen == nil {
+		return false
+	}
+	now := f.now()
+	if now.Sub(lastTrade) < f.idle {
+		return false
+	}
+	open, since := f.sessionOpen(ctx, now)
+	if !open || now.Sub(since) < f.idle {
+		return false
+	}
+	finnhubIdleReconnects.Inc()
+	f.log.Warn("finnhub: no trades while the market is open, reconnecting",
+		"quiet_for", now.Sub(lastTrade).Round(time.Second), "session_open_since", since)
+	return true
 }
 
 type frame struct {
@@ -218,18 +280,22 @@ type trade struct {
 	V float64 `json:"v"`
 }
 
-func (f *Finnhub) handleFrame(data []byte, co *coalescer) {
+// handleFrame folds a frame's trades into co and returns how many were valid, so the
+// caller can tell a trade from a ping.
+func (f *Finnhub) handleFrame(data []byte, co *coalescer) int {
 	var fr frame
 	if err := json.Unmarshal(data, &fr); err != nil {
 		f.log.Debug("finnhub: unreadable frame", "error", err)
-		return
+		return 0
 	}
+	n := 0
 	switch fr.Type {
 	case "trade":
 		for _, t := range fr.Data {
 			if t.S == "" || t.P <= 0 || t.V < 0 {
 				continue
 			}
+			n++
 			finnhubTrades.Inc()
 			if !co.add(t.S, t.P, t.V, time.UnixMilli(t.T)) {
 				finnhubLateTrades.Inc()
@@ -241,6 +307,7 @@ func (f *Finnhub) handleFrame(data []byte, co *coalescer) {
 	default:
 		f.log.Debug("finnhub: unhandled frame", "type", fr.Type)
 	}
+	return n
 }
 
 // flushLoop emits every bar whose second, plus the grace, has passed.

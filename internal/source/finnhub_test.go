@@ -407,3 +407,113 @@ func TestStreamUniverseIsTheEighteenStocks(t *testing.T) {
 		t.Errorf("StreamSymbolCodes = %v", got)
 	}
 }
+
+// pingsOnly is a socket that stays up and answers, and never sends a trade: the
+// failure of 2026-10-16, after a reconnect at 08:30 ET.
+func pingsOnly(ctx context.Context, _ int, c *websocket.Conn) {
+	for ctx.Err() == nil {
+		if c.Write(ctx, websocket.MessageText, []byte(`{"type":"ping"}`)) != nil {
+			return
+		}
+		time.Sleep(40 * time.Millisecond)
+	}
+}
+
+// quietFinnhub is a source whose socket must be silent for 300ms to count as dead.
+func quietFinnhub(t *testing.T, script func(ctx context.Context, n int, c *websocket.Conn), session SessionFunc) (*feed, context.CancelFunc) {
+	t.Helper()
+	fd, srv := startFeed(t, script)
+	log, _ := quietLog()
+	f := newTestFinnhub(srv.URL, log).WithSession(session)
+	f.idle = 300 * time.Millisecond
+	ctx, cancel := context.WithCancel(context.Background())
+	if _, err := f.Subscribe(ctx, []string{"AAPL"}); err != nil {
+		t.Fatal(err)
+	}
+	return fd, cancel
+}
+
+func TestFinnhub_ReplacesASocketThatPingsButSendsNoTradesWhileTheMarketIsOpen(t *testing.T) {
+	open := func(context.Context, time.Time) (bool, time.Time) { return true, time.Time{} }
+	fd, cancel := quietFinnhub(t, pingsOnly, open)
+	defer cancel()
+
+	deadline := time.After(10 * time.Second)
+	for fd.conns.Load() < 2 {
+		select {
+		case <-deadline:
+			t.Fatalf("connections = %d: a silent socket was never replaced", fd.conns.Load())
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
+	// And it resubscribes on the new connection, as after any drop.
+	n := 0
+loop:
+	for {
+		select {
+		case <-fd.subs:
+			n++
+		case <-time.After(300 * time.Millisecond):
+			break loop
+		}
+	}
+	if n < 2 {
+		t.Errorf("subscribe messages = %d, want one per connection", n)
+	}
+}
+
+func TestFinnhub_LeavesAQuietSocketAloneWhenTheMarketIsClosed(t *testing.T) {
+	closed := func(context.Context, time.Time) (bool, time.Time) { return false, time.Time{} }
+	fd, cancel := quietFinnhub(t, pingsOnly, closed)
+	defer cancel()
+	time.Sleep(2500 * time.Millisecond) // well past the idle time and the reconnect backoff
+	if got := fd.conns.Load(); got != 1 {
+		t.Errorf("connections = %d, want 1: silence overnight is not a fault", got)
+	}
+}
+
+func TestFinnhub_DoesNotJudgeTheFirstMomentsOfASession(t *testing.T) {
+	// Open "since now" on every call: the session has only just begun, so a socket
+	// that has been quiet since the night is not yet a dead one.
+	justOpened := func(_ context.Context, now time.Time) (bool, time.Time) { return true, now }
+	fd, cancel := quietFinnhub(t, pingsOnly, justOpened)
+	defer cancel()
+	time.Sleep(2500 * time.Millisecond)
+	if got := fd.conns.Load(); got != 1 {
+		t.Errorf("connections = %d, want 1: the open must not be judged by the night before", got)
+	}
+}
+
+func TestFinnhub_KeepsASocketThatTrades(t *testing.T) {
+	open := func(context.Context, time.Time) (bool, time.Time) { return true, time.Time{} }
+	trading := func(ctx context.Context, _ int, c *websocket.Conn) {
+		for ctx.Err() == nil {
+			if c.Write(ctx, websocket.MessageText, []byte(tradeFrame("AAPL", time.Now(), 100, 1))) != nil {
+				return
+			}
+			time.Sleep(40 * time.Millisecond)
+		}
+	}
+	fd, cancel := quietFinnhub(t, trading, open)
+	defer cancel()
+	time.Sleep(2500 * time.Millisecond)
+	if got := fd.conns.Load(); got != 1 {
+		t.Errorf("connections = %d, want 1: a socket that trades is healthy", got)
+	}
+}
+
+func TestFinnhub_NoSessionFuncMeansNoQuietCheck(t *testing.T) {
+	fd, srv := startFeed(t, pingsOnly)
+	log, _ := quietLog()
+	f := newTestFinnhub(srv.URL, log)
+	f.idle = 300 * time.Millisecond
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	if _, err := f.Subscribe(ctx, []string{"AAPL"}); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(2500 * time.Millisecond)
+	if got := fd.conns.Load(); got != 1 {
+		t.Errorf("connections = %d, want 1: dev and tests model no market", got)
+	}
+}
