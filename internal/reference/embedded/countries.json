@@ -13,7 +13,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "asia-pacific",
-      "regionOrder": 3,
       "liquidity": null,
       "newsTopic": null
     },
@@ -28,7 +27,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "asia-pacific",
-      "regionOrder": 3,
       "liquidity": "thin",
       "newsTopic": null
     },
@@ -43,7 +41,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "africa",
-      "regionOrder": 5,
       "liquidity": null,
       "newsTopic": null
     },
@@ -58,7 +55,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "asia-pacific",
-      "regionOrder": 3,
       "liquidity": null,
       "newsTopic": null
     },
@@ -73,7 +69,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "americas",
-      "regionOrder": 1,
       "liquidity": null,
       "newsTopic": null
     },
@@ -88,7 +83,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "americas",
-      "regionOrder": 1,
       "liquidity": "thin",
       "newsTopic": null
     },
@@ -103,7 +97,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "americas",
-      "regionOrder": 1,
       "liquidity": null,
       "newsTopic": null
     },
@@ -118,7 +111,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "middle-east",
-      "regionOrder": 4,
       "liquidity": "thin",
       "newsTopic": null
     },
@@ -133,7 +125,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "europe",
-      "regionOrder": 2,
       "liquidity": null,
       "newsTopic": null
     },
@@ -148,7 +139,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "asia-pacific",
-      "regionOrder": 3,
       "liquidity": "thin",
       "newsTopic": null
     },
@@ -163,7 +153,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "asia-pacific",
-      "regionOrder": 3,
       "liquidity": null,
       "newsTopic": null
     },
@@ -178,7 +167,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "europe",
-      "regionOrder": 2,
       "liquidity": null,
       "newsTopic": null
     },
@@ -193,7 +181,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "europe",
-      "regionOrder": 2,
       "liquidity": null,
       "newsTopic": null
     },
@@ -208,7 +195,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "asia-pacific",
-      "regionOrder": 3,
       "liquidity": null,
       "newsTopic": null
     },
@@ -223,7 +209,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "middle-east",
-      "regionOrder": 4,
       "liquidity": null,
       "newsTopic": null
     },
@@ -238,7 +223,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "americas",
-      "regionOrder": 1,
       "liquidity": null,
       "newsTopic": null
     },
@@ -253,7 +237,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "europe",
-      "regionOrder": 2,
       "liquidity": null,
       "newsTopic": null
     },
@@ -268,7 +251,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "europe",
-      "regionOrder": 2,
       "liquidity": null,
       "newsTopic": null
     },
@@ -283,7 +265,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "europe",
-      "regionOrder": 2,
       "liquidity": null,
       "newsTopic": null
     },
@@ -298,7 +279,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "asia-pacific",
-      "regionOrder": 3,
       "liquidity": null,
       "newsTopic": null
     },
@@ -313,7 +293,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "europe",
-      "regionOrder": 2,
       "liquidity": null,
       "newsTopic": null
     },
@@ -328,7 +307,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "europe",
-      "regionOrder": 2,
       "liquidity": null,
       "newsTopic": null
     },
@@ -343,7 +321,6 @@
       "atlas": true,
       "hasCityPage": false,
       "region": "americas",
-      "regionOrder": 1,
       "liquidity": null,
       "newsTopic": null
     },
@@ -358,7 +335,6 @@
       "atlas": false,
       "hasCityPage": false,
       "region": "americas",
-      "regionOrder": 1,
       "liquidity": null,
       "newsTopic": null
     },
@@ -373,7 +349,6 @@
       "atlas": false,
       "hasCityPage": false,
       "region": "americas",
-      "regionOrder": 1,
       "liquidity": null,
       "newsTopic": null
     }

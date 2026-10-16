@@ -39,7 +39,7 @@ func wbRow(prices change.Series) worldbank.Row {
 func country(slug, code string, cur *string, sensor *string) reference.Country {
 	city := slug + "-city"
 	return reference.Country{Slug: slug, City: &city, Country: slug, Code: code, Currency: cur, EuroArea: cur == nil,
-		Sensor: sensor, Atlas: true, Region: "europe", RegionOrder: 2}
+		Sensor: sensor, Atlas: true, Region: "europe"}
 }
 
 // fixture: Italy (euro), Japan (yen) and Israel (no shekel before 2011), all

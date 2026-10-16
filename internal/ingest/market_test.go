@@ -226,3 +226,153 @@ func TestTickFresh_FirstCheckAfterTheOpenDoesNotCountTheNight(t *testing.T) {
 		t.Error("31 minutes into the session with no tick must be unhealthy")
 	}
 }
+
+func TestFeedState_LiveClosedAndStale(t *testing.T) {
+	ctx := context.Background()
+	night := at(t, time.October, 14, 23, 0)
+	last := at(t, time.October, 14, 16, 0)
+	midday := at(t, time.October, 14, 11, 0)
+	lastMorning := at(t, time.October, 14, 10, 0)
+
+	if got := FeedState(ctx, midday, midday.Add(-time.Second), maxAge, newGate(t, &fakeStatus{state: MarketState{Open: true}})); got != FeedLive {
+		t.Errorf("a tick a second old = %q, want live", got)
+	}
+	if got := FeedState(ctx, night, last, maxAge, newGate(t, &fakeStatus{state: MarketState{Open: false}})); got != FeedClosed {
+		t.Errorf("seven hours of silence overnight = %q, want closed", got)
+	}
+	if got := FeedState(ctx, midday, lastMorning, maxAge, newGate(t, &fakeStatus{state: MarketState{Open: true}})); got != FeedStale {
+		t.Errorf("an hour of silence mid-session = %q, want stale", got)
+	}
+}
+
+// A lookup that fails is not "closed": a feed that cannot be vouched for must
+// not read as one that is merely resting.
+func TestFeedState_AFailedLookupIsStale(t *testing.T) {
+	night := at(t, time.October, 14, 23, 0)
+	last := at(t, time.October, 14, 16, 0)
+	if got := FeedState(context.Background(), night, last, maxAge, newGate(t, &fakeStatus{err: errors.New("down")})); got != FeedStale {
+		t.Errorf("a failed status lookup = %q, want stale", got)
+	}
+}
+
+func TestFeedState_NilGateIsNeverClosed(t *testing.T) {
+	now := at(t, time.October, 14, 12, 0)
+	if got := FeedState(context.Background(), now, now.Add(-29*time.Minute), maxAge, nil); got != FeedLive {
+		t.Errorf("29 minutes, no gate = %q, want live", got)
+	}
+	if got := FeedState(context.Background(), now, now.Add(-31*time.Minute), maxAge, nil); got != FeedStale {
+		t.Errorf("31 minutes, no gate = %q, want stale (the simulator never goes quiet)", got)
+	}
+}
+
+func TestFeedState_FlowingTicksMakeNoStatusCall(t *testing.T) {
+	f := &fakeStatus{state: MarketState{Open: true}}
+	g := newGate(t, f)
+	now := at(t, time.October, 14, 12, 0)
+	if FeedState(context.Background(), now, now.Add(-time.Second), maxAge, g) != FeedLive || f.calls != 0 {
+		t.Errorf("calls = %d on a trading day with ticks flowing, want 0", f.calls)
+	}
+}
+
+// The first check after the open must not count the night against the new
+// session: it reads live, not stale, for the first half hour.
+func TestFeedState_FirstCheckAfterTheOpenIsLive(t *testing.T) {
+	ctx := context.Background()
+	f := &fakeStatus{state: MarketState{Open: false}}
+	g := newGate(t, f)
+	last := at(t, time.October, 14, 16, 0)
+	if got := FeedState(ctx, at(t, time.October, 14, 22, 0), last, maxAge, g); got != FeedClosed {
+		t.Fatalf("overnight = %q, want closed", got)
+	}
+	f.state = MarketState{Open: true}
+	if got := FeedState(ctx, at(t, time.October, 15, 9, 31), last, maxAge, g); got != FeedLive {
+		t.Errorf("one minute after the open with no tick yet = %q, want live", got)
+	}
+	if got := FeedState(ctx, at(t, time.October, 15, 10, 15), last, maxAge, g); got != FeedStale {
+		t.Errorf("forty-five minutes into the session with no tick = %q, want stale", got)
+	}
+}
+
+func TestSession_OpenIsNotClosedAndHasNoOpeningTime(t *testing.T) {
+	g := newGate(t, &fakeStatus{state: MarketState{Open: true}})
+	closed, opensAt := g.Session(context.Background(), at(t, time.October, 14, 12, 0))
+	if closed || !opensAt.IsZero() {
+		t.Errorf("an open session = (%v, %v), want (false, zero)", closed, opensAt)
+	}
+}
+
+// A Friday evening resolves to Monday's open, not Saturday's: weekends are
+// skipped, and the clock is New York's wall time.
+func TestSession_ClosedCarriesTheNextWeekdayOpen(t *testing.T) {
+	g := newGate(t, &fakeStatus{state: MarketState{Open: false}})
+	closed, opensAt := g.Session(context.Background(), at(t, time.October, 16, 21, 0))
+	if !closed {
+		t.Fatal("a closed session reported open")
+	}
+	want := at(t, time.October, 19, 9, 30)
+	if !opensAt.Equal(want) {
+		t.Errorf("opens at %s, want %s", opensAt, want)
+	}
+}
+
+func TestSession_AWeekdayEveningResolvesToTomorrowMorning(t *testing.T) {
+	g := newGate(t, &fakeStatus{state: MarketState{Open: false}})
+	_, opensAt := g.Session(context.Background(), at(t, time.October, 14, 17, 0))
+	if want := at(t, time.October, 15, 9, 30); !opensAt.Equal(want) {
+		t.Errorf("opens at %s, want %s", opensAt, want)
+	}
+}
+
+// The first answer is cached to the next open, so asking again all weekend costs
+// nothing: the cost of the state endpoint is one call, not one per poll.
+func TestSession_ACachedClosedAnswerMakesNoFurtherCall(t *testing.T) {
+	f := &fakeStatus{state: MarketState{Open: false}}
+	g := newGate(t, f)
+	ctx := context.Background()
+	for _, now := range []time.Time{at(t, time.October, 16, 21, 0), at(t, time.October, 17, 12, 0), at(t, time.October, 18, 23, 0)} {
+		if closed, _ := g.Session(ctx, now); !closed {
+			t.Fatalf("not closed at %s", now)
+		}
+	}
+	if f.calls != 1 {
+		t.Errorf("status calls = %d across the weekend, want 1", f.calls)
+	}
+}
+
+// While the session is open the endpoint asks at most once every openRecheck,
+// however often it is polled.
+func TestSession_AnOpenSessionIsRecheckedOnlyAfterTheInterval(t *testing.T) {
+	f := &fakeStatus{state: MarketState{Open: true}}
+	g := newGate(t, f)
+	ctx := context.Background()
+	start := at(t, time.October, 14, 12, 0)
+	for i := range 10 {
+		g.Session(ctx, start.Add(time.Duration(i)*30*time.Second))
+	}
+	if f.calls != 1 {
+		t.Errorf("status calls in five minutes of polling = %d, want 1", f.calls)
+	}
+}
+
+func TestSession_TheWindowEndingClearsIt(t *testing.T) {
+	f := &fakeStatus{state: MarketState{Open: false}}
+	g := newGate(t, f)
+	ctx := context.Background()
+	if closed, _ := g.Session(ctx, at(t, time.October, 14, 17, 0)); !closed {
+		t.Fatal("not closed in the evening")
+	}
+	f.state = MarketState{Open: true}
+	closed, opensAt := g.Session(ctx, at(t, time.October, 15, 9, 31))
+	if closed || !opensAt.IsZero() {
+		t.Errorf("after the open = (%v, %v), want (false, zero)", closed, opensAt)
+	}
+}
+
+// A lookup that fails is read as open, the same fail-toward-alerting rule the
+// health check uses: the page does not freeze on a guess.
+func TestSession_AFailedLookupIsOpen(t *testing.T) {
+	g := newGate(t, &fakeStatus{err: errors.New("down")})
+	if closed, opensAt := g.Session(context.Background(), at(t, time.October, 14, 23, 0)); closed || !opensAt.IsZero() {
+		t.Errorf("a failed lookup = (%v, %v), want (false, zero)", closed, opensAt)
+	}
+}

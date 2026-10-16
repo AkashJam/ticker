@@ -106,7 +106,14 @@ func (p *Producer) handle(ctx context.Context, tick source.NormalizedTick) {
 	ticksProduced.WithLabelValues(tick.Symbol).Inc()
 	p.lastTick.Store(time.Now().UnixNano())
 
-	envelope, err := json.Marshal(source.PubSubMessage{Type: "quote", Payload: payload})
+	// The stream entry and the cache keep the whole tick; the SSE payload is
+	// the public QuoteEvent, so Simulated never leaves the pipeline.
+	public, err := json.Marshal(tick.Public())
+	if err != nil {
+		p.log.Error("ingest: marshal quote event", "error", err)
+		return
+	}
+	envelope, err := json.Marshal(source.PubSubMessage{Type: "quote", Payload: public})
 	if err != nil {
 		p.log.Error("ingest: marshal quote envelope", "error", err)
 	} else if err := p.redis.Publish(ctx, store.QuoteChannel(tick.Symbol), envelope); err != nil {

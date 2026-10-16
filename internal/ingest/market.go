@@ -47,10 +47,13 @@ type MarketState struct {
 type StatusFunc func(ctx context.Context) (MarketState, error)
 
 // MarketGate tells the dead-man health check whether silence from the feed is
-// expected (portfolio.md §15 Phase 13 step 3). It does not poll. While ticks
-// flow it is never consulted; it is asked only when the last tick is already
-// stale, and a "closed" answer is cached until the next weekday's open, so a
-// night, a weekend or a holiday costs one call. Holidays and early closes come
+// expected (portfolio.md §15 Phase 13 step 3). It does not poll. The health
+// check consults it only when the last tick is already stale, and a "closed"
+// answer is cached until the next weekday's open, so a night, a weekend or a
+// holiday costs one call. GET /market/state also asks it (Phase 14 step 7), so
+// the page can say the session is closed and when it opens: that asks at most
+// once every openRecheck while the session is open and someone has a page open,
+// and nothing while a cached closed answer holds. Holidays and early closes come
 // from the answer, not from a table.
 //
 // Errors fail toward alerting: a call that fails is "not known closed", because
@@ -125,6 +128,23 @@ func (g *MarketGate) Closed(ctx context.Context, now time.Time) bool {
 	return true
 }
 
+// Session reports whether the regular session is closed and, if so, when it
+// next opens: the cached resume time, so a closed answer costs no call after
+// the first. It is Closed with the time attached. An open market, and a status
+// lookup that failed (which Closed treats as open), return the zero time.
+func (g *MarketGate) Session(ctx context.Context, now time.Time) (closed bool, opensAt time.Time) {
+	if !g.Closed(ctx, now) {
+		return false, time.Time{}
+	}
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.rollover(now)
+	if g.closedUntil.IsZero() {
+		return false, time.Time{} // the window ended between the two locks
+	}
+	return true, g.closedUntil
+}
+
 // rollover ends a cached closed window once its resume time has passed.
 func (g *MarketGate) rollover(now time.Time) {
 	if g.closedUntil.IsZero() || now.Before(g.closedUntil) {
@@ -156,21 +176,41 @@ func (g *MarketGate) nextOpen(now time.Time) time.Time {
 	panic("ingest: no weekday within 8 days") // unreachable
 }
 
-// TickFresh is the dead-man check's verdict on the feed: true when the last
-// tick is younger than maxAge, or when the silence is expected because the
-// market is closed. gate is nil for a feed that never goes quiet (the sim), in
-// which case this is plain tick age. A stale feed with a gate asks Finnhub
-// once (see Closed) and otherwise makes no call.
+// The feed's three states as the market indicator reports them. Live means
+// ticks are flowing now; closed means they are not and that is expected; stale
+// means they are not and it is not.
+const (
+	FeedLive   = "live"
+	FeedClosed = "closed"
+	FeedStale  = "stale"
+)
+
+// FeedState says which of the three the feed is in. gate is nil for a feed that
+// never goes quiet (the sim), which is therefore never closed. A stale feed with
+// a gate asks Finnhub once (see Closed) and otherwise makes no call, and a
+// failed lookup is not "closed", so a feed that cannot be vouched for reads
+// stale.
 //
 // Tick age is measured from no earlier than the end of a cached closed window,
 // so the first check after the open does not count the night against the new
 // session.
-func TickFresh(ctx context.Context, now, lastTick time.Time, maxAge time.Duration, gate *MarketGate) bool {
+func FeedState(ctx context.Context, now, lastTick time.Time, maxAge time.Duration, gate *MarketGate) string {
 	if gate != nil && gate.ResumeFloor(now).After(lastTick) {
 		lastTick = gate.ResumeFloor(now)
 	}
 	if now.Sub(lastTick) < maxAge {
-		return true
+		return FeedLive
 	}
-	return gate != nil && gate.Closed(ctx, now)
+	if gate != nil && gate.Closed(ctx, now) {
+		return FeedClosed
+	}
+	return FeedStale
+}
+
+// TickFresh is the dead-man check's verdict on the feed: true unless it is
+// stale, that is, when the last tick is younger than maxAge or the silence is
+// expected because the market is closed. The indicator and the pager share
+// FeedState, so they cannot disagree about what dead means.
+func TickFresh(ctx context.Context, now, lastTick time.Time, maxAge time.Duration, gate *MarketGate) bool {
+	return FeedState(ctx, now, lastTick, maxAge, gate) != FeedStale
 }

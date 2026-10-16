@@ -31,6 +31,9 @@ type indicatorSeriesResponse struct {
 // what the frontend's charts need (portfolio.md §15 Phase C).
 func (h *Handlers) GetIndicators(c *gin.Context) {
 	symbol := c.Param("symbol")
+	if !h.requireSymbol(c, symbol) {
+		return
+	}
 	interval := c.DefaultQuery("interval", "1h")
 	setParam := c.DefaultQuery("set", "ema,rsi")
 	series := c.Query("series") == "true"

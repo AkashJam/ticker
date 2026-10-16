@@ -52,12 +52,14 @@ var (
 // payload that isn't a tick or carries no timestamp — nothing to observe.
 // Pure so it can be tested without a Redis subscription or an HTTP writer.
 func fanoutLatency(payload []byte, now time.Time) (seconds float64, sourceLabel string, ok bool) {
-	var tick source.NormalizedTick
+	var tick source.QuoteEvent
 	if err := json.Unmarshal(payload, &tick); err != nil || tick.Timestamp.IsZero() {
 		return 0, "", false
 	}
+	// The payload no longer says where a tick came from; SIM: symbols are the
+	// simulator's by construction (they never share a name with a real one).
 	sourceLabel = "live"
-	if tick.Simulated {
+	if strings.HasPrefix(tick.Symbol, "SIM:") {
 		sourceLabel = "sim"
 	}
 	return now.Sub(tick.Timestamp).Seconds(), sourceLabel, true
@@ -124,6 +126,12 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	heartbeat := time.NewTicker(heartbeatInterval)
 	defer heartbeat.Stop()
+
+	// A connection that has just been accepted is alive, and a client that has
+	// been showing "feed interrupted" should learn that now, not up to 15 s
+	// later. It matters most on symbols that rarely trade: a quote may not come
+	// for hours, and the heartbeat is then the only proof of life.
+	h.sendHeartbeat(w, flusher)
 
 	msgs := pubsub.Channel()
 	for {

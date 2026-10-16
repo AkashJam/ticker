@@ -21,10 +21,10 @@ const (
 
 // NormalizedTick is the common shape every MarketSource emits, regardless of
 // upstream format — this is what the ingestion pipeline consumes. JSON tags
-// double this struct as the wire format for the Redis Stream entry and the
-// SSE `quote` event (§8) — both are internal-to-this-service or
-// internal-to-this-repo contracts, not a versioned public API, so one type
-// serving both is intentional rather than premature reuse.
+// make it the wire format for the Redis Stream entry and the quote cache,
+// which are internal to this service. The SSE `quote` event is the public
+// face of a tick and is a separate type, QuoteEvent, so what only the
+// pipeline needs (Simulated) never reaches a reader.
 type NormalizedTick struct {
 	Symbol string `json:"symbol"`
 	// Price is the tick's price; for a coalesced bar (Finnhub) it is the
@@ -41,11 +41,32 @@ type NormalizedTick struct {
 	Open float64 `json:"open,omitempty"`
 	High float64 `json:"high,omitempty"`
 	Low  float64 `json:"low,omitempty"`
-	// Simulated is true when the tick was produced by the sim source, never
-	// a live feed. Carried end-to-end through storage and the API so the
-	// UI can flag it — it must never be able to masquerade as real market
-	// data (ADR-005).
+	// Simulated is true when the tick was produced by the sim source. It is
+	// internal to dev and CI (portfolio.md ADR-006): the aggregator uses it to
+	// give SIM: symbols their own daily bar, and it is stored on the tick row.
+	// It is not part of QuoteEvent, so no API response or SSE event carries it.
 	Simulated bool `json:"simulated"`
+}
+
+// QuoteEvent is the SSE `quote` payload (§8): a tick as a reader sees it.
+// Time is the trade time, which is the value's vintage (ADR-006).
+type QuoteEvent struct {
+	Symbol    string    `json:"symbol"`
+	Price     float64   `json:"price"`
+	Volume    float64   `json:"volume"`
+	Timestamp time.Time `json:"time"`
+	AssetType AssetType `json:"assetType"`
+	Open      float64   `json:"open,omitempty"`
+	High      float64   `json:"high,omitempty"`
+	Low       float64   `json:"low,omitempty"`
+}
+
+// Public drops what only the pipeline needs.
+func (t NormalizedTick) Public() QuoteEvent {
+	return QuoteEvent{
+		Symbol: t.Symbol, Price: t.Price, Volume: t.Volume, Timestamp: t.Timestamp,
+		AssetType: t.AssetType, Open: t.Open, High: t.High, Low: t.Low,
+	}
 }
 
 // Candle is one OHLCV bar for a symbol at a given interval, produced by the
@@ -93,7 +114,7 @@ type MarketSource interface {
 	Backfill(ctx context.Context, symbol string, from, to time.Time) ([]Candle, error)
 
 	// Name identifies the source ("sim" | "finnhub") — surfaced end-to-end
-	// via NormalizedTick.Simulated / the API's `simulated` field so the UI
-	// can badge it (ADR-005).
+	// in logs and metrics. It is not shown to readers: the API carries a
+	// value's vintage (`asOf`), not its source (ADR-006).
 	Name() string
 }

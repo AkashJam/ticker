@@ -15,7 +15,6 @@ import (
 	"github.com/AkashJam/ticker/flags"
 	"github.com/AkashJam/ticker/internal/aggregate"
 	"github.com/AkashJam/ticker/internal/api"
-	"github.com/AkashJam/ticker/internal/change"
 	"github.com/AkashJam/ticker/internal/ecb"
 	"github.com/AkashJam/ticker/internal/fred"
 	"github.com/AkashJam/ticker/internal/indicators"
@@ -172,25 +171,19 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 		},
 	}, leader, sweep.NewPinger(cfg.HealthchecksReferenceURL, log), log)
 
-	// /col carries its survey baselines on real CPI (Phase 10; Phase 14 deletes
-	// both). The reference store falls back to the embedded snapshot, so this
-	// works with Redis down.
 	handlers.Ref = refStore
-	handlers.CPI = func(ctx context.Context, code string) (change.Series, bool) {
-		var ds worldbank.Dataset
-		if _, err := refStore.Get(ctx, worldbank.DatasetName, &ds); err != nil {
-			return change.Series{}, false
-		}
-		row, ok := ds.Rows[code]
-		return row.Prices.Series, ok && row.Prices.Series.Validate() == nil
-	}
+	handlers.Source = cfg.Source
 
-	return &Server{
+	srv := &Server{
 		cfg: cfg, log: log,
 		pool: pool, redis: redis, ts: ts,
 		src: src, symbols: symbols, gate: gate, now: time.Now, leader: leader, producer: producer, deadman: deadman, sweeper: sweeper, reference: refScheduler, aggregator: aggregator,
 		httpServer: &http.Server{Addr: cfg.Addr, Handler: router},
-	}, nil
+	}
+	// Wired after construction: the indicator reads the server's own verdict.
+	handlers.Feed = srv.feedState
+	handlers.Session = srv.session
+	return srv, nil
 }
 
 // maxTickAge is how long the leader may go without ingesting a tick before
@@ -222,6 +215,33 @@ func (s *Server) healthy(ctx context.Context) bool {
 		last = s.startedAt
 	}
 	return ingest.TickFresh(ctx, s.now(), last, maxTickAge, s.gate)
+}
+
+// feedState is what GET /market/state reports: the same verdict as healthy, but
+// with the three outcomes kept apart for the page. Redis unreachable is down; a
+// standby replica is not the one ingesting, so it vouches for nothing and reads
+// live, as healthy does.
+func (s *Server) feedState(ctx context.Context) string {
+	if err := s.redis.Ping(ctx); err != nil {
+		return "down"
+	}
+	if !s.leader.IsLeader() {
+		return ingest.FeedLive
+	}
+	last := s.producer.LastTick()
+	if last.IsZero() {
+		last = s.startedAt
+	}
+	return ingest.FeedState(ctx, s.now(), last, maxTickAge, s.gate)
+}
+
+// session is what GET /market/state reports about the regular session. The
+// simulator has no gate: its ticks never stop, so it is always open.
+func (s *Server) session(ctx context.Context) (closed bool, opensAt time.Time) {
+	if s.gate == nil {
+		return false, time.Time{}
+	}
+	return s.gate.Session(ctx, s.now())
 }
 
 // Run starts the pipeline and the HTTP server, blocking until ctx is

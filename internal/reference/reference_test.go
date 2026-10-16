@@ -172,7 +172,7 @@ func TestCountryTable(t *testing.T) {
 	for _, s := range source.SweepUniverse {
 		universe[s.Symbol] = true
 	}
-	regions := map[string]int{"americas": 1, "europe": 2, "asia-pacific": 3, "middle-east": 4, "africa": 5}
+	regions := map[string]bool{"americas": true, "europe": true, "asia-pacific": true, "middle-east": true, "africa": true}
 	slugs, codes := map[string]bool{}, map[string]bool{}
 	var sensors, atlasSensors int
 	thin := map[string]bool{}
@@ -184,8 +184,8 @@ func TestCountryTable(t *testing.T) {
 		if c.EuroArea != (c.Currency == nil && c.Atlas) {
 			t.Errorf("%s: euroArea=%v but currency=%v; euro-area rows carry a null currency", c.Slug, c.EuroArea, c.Currency)
 		}
-		if order, ok := regions[c.Region]; !ok || c.RegionOrder != order {
-			t.Errorf("%s: region %q order %d", c.Slug, c.Region, c.RegionOrder)
+		if !regions[c.Region] {
+			t.Errorf("%s: unknown region %q", c.Slug, c.Region)
 		}
 		if c.HasCityPage {
 			t.Errorf("%s: hasCityPage is true, but no city page has shipped (bearing.md #101)", c.Slug)
@@ -244,25 +244,6 @@ func TestEmbeddedValuesCarrySourceAndAsOf(t *testing.T) {
 		t.Errorf("countries.json: source=%q asOf=%q", c.Source, c.AsOf)
 	}
 
-	var b struct {
-		Rows []struct {
-			City   string  `json:"city"`
-			Value  float64 `json:"value"`
-			Source string  `json:"source"`
-			AsOf   string  `json:"asOf"`
-		} `json:"rows"`
-	}
-	if _, err := New(nil, Embedded(), nil).Get(context.Background(), "survey_baselines", &b); err != nil {
-		t.Fatal(err)
-	}
-	if len(b.Rows) != 5 {
-		t.Errorf("survey_baselines.json has %d rows, want 5", len(b.Rows))
-	}
-	for _, r := range b.Rows {
-		if r.Value <= 0 || r.Source == "" || r.AsOf == "" {
-			t.Errorf("%s: value=%v source=%q asOf=%q", r.City, r.Value, r.Source, r.AsOf)
-		}
-	}
 }
 
 func TestEmbeddedHasOnlyKnownFiles(t *testing.T) {
