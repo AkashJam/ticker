@@ -27,6 +27,7 @@ import (
 	"github.com/AkashJam/ticker/internal/source"
 	"github.com/AkashJam/ticker/internal/store"
 	"github.com/AkashJam/ticker/internal/sweep"
+	"github.com/AkashJam/ticker/internal/trigger"
 	"github.com/AkashJam/ticker/internal/worldbank"
 	"github.com/AkashJam/ticker/migrations"
 	"github.com/AkashJam/ticker/server"
@@ -105,6 +106,12 @@ func main() {
 					}
 					return runSweep(ctx, configFromCmd(cmd), mode, cmd.Bool("dry-run"))
 				},
+			},
+			{
+				Name:   "sigma",
+				Usage:  "print each sensor's residual return, sigma and z on the newest daily close, read-only, then exit",
+				Flags:  sharedFlags,
+				Action: func(ctx context.Context, cmd *cli.Command) error { return runSigma(ctx, configFromCmd(cmd)) },
 			},
 			{
 				Name:  "fred",
@@ -208,6 +215,50 @@ func runSweep(ctx context.Context, cfg flags.Config, mode sweep.Mode, dryRun boo
 	fmt.Println(sweep.Explain(res, dryRun))
 	if res.State == sweep.StateFailed {
 		return fmt.Errorf("sweep: %d symbol(s) not written", len(res.Failed))
+	}
+	return nil
+}
+
+// runSigma prints the figures Phase 15's threshold is made of, for every
+// sensor, on the newest daily close in the database. It reads candles and
+// writes nothing, so it is the way to check a z against a spreadsheet before
+// anything fires (phase15.md step 2).
+func runSigma(ctx context.Context, cfg flags.Config) error {
+	if cfg.TimescaleDSN == "" {
+		return fmt.Errorf("sigma: TIMESCALE_DSN (or --db-dsn) is required")
+	}
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	pool, err := store.NewPool(ctx, cfg.TimescaleDSN)
+	if err != nil {
+		return fmt.Errorf("sigma: %w", err)
+	}
+	defer pool.Close()
+
+	var sensors []string
+	for _, s := range source.StreamUniverse() {
+		sensors = append(sensors, s.Symbol)
+	}
+	all, err := trigger.Load(ctx, store.NewTimescale(pool), source.SweepSymbolCodes())
+	if err != nil {
+		return err
+	}
+	results, errs := trigger.EvaluateLatest(all, sensors)
+	if len(results) > 0 {
+		fmt.Printf("session %s, residual = symbol - benchmark, sigma over the %d sessions before it\n", results[0].Date.Format(time.DateOnly), trigger.Window)
+		fmt.Printf("%-6s %-6s %9s %9s %9s %8s %8s  %s\n", "symbol", "bench", "return%", "bench%", "resid%", "sigma%", "z", "window from")
+	}
+	for _, r := range results {
+		bench, bret := "-", "-"
+		if r.Point.Benchmark != nil {
+			bench, bret = r.Benchmark, fmt.Sprintf("%+.3f", *r.Point.Benchmark*100)
+		}
+		fmt.Printf("%-6s %-6s %+9.3f %9s %+9.3f %8.3f %+8.2f  %s\n", r.Symbol, bench, r.Return*100, bret, r.Residual*100, r.Sigma*100, r.Z, r.WindowStart.Format(time.DateOnly))
+	}
+	for _, sym := range sensors {
+		if err, ok := errs[sym]; ok {
+			fmt.Printf("%-6s not evaluated: %v\n", sym, err)
+		}
 	}
 	return nil
 }
