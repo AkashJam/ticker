@@ -29,6 +29,12 @@ type Scheduler struct {
 	Now    func() time.Time
 	Sleep  func(ctx context.Context, d time.Duration) error
 	Log    *slog.Logger
+	// OnSession, when set, is called with the session date after a run has
+	// written (or tried to write) that session's bars, and after a start-up
+	// catch-up that finds them already there. It runs on the leader only, once
+	// per run, and a holiday or an unfinished session never reaches it. The
+	// threshold job hangs here (phase15.md step 3).
+	OnSession func(ctx context.Context, session time.Time)
 }
 
 func NewScheduler(r *Runner, leader LeaderChecker, ping Pinger, log *slog.Logger) *Scheduler {
@@ -82,6 +88,16 @@ func (s *Scheduler) catchUp(ctx context.Context) {
 	if res.State == StateWritten || res.State == StateFailed {
 		s.report(ctx, res)
 	}
+	// Up-to-date counts too: a restart is how a run the trigger missed is repaired.
+	if res.State == StateWritten || res.State == StateFailed || res.State == StateUpToDate {
+		s.sessionDone(ctx, res.Session)
+	}
+}
+
+func (s *Scheduler) sessionDone(ctx context.Context, session time.Time) {
+	if s.OnSession != nil && ctx.Err() == nil {
+		s.OnSession(ctx, session)
+	}
 }
 
 func (s *Scheduler) fire(ctx context.Context) {
@@ -99,6 +115,9 @@ func (s *Scheduler) fire(ctx context.Context) {
 	}
 	s.Log.Info("sweep: run", "state", res.State, "session", res.Session.Format(time.DateOnly), "written", res.Written, "failed", res.Failed)
 	s.report(ctx, res)
+	if res.State == StateWritten || res.State == StateFailed {
+		s.sessionDone(ctx, res.Session)
+	}
 }
 
 // report maps an outcome to the check. A holiday is a correct skip and counts

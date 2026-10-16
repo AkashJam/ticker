@@ -24,6 +24,7 @@ import (
 	"github.com/AkashJam/ticker/internal/sse"
 	"github.com/AkashJam/ticker/internal/store"
 	"github.com/AkashJam/ticker/internal/sweep"
+	"github.com/AkashJam/ticker/internal/trigger"
 	"github.com/AkashJam/ticker/internal/worldbank"
 )
 
@@ -145,6 +146,24 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 		}
 		runner := sweep.NewRunner(sweep.NewFinnhubClient(cfg.FinnhubAPIKey), ts, source.SweepSymbolCodes(), loc, log)
 		sweeper = sweep.NewScheduler(runner, leader, sweep.NewPinger(cfg.HealthchecksSweepURL, log), log)
+		// The threshold job judges each session once its bars are written
+		// (phase15.md step 3). Its failures are logged and counted, never the
+		// sweep's: the sweep succeeded, and a restart re-judges the newest session.
+		judge := &trigger.Runner{
+			Candles: ts, Events: ts, Loc: loc, Threshold: cfg.TriggerThreshold, Log: log,
+			Thin: func(ctx context.Context) (map[string]bool, error) {
+				sensors, err := reference.New(redis, reference.Embedded(), log).Sensors(ctx)
+				if err != nil {
+					return nil, err
+				}
+				return ThinSensors(sensors), nil
+			},
+		}
+		sweeper.OnSession = func(ctx context.Context, session time.Time) {
+			if _, err := judge.Run(ctx, session); err != nil && ctx.Err() == nil {
+				log.Error("trigger: run failed", "session", session.Format(time.DateOnly), "error", err)
+			}
+		}
 		// An empty URL makes every ping a silent no-op, so in production the
 		// sweep would run unwatched (phase8.md, gate).
 		if cfg.HealthchecksSweepURL == "" && cfg.Env == "prod" {
@@ -368,4 +387,16 @@ func aggWindowLabel(d time.Duration) string {
 	default:
 		return fmt.Sprintf("%ds", int(d/time.Second))
 	}
+}
+
+// ThinSensors is the sensors the reference table tags as thin listings, the
+// input to the thin_listing caveat.
+func ThinSensors(sensors []reference.Sensor) map[string]bool {
+	thin := map[string]bool{}
+	for _, s := range sensors {
+		if s.Liquidity != nil && *s.Liquidity == "thin" {
+			thin[s.Symbol] = true
+		}
+	}
+	return thin
 }

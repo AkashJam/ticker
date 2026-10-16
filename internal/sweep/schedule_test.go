@@ -122,3 +122,103 @@ func TestCatchUp_RunsOnlyWhenLeaderAndABarIsMissing(t *testing.T) {
 		t.Errorf("a non-leader's catch-up made %d calls", h2.q.total())
 	}
 }
+
+// recorder collects the sessions the threshold job is asked to judge.
+type recorder struct{ sessions []time.Time }
+
+func (r *recorder) hook(_ context.Context, s time.Time) { r.sessions = append(r.sessions, s) }
+
+func TestFire_JudgesTheSessionAfterAFullOrPartialSweep(t *testing.T) {
+	friday := time.Date(2026, 10, 9, 0, 0, 0, 0, time.UTC)
+
+	h := newHarness([]string{"RY", "BAP"}, quoteAt(fridayClose), fridayEvening)
+	s, _ := newScheduler(h, true)
+	var rec recorder
+	s.OnSession = rec.hook
+	s.fire(context.Background())
+	if len(rec.sessions) != 1 || !rec.sessions[0].Equal(friday) {
+		t.Errorf("after a full sweep: %v", rec.sessions)
+	}
+
+	// One symbol failed: the others still get judged.
+	h = newHarness([]string{"RY", "KB", "BAP"}, quoteAt(fridayClose), fridayEvening)
+	h.q.errs["KB"] = []error{&StatusError{Code: 403}}
+	s, _ = newScheduler(h, true)
+	rec = recorder{}
+	s.OnSession = rec.hook
+	s.fire(context.Background())
+	if len(rec.sessions) != 1 || !rec.sessions[0].Equal(friday) {
+		t.Errorf("after a partial sweep: %v", rec.sessions)
+	}
+}
+
+func TestFire_DoesNotJudgeAHolidayOrANonLeader(t *testing.T) {
+	holiday := newHarness([]string{"RY", "BAP"}, quoteAt(time.Date(2026, 10, 8, 20, 0, 0, 0, time.UTC)), fridayEvening)
+	s, _ := newScheduler(holiday, true)
+	var rec recorder
+	s.OnSession = rec.hook
+	s.fire(context.Background())
+	if len(rec.sessions) != 0 {
+		t.Errorf("a holiday was judged: %v", rec.sessions)
+	}
+
+	h := newHarness([]string{"RY", "BAP"}, quoteAt(fridayClose), fridayEvening)
+	s, _ = newScheduler(h, false)
+	s.OnSession = rec.hook
+	s.fire(context.Background())
+	if len(rec.sessions) != 0 {
+		t.Errorf("a non-leader judged: %v", rec.sessions)
+	}
+}
+
+func TestCatchUp_JudgesWhetherItSweptOrFoundTheBarsThere(t *testing.T) {
+	saturday := time.Date(2026, 10, 10, 13, 0, 0, 0, time.UTC)
+	friday := time.Date(2026, 10, 9, 0, 0, 0, 0, time.UTC)
+	h := newHarness([]string{"RY", "BAP"}, quoteAt(fridayClose), saturday)
+
+	s, _ := newScheduler(h, true)
+	var rec recorder
+	s.OnSession = rec.hook
+	s.catchUp(context.Background()) // sweeps
+	s.catchUp(context.Background()) // bars already there: a restart repairs a missed judgement
+	if len(rec.sessions) != 2 || !rec.sessions[0].Equal(friday) || !rec.sessions[1].Equal(friday) {
+		t.Errorf("sessions = %v, want Friday twice", rec.sessions)
+	}
+
+	// A non-leader never judges.
+	h2 := newHarness([]string{"RY", "BAP"}, quoteAt(fridayClose), saturday)
+	s, _ = newScheduler(h2, false)
+	rec = recorder{}
+	s.OnSession = rec.hook
+	s.catchUp(context.Background())
+	if len(rec.sessions) != 0 {
+		t.Errorf("a non-leader's catch-up judged: %v", rec.sessions)
+	}
+}
+
+func TestCatchUp_DoesNotJudgeAnUnfinishedSession(t *testing.T) {
+	midSession := time.Date(2026, 10, 9, 15, 0, 0, 0, time.UTC)
+	h := newHarness([]string{"RY", "BAP"}, quoteAt(time.Date(2026, 10, 9, 14, 55, 0, 0, time.UTC)), midSession)
+	s, _ := newScheduler(h, true)
+	var rec recorder
+	s.OnSession = rec.hook
+	s.catchUp(context.Background())
+	if len(rec.sessions) != 0 {
+		t.Errorf("an open session was judged: %v", rec.sessions)
+	}
+}
+
+func TestSessionDone_NilHookAndCanceledContext(t *testing.T) {
+	h := newHarness([]string{"RY"}, quoteAt(fridayClose), fridayEvening)
+	s, _ := newScheduler(h, true)
+	s.sessionDone(context.Background(), time.Time{}) // no hook: no panic
+
+	called := false
+	s.OnSession = func(context.Context, time.Time) { called = true }
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	s.sessionDone(ctx, time.Time{})
+	if called {
+		t.Error("the hook ran after shutdown began")
+	}
+}

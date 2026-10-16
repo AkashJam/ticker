@@ -38,6 +38,8 @@ var (
 	// ErrNoReturn means the tested day has no valid return: the symbol or its
 	// benchmark lacks a bar on that day or on the session before.
 	ErrNoReturn = errors.New("trigger: no valid return on the tested day")
+	// ErrNoSession means no symbol has a bar for the requested session.
+	ErrNoSession = errors.New("trigger: no symbol has a bar for the session")
 	// ErrZeroSigma means the window was flat, so z is undefined.
 	ErrZeroSigma = errors.New("trigger: sigma is zero")
 )
@@ -203,16 +205,54 @@ func Load(ctx context.Context, r CandleReader, symbols []string) (map[string]Clo
 	return out, nil
 }
 
-// EvaluateLatest evaluates every sensor on the newest session in the data,
-// using the mapped benchmark. Sensors that cannot be evaluated are returned
-// with their error in errs, keyed by symbol.
+// RangeReader reads daily candles in [from, to), oldest first.
+type RangeReader interface {
+	Candles(ctx context.Context, symbol, interval string, from, to time.Time) ([]source.Candle, error)
+}
+
+// loadSpan is how far before a session LoadAsOf reads: the window, the two
+// closes around the tested day, and room for weekends, holidays and gaps.
+const loadSpan = 150 * 24 * time.Hour
+
+// LoadAsOf reads the daily closes of every symbol up to and including session,
+// so a past session is judged by the data that preceded it and not by
+// whatever has been written since.
+func LoadAsOf(ctx context.Context, r RangeReader, symbols []string, session time.Time) (map[string]Closes, error) {
+	to := day(session).Add(24 * time.Hour)
+	out := make(map[string]Closes, len(symbols))
+	for _, s := range symbols {
+		bars, err := r.Candles(ctx, s, DailyInterval, to.Add(-loadSpan), to)
+		if err != nil {
+			return nil, fmt.Errorf("trigger: load %s: %w", s, err)
+		}
+		out[s] = NewCloses(bars)
+	}
+	return out, nil
+}
+
+// EvaluateLatest evaluates every sensor on the newest session in the data.
 func EvaluateLatest(all map[string]Closes, sensors []string) (results []Result, errs map[string]error) {
 	sessions := Sessions(all)
-	errs = map[string]error{}
 	if len(sessions) == 0 {
+		return nil, map[string]error{}
+	}
+	return EvaluateOn(all, sensors, sessions[len(sessions)-1])
+}
+
+// EvaluateOn evaluates every sensor on the given session, using the mapped
+// benchmark. Sensors that cannot be evaluated are returned with their error in
+// errs, keyed by symbol. A session no symbol has a bar for evaluates nothing
+// and reports ErrNoSession for every sensor.
+func EvaluateOn(all map[string]Closes, sensors []string, session time.Time) (results []Result, errs map[string]error) {
+	errs = map[string]error{}
+	sessions := Sessions(all)
+	at, found := slices.BinarySearchFunc(sessions, day(session), func(a, b time.Time) int { return a.Compare(b) })
+	if !found {
+		for _, s := range sensors {
+			errs[s] = ErrNoSession
+		}
 		return nil, errs
 	}
-	at := len(sessions) - 1
 	for _, s := range sensors {
 		b := Benchmarks[s]
 		var bc Closes

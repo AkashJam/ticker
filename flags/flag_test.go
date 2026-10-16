@@ -1,6 +1,7 @@
 package flags
 
 import (
+	"math"
 	"testing"
 	"time"
 )
@@ -12,6 +13,8 @@ func validConfig() Config {
 		AggWindow:    time.Minute,
 		TimescaleDSN: "postgres://ticker:ticker@localhost:5432/ticker",
 		RedisAddr:    "localhost:6379",
+
+		TriggerThreshold: 2.5,
 	}
 }
 
@@ -51,6 +54,11 @@ func TestValidate(t *testing.T) {
 		{"non-positive window", func(c *Config) { c.AggWindow = 0 }, true},
 		{"empty DSN", func(c *Config) { c.TimescaleDSN = "" }, true},
 		{"empty Redis address", func(c *Config) { c.RedisAddr = "" }, true},
+		{"zero threshold", func(c *Config) { c.TriggerThreshold = 0 }, true},
+		{"negative threshold", func(c *Config) { c.TriggerThreshold = -2.5 }, true},
+		{"absurd threshold", func(c *Config) { c.TriggerThreshold = 25 }, true},
+		{"NaN threshold", func(c *Config) { c.TriggerThreshold = math.NaN() }, true},
+		{"the bound itself is allowed", func(c *Config) { c.TriggerThreshold = MaxTriggerThreshold }, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -60,5 +68,26 @@ func TestValidate(t *testing.T) {
 				t.Fatalf("Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestValidateTrigger(t *testing.T) {
+	c := validConfig()
+	if err := c.ValidateTrigger(); err != nil {
+		t.Fatalf("a valid config: %v", err)
+	}
+	c.TimescaleDSN = ""
+	if c.ValidateTrigger() == nil {
+		t.Error("no DSN must fail")
+	}
+	c = validConfig()
+	c.TriggerThreshold = 0
+	if c.ValidateTrigger() == nil {
+		t.Error("a zero threshold must fail")
+	}
+	c = validConfig()
+	c.RedisAddr, c.Addr = "", ""
+	if err := c.ValidateTrigger(); err != nil {
+		t.Errorf("Redis and the listen address are not needed to judge a session: %v", err)
 	}
 }

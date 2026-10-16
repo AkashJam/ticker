@@ -40,6 +40,10 @@ type Config struct {
 	// HealthchecksReferenceURL is the Atlas reference fetchers' healthchecks.io
 	// check (FRED today; ECB and World Bank join it). Empty disables the ping.
 	HealthchecksReferenceURL string
+	// TriggerThreshold is the |z| a sensor's residual move must pass on the
+	// close to be recorded as an event (portfolio.md §15 Phase 15). It is stored
+	// on every event, so changing it never rewrites what an old event says fired it.
+	TriggerThreshold float64
 	// Consumer names this instance in the ticks:raw consumer group. Empty
 	// falls back to aggregate.New's hostname-pid default, correct for
 	// today's single-aggregator deployment; ADR-003's revisit trigger (a
@@ -55,6 +59,27 @@ func (c Config) ValidateSweep() error {
 	}
 	if c.FinnhubAPIKey == "" {
 		return fmt.Errorf("flags: FINNHUB_API_KEY (or --finnhub-api-key) is required to sweep")
+	}
+	return nil
+}
+
+// MaxTriggerThreshold bounds --trigger-threshold. A threshold above it would
+// fire only on a move the sixty-session history cannot even produce (a z over
+// about 7.8 is arithmetically out of reach for 61 points), so it is a typo.
+const MaxTriggerThreshold = 10
+
+// ValidateTrigger is what the `trigger` subcommand needs: the database and a
+// sane threshold.
+func (c Config) ValidateTrigger() error {
+	if c.TimescaleDSN == "" {
+		return fmt.Errorf("flags: TIMESCALE_DSN (or --db-dsn) is required")
+	}
+	return c.validateThreshold()
+}
+
+func (c Config) validateThreshold() error {
+	if !(c.TriggerThreshold > 0 && c.TriggerThreshold <= MaxTriggerThreshold) {
+		return fmt.Errorf("flags: --trigger-threshold must be in (0, %d], got %v", MaxTriggerThreshold, c.TriggerThreshold)
 	}
 	return nil
 }
@@ -82,5 +107,5 @@ func (c Config) Validate() error {
 	if c.RedisAddr == "" {
 		return fmt.Errorf("flags: REDIS_ADDR (or --redis-addr) is required")
 	}
-	return nil
+	return c.validateThreshold()
 }

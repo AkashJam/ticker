@@ -12,8 +12,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"os"
 	"os/signal"
+	"slices"
 	"syscall"
 	"time"
 	_ "time/tzdata" // the runtime image has no zoneinfo; the sweep schedules in America/New_York
@@ -55,9 +57,10 @@ func main() {
 	finnhubKeyFlag := &cli.StringFlag{Name: "finnhub-api-key", Sources: cli.EnvVars("FINNHUB_API_KEY")}
 	sweepHealthchecksFlag := &cli.StringFlag{Name: "healthchecks-sweep-url", Sources: cli.EnvVars("HEALTHCHECKS_SWEEP_URL")}
 	referenceHealthchecksFlag := &cli.StringFlag{Name: "healthchecks-reference-url", Sources: cli.EnvVars("HEALTHCHECKS_REFERENCE_URL")}
+	triggerThresholdFlag := &cli.FloatFlag{Name: "trigger-threshold", Value: 2.5, Sources: cli.EnvVars("TRIGGER_THRESHOLD"), Usage: "|z| a sensor's residual move must pass on the close to be recorded as an event"}
 	consumerFlag := &cli.StringFlag{Name: "consumer", Sources: cli.EnvVars("CONSUMER"), Usage: "ticks:raw consumer group member name; defaults to hostname-pid"}
 
-	sharedFlags := []cli.Flag{sourceFlag, envFlag, addrFlag, aggWindowFlag, logLevelFlag, dbDSNFlag, redisAddrFlag, healthchecksFlag, finnhubKeyFlag, sweepHealthchecksFlag, referenceHealthchecksFlag, consumerFlag}
+	sharedFlags := []cli.Flag{sourceFlag, envFlag, addrFlag, aggWindowFlag, logLevelFlag, dbDSNFlag, redisAddrFlag, healthchecksFlag, finnhubKeyFlag, sweepHealthchecksFlag, referenceHealthchecksFlag, triggerThresholdFlag, consumerFlag}
 
 	configFromCmd := func(cmd *cli.Command) flags.Config {
 		return flags.Config{
@@ -67,6 +70,7 @@ func main() {
 			HealthchecksURL: cmd.String("healthchecks-url"), Consumer: cmd.String("consumer"),
 			FinnhubAPIKey: cmd.String("finnhub-api-key"), HealthchecksSweepURL: cmd.String("healthchecks-sweep-url"),
 			HealthchecksReferenceURL: cmd.String("healthchecks-reference-url"),
+			TriggerThreshold:         cmd.Float("trigger-threshold"),
 		}
 	}
 
@@ -105,6 +109,17 @@ func main() {
 						return err
 					}
 					return runSweep(ctx, configFromCmd(cmd), mode, cmd.Bool("dry-run"))
+				},
+			},
+			{
+				Name:  "trigger",
+				Usage: "judge a session's closes against the threshold and record every trip, then exit; repairs a missed run",
+				Flags: append(append([]cli.Flag{}, sharedFlags...),
+					&cli.StringFlag{Name: "session", Usage: "the New York session date, YYYY-MM-DD; default the newest session in the database"},
+					&cli.BoolFlag{Name: "dry-run", Usage: "decide and print, but write nothing"},
+				),
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					return runTrigger(ctx, configFromCmd(cmd), cmd.String("session"), cmd.Bool("dry-run"))
 				},
 			},
 			{
@@ -215,6 +230,95 @@ func runSweep(ctx context.Context, cfg flags.Config, mode sweep.Mode, dryRun boo
 	fmt.Println(sweep.Explain(res, dryRun))
 	if res.State == sweep.StateFailed {
 		return fmt.Errorf("sweep: %d symbol(s) not written", len(res.Failed))
+	}
+	return nil
+}
+
+// runTrigger judges one session, as the scheduled run does after the sweep. It
+// is idempotent, so it is safe to repeat; with --dry-run it records nothing and
+// says which trips it would write. The server does the same thing itself after
+// every sweep and at start-up, so this is for repair and for looking.
+func runTrigger(ctx context.Context, cfg flags.Config, sessionArg string, dryRun bool) error {
+	if err := cfg.ValidateTrigger(); err != nil {
+		return err
+	}
+	log := newLogger(cfg.LogLevel)
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	loc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		return fmt.Errorf("trigger: load America/New_York: %w", err)
+	}
+	pool, err := store.NewPool(ctx, cfg.TimescaleDSN)
+	if err != nil {
+		return fmt.Errorf("trigger: %w", err)
+	}
+	defer pool.Close()
+	ts := store.NewTimescale(pool)
+
+	var session time.Time
+	if sessionArg != "" {
+		if session, err = time.Parse(time.DateOnly, sessionArg); err != nil {
+			return fmt.Errorf("trigger: --session %q: %w", sessionArg, err)
+		}
+	} else {
+		latest, ok, err := ts.LatestCandle(ctx, source.SweepUniverse[0].Symbol, trigger.DailyInterval)
+		if err != nil {
+			return fmt.Errorf("trigger: %w", err)
+		}
+		if !ok {
+			return fmt.Errorf("trigger: no daily bars yet")
+		}
+		session = latest.Time
+	}
+
+	// The reference table needs Redis only for a refreshed copy; without an
+	// address the embedded one answers.
+	var cache reference.Cache
+	if cfg.RedisAddr != "" {
+		cache = store.NewRedis(cfg.RedisAddr)
+	}
+	refStore := reference.New(cache, reference.Embedded(), log)
+	var events trigger.EventStore = ts
+	if dryRun {
+		events = trigger.ReadOnly(ts)
+	}
+	judge := &trigger.Runner{
+		Candles: ts, Events: events, Loc: loc, Threshold: cfg.TriggerThreshold, Log: log,
+		Thin: func(ctx context.Context) (map[string]bool, error) {
+			sensors, err := refStore.Sensors(ctx)
+			if err != nil {
+				return nil, err
+			}
+			return server.ThinSensors(sensors), nil
+		},
+	}
+	sum, err := judge.Run(ctx, session)
+	if err != nil {
+		return err
+	}
+	verb := "recorded"
+	if dryRun {
+		verb = "would record"
+	}
+	fmt.Printf("session %s: %d evaluated, %d skipped, %d past %.2f sigma\n", sum.Session.Format(time.DateOnly), sum.Evaluated, len(sum.Skipped), len(sum.Trips), cfg.TriggerThreshold)
+	for _, t := range sum.Trips {
+		bench := "no benchmark"
+		if t.Benchmark != nil {
+			bench = "vs " + *t.Benchmark
+		}
+		fmt.Printf("  %-5s z %+6.2f  residual %+7.3f%%  sigma %6.3f%%  %s  caveats %v\n", t.Symbol, t.Z, t.Residual*100, t.Sigma*100, bench, t.Caveats)
+	}
+	fmt.Printf("%s %d, already recorded %d", verb, sum.Inserted, sum.Existing)
+	if dryRun {
+		fmt.Printf(" (nothing written)")
+	}
+	fmt.Println()
+	for _, sym := range slices.Sorted(maps.Keys(sum.Skipped)) {
+		fmt.Printf("  %-5s not evaluated: %s\n", sym, sum.Skipped[sym])
+	}
+	if len(sum.Mismatched) > 0 {
+		fmt.Printf("WARNING: recorded events differ from a fresh evaluation (kept): %v\n", sum.Mismatched)
 	}
 	return nil
 }
