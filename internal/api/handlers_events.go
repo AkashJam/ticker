@@ -23,6 +23,8 @@ const eventsLimit = 100
 // EventReader is what the ledger reads from the events table.
 type EventReader interface {
 	Events(ctx context.Context, limit int) ([]trigger.Trip, error)
+	// EventsFor is one symbol's whole record, newest session first.
+	EventsFor(ctx context.Context, symbol string) ([]trigger.Trip, error)
 }
 
 type eventCountry struct {
@@ -56,7 +58,9 @@ type eventThin struct {
 	Label string  `json:"label"`
 }
 
-type eventResponse struct {
+// eventBody is an event without its band: the ledger adds the band, the
+// sensor's record (which draws the longer series instead) does not.
+type eventBody struct {
 	// ID is the fragment the entry is addressed by: /market#japan-2026-10-15.
 	ID          string        `json:"id"`
 	Symbol      string        `json:"symbol"`
@@ -68,13 +72,17 @@ type eventResponse struct {
 	Theme       *string       `json:"theme"`       // a global name's, else nil
 	Price       *eventPrice   `json:"price"`
 	Trigger     eventTrigger  `json:"trigger"`
-	Band        *trigger.Band `json:"band"`
 	// Split and Coverage are stored JSON, passed through whole. Split is null
 	// until the currency split has been made; Coverage until the first fetch.
 	Split    json.RawMessage `json:"split"`
 	Coverage json.RawMessage `json:"coverage"`
 	Caveats  []string        `json:"caveats"`
 	Thin     *eventThin      `json:"thin"`
+}
+
+type eventResponse struct {
+	eventBody
+	Band *trigger.Band `json:"band"`
 }
 
 type eventsResponse struct {
@@ -110,23 +118,9 @@ func (h *Handlers) buildEvents(ctx context.Context) ([]byte, error) {
 		trips, res.Truncated = trips[:eventsLimit], true
 	}
 
-	sensors, err := h.Ref.Sensors(ctx)
+	lk, err := h.eventLookups(ctx)
 	if err != nil {
 		return nil, err
-	}
-	countries, err := h.Ref.Countries(ctx)
-	if err != nil {
-		return nil, err
-	}
-	bySensor := map[string]reference.Sensor{}
-	for _, s := range sensors {
-		bySensor[s.Symbol] = s
-	}
-	byCountry := map[string]reference.Country{}
-	for _, cn := range countries {
-		if cn.Sensor != nil {
-			byCountry[*cn.Sensor] = cn
-		}
 	}
 
 	var oldest time.Time
@@ -143,34 +137,7 @@ func (h *Handlers) buildEvents(ctx context.Context) ([]byte, error) {
 	}
 
 	for _, t := range trips {
-		ev := eventResponse{
-			Symbol: t.Symbol, SessionDate: t.SessionDate.Format(time.DateOnly), ClosedAt: t.ClosedAt.UTC(),
-			SessionsAgo: sessionsAfter(canary, t.SessionDate),
-			Trigger: eventTrigger{
-				SymbolReturn: t.SymbolReturn, Benchmark: t.Benchmark, BenchmarkReturn: t.BenchmarkReturn, BenchmarkReason: t.BenchmarkReason,
-				Residual: t.Residual, Sigma: t.Sigma, Z: t.Z, Threshold: t.Threshold, Window: t.WindowSessions,
-			},
-			Split: rawOrNull(t.Split), Coverage: rawOrNull(t.Coverage), Caveats: t.Caveats,
-		}
-		if ev.Caveats == nil {
-			ev.Caveats = []string{}
-		}
-		sn := bySensor[t.Symbol]
-		ev.Name = sn.Name
-		if ev.Name == "" {
-			ev.Name = t.Symbol
-		}
-		ev.ID = strings.ToLower(t.Symbol)
-		if cn, ok := byCountry[t.Symbol]; ok {
-			ev.Country = &eventCountry{Slug: cn.Slug, Name: cn.Country, Atlas: cn.Atlas}
-			ev.ID = cn.Slug
-		} else {
-			ev.Theme = sn.Theme
-		}
-		ev.ID += "-" + ev.SessionDate
-		if sn.Liquidity != nil && *sn.Liquidity == "thin" && sn.LiquidityUsdM != nil && sn.LiquidityAsOf != nil {
-			ev.Thin = &eventThin{UsdM: *sn.LiquidityUsdM, AsOf: *sn.LiquidityAsOf, Label: "thin listing"}
-		}
+		ev := eventResponse{eventBody: lk.body(t, canary)}
 		ev.Price, ev.Band = h.priceAndBand(ctx, t)
 		res.Events = append(res.Events, ev)
 	}
@@ -269,4 +236,66 @@ func (h *Handlers) tripped(ctx context.Context) bool {
 		return false
 	}
 	return sessions[len(sessions)-1].Equal(latest[0].SessionDate.UTC())
+}
+
+// eventLookups are the reference rows an event is dressed from.
+type eventLookups struct {
+	bySensor  map[string]reference.Sensor
+	byCountry map[string]reference.Country // keyed by the sensor's symbol
+}
+
+func (h *Handlers) eventLookups(ctx context.Context) (eventLookups, error) {
+	sensors, err := h.Ref.Sensors(ctx)
+	if err != nil {
+		return eventLookups{}, err
+	}
+	countries, err := h.Ref.Countries(ctx)
+	if err != nil {
+		return eventLookups{}, err
+	}
+	lk := eventLookups{bySensor: map[string]reference.Sensor{}, byCountry: map[string]reference.Country{}}
+	for _, s := range sensors {
+		lk.bySensor[s.Symbol] = s
+	}
+	for _, cn := range countries {
+		if cn.Sensor != nil {
+			lk.byCountry[*cn.Sensor] = cn
+		}
+	}
+	return lk, nil
+}
+
+// body dresses a trip as the API serves it, without its price or band: the
+// trigger's own figures, the stored split and coverage, the country or theme and
+// the thin-listing line. canary is the calendar "sessions ago" is counted on.
+func (lk eventLookups) body(t trigger.Trip, canary []time.Time) eventBody {
+	ev := eventBody{
+		Symbol: t.Symbol, SessionDate: t.SessionDate.Format(time.DateOnly), ClosedAt: t.ClosedAt.UTC(),
+		SessionsAgo: sessionsAfter(canary, t.SessionDate),
+		Trigger: eventTrigger{
+			SymbolReturn: t.SymbolReturn, Benchmark: t.Benchmark, BenchmarkReturn: t.BenchmarkReturn, BenchmarkReason: t.BenchmarkReason,
+			Residual: t.Residual, Sigma: t.Sigma, Z: t.Z, Threshold: t.Threshold, Window: t.WindowSessions,
+		},
+		Split: rawOrNull(t.Split), Coverage: rawOrNull(t.Coverage), Caveats: t.Caveats,
+	}
+	if ev.Caveats == nil {
+		ev.Caveats = []string{}
+	}
+	sn := lk.bySensor[t.Symbol]
+	ev.Name = sn.Name
+	if ev.Name == "" {
+		ev.Name = t.Symbol
+	}
+	ev.ID = strings.ToLower(t.Symbol)
+	if cn, ok := lk.byCountry[t.Symbol]; ok {
+		ev.Country = &eventCountry{Slug: cn.Slug, Name: cn.Country, Atlas: cn.Atlas}
+		ev.ID = cn.Slug
+	} else {
+		ev.Theme = sn.Theme
+	}
+	ev.ID += "-" + ev.SessionDate
+	if sn.Liquidity != nil && *sn.Liquidity == "thin" && sn.LiquidityUsdM != nil && sn.LiquidityAsOf != nil {
+		ev.Thin = &eventThin{UsdM: *sn.LiquidityUsdM, AsOf: *sn.LiquidityAsOf, Label: "thin listing"}
+	}
+	return ev
 }

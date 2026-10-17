@@ -202,6 +202,7 @@ it). See [`internal/api/router.go`](internal/api/router.go).
 | GET | `/market/state` | The feed's state for the page's Market indicator (`feed`: `live`, `closed` (silent, as expected), `stale` or `down`; the dead-man switch's own verdict, outcomes kept apart) and the regular session's (`session`: `open` or `closed`, with `opensAt`, the next open, when closed) |
 | GET | `/atlas/cities` | The `/atlas` comparison: 23 rows, eight measures, every value with source and as-of; answers from the embedded snapshots with Redis down |
 | GET | `/sensors` | The eighteen market sensors in their fixed display order; answers from the embedded snapshot with Redis down |
+| GET | `/market/sensors/:symbol` | One sensor's accumulated record: every event it has recorded (the ledger's shape, without the band), and its daily closes and its benchmark's from the first shared bar. `:symbol` is a sensor symbol in any case or its country's slug (`japan` and `MUFG` are one body); anything else, a `SIM:` symbol or a sector ETF included, is a 404 |
 | GET | `/stream` | SSE — `?symbols=SIM:NOVA,SIM:HELIX`, emits `quote` / `candle` / `heartbeat` |
 
 ## Project layout

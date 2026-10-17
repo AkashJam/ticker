@@ -53,6 +53,7 @@ type Handlers struct {
 	sensors atlasMemo
 	events  atlasMemo
 	tape    atlasMemo
+	records recordMemos
 }
 
 // SymbolStore is what the symbol handlers need from the symbols table, as an

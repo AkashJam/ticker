@@ -55,6 +55,19 @@ func (f fakeEventStore) Events(_ context.Context, limit int) ([]trigger.Trip, er
 	return f.trips, nil
 }
 
+func (f fakeEventStore) EventsFor(_ context.Context, symbol string) ([]trigger.Trip, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	var out []trigger.Trip
+	for _, t := range f.trips {
+		if t.Symbol == symbol {
+			out = append(out, t)
+		}
+	}
+	return out, nil
+}
+
 // bars builds n consecutive daily bars from day0 whose close moves by
 // step(i) from 100; the sensors alternate +-1% so sigma is positive.
 func bars(symbol string, n int, step func(i int) float64) []source.Candle {
@@ -92,6 +105,7 @@ func ledgerRouter(h *Handlers) *gin.Engine {
 	r := gin.New()
 	r.GET("/market/events", h.GetEvents)
 	r.GET("/market/tape", h.GetTape)
+	r.GET("/market/sensors/:symbol", h.GetSensorRecord)
 	r.GET("/market/state", h.GetMarketState)
 	return r
 }

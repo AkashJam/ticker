@@ -135,3 +135,21 @@ func (t *Timescale) Events(ctx context.Context, limit int) ([]trigger.Trip, erro
 	}
 	return out, rows.Err()
 }
+
+// EventsFor returns every event recorded for one symbol, newest session first.
+func (t *Timescale) EventsFor(ctx context.Context, symbol string) ([]trigger.Trip, error) {
+	rows, err := t.pool.Query(ctx, `SELECT `+eventColumns+` FROM events WHERE symbol = $1 ORDER BY session_date DESC`, symbol)
+	if err != nil {
+		return nil, fmt.Errorf("store: events for %s: %w", symbol, err)
+	}
+	defer rows.Close()
+	out := []trigger.Trip{}
+	for rows.Next() {
+		e, err := scanTrip(rows)
+		if err != nil {
+			return nil, fmt.Errorf("store: scan event: %w", err)
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}
