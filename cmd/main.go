@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/signal"
 	"slices"
+	"strings"
 	"syscall"
 	"time"
 	_ "time/tzdata" // the runtime image has no zoneinfo; the sweep schedules in America/New_York
@@ -23,6 +24,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/AkashJam/ticker/flags"
+	"github.com/AkashJam/ticker/internal/coverage"
 	"github.com/AkashJam/ticker/internal/ecb"
 	"github.com/AkashJam/ticker/internal/edgar"
 	"github.com/AkashJam/ticker/internal/fred"
@@ -303,8 +305,18 @@ func runTrigger(ctx context.Context, cfg flags.Config, sessionArg string, dryRun
 	if dryRun {
 		events = trigger.ReadOnly(ts)
 	}
+	// EDGAR needs a contact; without one the filings source is an error, frozen.
+	var filer coverage.FilingSource
+	if cfg.FetchContact != "" {
+		c, err := edgar.NewClient(cfg.FetchContact)
+		if err != nil {
+			return fmt.Errorf("trigger: %w", err)
+		}
+		filer = c
+	}
 	judge := &trigger.Runner{
-		Candles: ts, Events: events, Loc: loc, Threshold: cfg.TriggerThreshold, Log: log,
+		Coverage: coverage.NewProduction(refStore, filer, log),
+		Candles:  ts, Events: events, Loc: loc, Threshold: cfg.TriggerThreshold, Log: log,
 		Rates: &ecb.RateSource{Store: refStore, Feed: ecb.NewClient()}, SplitThreshold: cfg.SplitThreshold,
 		Thin: func(ctx context.Context) (map[string]bool, error) {
 			sensors, err := refStore.Sensors(ctx)
@@ -337,6 +349,9 @@ func runTrigger(ctx context.Context, cfg flags.Config, sessionArg string, dryRun
 					sp.CurrencyPart.Value*100, sp.CurrencyPart.Z, sp.StockPart.Value*100, sp.StockPart.Z)
 			}
 		}
+	}
+	for _, key := range slices.Sorted(maps.Keys(sum.Coverages)) {
+		fmt.Printf("  coverage %s\n%s", key, coverageSummary(sum.Coverages[key]))
 	}
 	fmt.Printf("%s %d, already recorded %d", verb, sum.Inserted, sum.Existing)
 	if dryRun {
@@ -488,7 +503,8 @@ func runNewsCheck(ctx context.Context, cfg flags.Config) error {
 			case <-time.After(time.Second):
 			}
 		}
-		items, err := client.Search(ctx, p.text, 48*time.Hour)
+		today := time.Now().UTC().Truncate(24 * time.Hour)
+		items, err := client.Search(ctx, p.text, today.AddDate(0, 0, -2), today.AddDate(0, 0, 1))
 		if err != nil {
 			failed++
 			fmt.Printf("%-8s %-5s %6s %8s  %s  (%v)\n", p.kind, p.symbol, "-", "-", p.text, err)
@@ -652,4 +668,41 @@ func runMigrate(cfg flags.Config) error {
 
 	fmt.Println("migrate: up to date")
 	return nil
+}
+
+// coverageSummary renders a stored coverage for the terminal: one line per
+// source, with the counts a reader checks first.
+func coverageSummary(b []byte) string {
+	cov, err := coverage.Decode(b)
+	if err != nil || cov == nil {
+		return fmt.Sprintf("    (unreadable: %v)\n", err)
+	}
+	var out strings.Builder
+	fmt.Fprintf(&out, "    stage %s, complete %v, routing %s, window %s to %s\n", cov.Stage, cov.Complete, cov.Routing, cov.Window.From, cov.Window.To)
+	for _, name := range slices.Sorted(maps.Keys(cov.Sources)) {
+		s := cov.Sources[name]
+		line := fmt.Sprintf("    %-12s %-5s attempts %d", name, s.Status, s.Attempts)
+		switch {
+		case s.Error != "":
+			line += "  error: " + s.Error
+		case s.Absent != nil:
+			line += "  absent: " + s.Absent.Reason
+		case len(s.Outlets) > 0:
+			var before, after int
+			for _, o := range s.Outlets {
+				for _, it := range o.Items {
+					if it.Side == "before" {
+						before++
+					} else {
+						after++
+					}
+				}
+			}
+			line += fmt.Sprintf("  %d outlets, %d headlines (%d before, %d after the close); query returned %d, %d excluded, %d not English", len(s.Outlets), before+after, before, after, s.Total, s.Excluded, s.NonEnglish)
+		default:
+			line += fmt.Sprintf("  %d items", len(s.Items))
+		}
+		out.WriteString(line + "\n")
+	}
+	return out.String()
 }

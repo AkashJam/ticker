@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+<title>Bank of Japan：RSS</title>
+<link>http://www.boj.or.jp/en/rss/whatsnew.xml?id=1002</link>
+<atom:link href="http://www.boj.or.jp/en/rss/whatsnew.xml?id=1002" rel="self" type="application/rss+xml" />
+<description></description>
+<item>
+<title>BOJ Current Account Balances by Sector (Sept.)</title>
+<description>…</description>
+<pubDate>Fri, 16 Oct 2026 17:00:00 +0900</pubDate>
+<link>http://www.boj.or.jp/en/statistics/boj/other/cabs/cabs.xlsx</link>
+<guid>http://www.boj.or.jp/en/statistics/boj/other/cabs/cabs.xlsx</guid>
+</item>
+<item>
+<title>Speech by Board Member KOEDA in Kumamoto (Economic Activity, Prices, and Monetary Policy in Japan)</title>
+<description>…</description>
+<pubDate>Thu, 15 Oct 2026 10:30:00 +0900</pubDate>
+<link>http://www.boj.or.jp/en/about/press/koen_2026/ko261015a.htm</link>
+<guid>http://www.boj.or.jp/en/about/press/koen_2026/ko261015a.htm</guid>
+</item>
+<item>
+<title>Summary of the &quot;Meeting on Market Operations&quot; (October 2026)</title>
+<description>…</description>
+<pubDate>Thu, 15 Oct 2026 10:00:00 +0900</pubDate>
+<link>http://www.boj.or.jp/en/paym/market/mkt261015a.pdf</link>
+<guid>http://www.boj.or.jp/en/paym/market/mkt261015a.pdf</guid>
+</item>
+</channel>
+</rss>

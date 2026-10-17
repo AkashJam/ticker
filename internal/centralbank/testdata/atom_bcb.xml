@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title type="text">RSS - Feeds do BC</title>
+  <subtitle type="text"></subtitle>
+  <id>sitefeeds</id>
+  <updated>2026-10-17T09:27:52-03:00</updated>
+  <category term="RSS - Feeds do BC" />
+  <category term="Itens Fora do Menu" />
+  <link rel="alternate" href="https://www.bcb.gov.br/" />
+  <entry>
+    <id>sitefeeds_21280</id>
+    <title type="text">BC passa a divulgar mensalmente indicadores de reajustes salariais negociados</title>
+    <updated>2026-10-06T07:34:47-03:00</updated>
+    <link rel="alternate" href="https://www.bcb.gov.br/detalhenoticia/21280/noticia" />
+    <content type="html">…</content>
+  </entry>
+<entry>
+    <id>sitefeeds_21279</id>
+    <title type="text">BC moderniza apresentação de dados sobre atuação no mercado de câmbio</title>
+    <updated>2026-10-05T08:30:53-03:00</updated>
+    <link rel="alternate" href="https://www.bcb.gov.br/detalhenoticia/21279/noticia" />
+    <content type="html">…</content>
+  </entry>
+<entry>
+    <id>sitefeeds_21278</id>
+    <title type="text">Pix amplia funcionalidades e reforça segurança com nova rodada de aperfeiçoamentos regulatórios</title>
+    <updated>2026-10-05T08:30:44-03:00</updated>
+    <link rel="alternate" href="https://www.bcb.gov.br/detalhenoticia/21278/noticia" />
+    <content type="html">…</content>
+  </entry>
+</feed>

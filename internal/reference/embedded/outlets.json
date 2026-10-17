@@ -1,0 +1,19 @@
+{
+  "source": "bearing.md #111: outlets that generate pages from price or filing data and explain nothing; measured 14 Oct 2026 at 18% of all news-query items and 36% of sector-query items",
+  "asOf": "2026-10-17",
+  "criterion": "machine-generated text, not a judgement of quality; real newspapers stay in even where they run some automated content",
+  "excluded": [
+    {"name": "MarketBeat",      "hosts": ["marketbeat.com"]},
+    {"name": "ad-hoc-news.de",  "hosts": ["ad-hoc-news.de"]},
+    {"name": "Kalkine Media",   "hosts": ["kalkinemedia.com"]},
+    {"name": "kalkine.ca",      "hosts": ["kalkine.ca"]},
+    {"name": "Bybit",           "hosts": ["bybit.com"]},
+    {"name": "Traders Union",   "hosts": ["traders-union.com", "tradersunion.com"]},
+    {"name": "BigGo Finance",   "hosts": ["biggo.com"]},
+    {"name": "tmgm.com",        "hosts": ["tmgm.com"]},
+    {"name": "CryptoRank",      "hosts": ["cryptorank.io"]},
+    {"name": "Moomoo",          "hosts": ["moomoo.com"]},
+    {"name": "TipRanks",        "hosts": ["tipranks.com"]},
+    {"name": "Stock Titan",     "hosts": ["stocktitan.net"]}
+  ]
+}

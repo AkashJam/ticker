@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"math"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -43,7 +44,9 @@ type fakeEvents struct {
 	inserts int
 	failOn  string
 
-	splitWrites int
+	splitWrites    int
+	coverageWrites int
+	clock          func() time.Time
 }
 
 func newFakeEvents() *fakeEvents { return &fakeEvents{rows: map[string]Trip{}} }
@@ -73,6 +76,41 @@ func (f *fakeEvents) SetSplit(_ context.Context, sym string, d time.Time, label 
 	f.rows[k] = row
 	f.splitWrites++
 	return true, nil
+}
+
+func (f *fakeEvents) SetCoverage(_ context.Context, sym string, d time.Time, cov []byte) error {
+	k := key(sym, d)
+	row, ok := f.rows[k]
+	if !ok {
+		return errors.New("no such event")
+	}
+	row.Coverage = cov
+	now := f.now()
+	row.CoverageFetchedAt = &now
+	f.rows[k] = row
+	f.coverageWrites++
+	return nil
+}
+
+func (f *fakeEvents) PendingCoverage(_ context.Context, before time.Time) ([]Trip, error) {
+	var out []Trip
+	for _, row := range f.rows {
+		if !row.SessionDate.Before(before) {
+			continue
+		}
+		if row.Coverage == nil || !strings.Contains(string(row.Coverage), `"complete":true`) {
+			out = append(out, row)
+		}
+	}
+	slices.SortFunc(out, func(a, b Trip) int { return a.SessionDate.Compare(b.SessionDate) })
+	return out, nil
+}
+
+func (f *fakeEvents) now() time.Time {
+	if f.clock != nil {
+		return f.clock()
+	}
+	return time.Now()
 }
 
 func (f *fakeEvents) Event(_ context.Context, sym string, d time.Time) (Trip, bool, error) {

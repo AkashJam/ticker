@@ -45,16 +45,21 @@ func NewClient() *Client {
 	return &Client{http: &http.Client{Timeout: 30 * time.Second}, baseURL: baseURL}
 }
 
-// Search returns the English-language items for phrase from the last window
-// (Google's when: syntax, e.g. 2*24*time.Hour is "2d"; a window under a day is
-// expressed in hours).
-func (c *Client) Search(ctx context.Context, phrase string, window time.Duration) ([]Item, error) {
+// Search returns the items for phrase published on or after after and before
+// before (Google's `after:` and `before:` operators: whole UTC days, before
+// exclusive). Either may be zero to leave that side open. Unlike `when:` the
+// window is absolute, so a follow-up or a repair run for an old session asks for
+// the same days the first fetch did. The query is the US-English edition.
+func (c *Client) Search(ctx context.Context, phrase string, after, before time.Time) ([]Item, error) {
 	q := strings.TrimSpace(phrase)
 	if q == "" {
 		return nil, errors.New("news: empty query")
 	}
-	if w := whenWindow(window); w != "" {
-		q += " when:" + w
+	if !after.IsZero() {
+		q += " after:" + after.UTC().Format(time.DateOnly)
+	}
+	if !before.IsZero() {
+		q += " before:" + before.UTC().Format(time.DateOnly)
 	}
 	v := url.Values{"q": {q}, "hl": {"en-US"}, "gl": {"US"}, "ceid": {"US:en"}}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"?"+v.Encode(), nil)
@@ -75,17 +80,6 @@ func (c *Client) Search(ctx context.Context, phrase string, window time.Duration
 		return nil, fmt.Errorf("news: read: %w", err)
 	}
 	return parse(b)
-}
-
-func whenWindow(d time.Duration) string {
-	switch {
-	case d <= 0:
-		return ""
-	case d%(24*time.Hour) == 0:
-		return fmt.Sprintf("%dd", int(d/(24*time.Hour)))
-	default:
-		return fmt.Sprintf("%dh", max(1, int(d/time.Hour)))
-	}
 }
 
 type rss struct {

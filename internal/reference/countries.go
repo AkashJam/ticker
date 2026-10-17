@@ -38,6 +38,10 @@ type Feed struct {
 	URL      string `json:"url"`
 	Format   string `json:"format"`   // rss2 | rss1 | atom
 	Language string `json:"language"` // ISO 639-1
+	// Timezone names the zone of dates that carry no offset ("Fri, 16 Oct 2026
+	// 18:30:00" from the RBI, "Oct 9, 2026, 12:00:00 AM" from the Turkish
+	// bank). Empty where the feed's dates carry their own.
+	Timezone string `json:"timezone,omitempty"`
 }
 
 // CountriesName is the dataset the table is stored and embedded as.

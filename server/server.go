@@ -15,6 +15,7 @@ import (
 	"github.com/AkashJam/ticker/flags"
 	"github.com/AkashJam/ticker/internal/aggregate"
 	"github.com/AkashJam/ticker/internal/api"
+	"github.com/AkashJam/ticker/internal/coverage"
 	"github.com/AkashJam/ticker/internal/ecb"
 	"github.com/AkashJam/ticker/internal/edgar"
 	"github.com/AkashJam/ticker/internal/fred"
@@ -151,8 +152,19 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 		// (phase15.md step 3). Its failures are logged and counted, never the
 		// sweep's: the sweep succeeded, and a restart re-judges the newest session.
 		refForTrigger := reference.New(redis, reference.Embedded(), log)
+		// EDGAR needs a contact; without one the filings source is an error, frozen.
+		var filer coverage.FilingSource
+		if cfg.FetchContact != "" {
+			c, err := edgar.NewClient(cfg.FetchContact)
+			if err != nil {
+				pool.Close()
+				return nil, fmt.Errorf("server: %w", err)
+			}
+			filer = c
+		}
 		judge := &trigger.Runner{
-			Candles: ts, Events: ts, Loc: loc, Threshold: cfg.TriggerThreshold, Log: log,
+			Coverage: coverage.NewProduction(refForTrigger, filer, log),
+			Candles:  ts, Events: ts, Loc: loc, Threshold: cfg.TriggerThreshold, Log: log,
 			Rates: &ecb.RateSource{Store: refForTrigger, Feed: ecb.NewClient()}, SplitThreshold: cfg.SplitThreshold,
 			Thin: func(ctx context.Context) (map[string]bool, error) {
 				sensors, err := refForTrigger.Sensors(ctx)

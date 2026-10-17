@@ -52,6 +52,28 @@ type EventStore interface {
 	// SetSplit records the currency split once: it writes only where the
 	// event has none, and reports whether it did.
 	SetSplit(ctx context.Context, symbol string, session time.Time, label *string, split []byte) (set bool, err error)
+	// SetCoverage records an event's coverage, replacing an earlier stage.
+	SetCoverage(ctx context.Context, symbol string, session time.Time, coverage []byte) error
+	// PendingCoverage returns the recent events before session whose coverage is
+	// missing or not complete, oldest first.
+	PendingCoverage(ctx context.Context, before time.Time) ([]Trip, error)
+}
+
+// The stages of an event's coverage: the fetch at the trip, then the follow-up
+// at the next session's run (phase15.md step 6, decision 2).
+const (
+	StageTrip     = "trip"
+	StageFollowUp = "followUp"
+)
+
+// RetryGap is how long a run waits before fetching an event's coverage again, so
+// a day of restarts cannot use up a source's attempts.
+const RetryGap = 6 * time.Hour
+
+// CoverageSource collects an event's news and filings. prev is the coverage
+// stored so far (nil at the trip); it returns the coverage to store.
+type CoverageSource interface {
+	Collect(ctx context.Context, ev Trip, prev []byte, stage string) ([]byte, error)
 }
 
 // ThinFunc reports which sensors are tagged thin in the reference table.
@@ -69,7 +91,11 @@ type Runner struct {
 	// split is not attempted and every trip stays pending.
 	Rates          RateSource
 	SplitThreshold float64
-	Log            *slog.Logger
+	// Coverage fetches the news and filings for each trip. With none, coverage
+	// is not attempted.
+	Coverage CoverageSource
+	Now      func() time.Time
+	Log      *slog.Logger
 }
 
 // Summary reports one Run.
@@ -84,6 +110,9 @@ type Summary struct {
 	// Splits is the outcome of each split attempted this run, by symbol; a
 	// symbol whose attempt failed transiently is absent from it.
 	Splits map[string]SplitResult
+	// Coverages is the coverage each fetch produced this run, by symbol, whether
+	// or not it was stored (a dry run stores nothing).
+	Coverages map[string][]byte
 }
 
 // ReasonOf names why a sensor could not be evaluated, for the metric and the
@@ -118,7 +147,7 @@ func (r *Runner) Run(ctx context.Context, session time.Time) (Summary, error) {
 
 func (r *Runner) run(ctx context.Context, session time.Time) (Summary, error) {
 	session = day(session)
-	sum := Summary{Session: session, Skipped: map[string]string{}, Splits: map[string]SplitResult{}}
+	sum := Summary{Session: session, Skipped: map[string]string{}, Splits: map[string]SplitResult{}, Coverages: map[string][]byte{}}
 
 	var sensors []string
 	for _, s := range source.StreamUniverse() {
@@ -190,6 +219,7 @@ func (r *Runner) run(ctx context.Context, session time.Time) (Summary, error) {
 				"recorded_residual", old.Residual, "fresh_residual", t.Residual)
 		}
 	}
+	r.collectCoverage(ctx, &sum, session)
 	r.Log.Info("trigger: run", "session", session.Format(time.DateOnly), "evaluated", sum.Evaluated,
 		"skipped", len(sum.Skipped), "trips", len(sum.Trips), "inserted", sum.Inserted, "existing", sum.Existing)
 	return sum, nil
@@ -263,6 +293,76 @@ func (r *Runner) splitFor(ctx context.Context, all map[string]Closes, res Result
 	return out, true
 }
 
+// collectCoverage fetches the news and filings for the session's trips that
+// have none, and the follow-up (or a retry) for earlier events whose coverage is
+// not complete. A failure is logged and left for the next run; the trips are
+// already recorded.
+func (r *Runner) collectCoverage(ctx context.Context, sum *Summary, session time.Time) {
+	if r.Coverage == nil {
+		return
+	}
+	for _, t := range sum.Trips {
+		ev := r.currentEvent(ctx, t, sum)
+		if ev.Coverage != nil {
+			continue
+		}
+		r.cover(ctx, sum, ev, nil, StageTrip)
+	}
+	pending, err := r.Events.PendingCoverage(ctx, session)
+	if err != nil {
+		r.Log.Error("trigger: pending coverage", "error", err)
+		return
+	}
+	now := time.Now
+	if r.Now != nil {
+		now = r.Now
+	}
+	for _, ev := range pending {
+		if ev.CoverageFetchedAt != nil && now().Sub(*ev.CoverageFetchedAt) < RetryGap {
+			continue
+		}
+		stage := StageFollowUp
+		if ev.Coverage == nil {
+			stage = StageTrip // the trip's own fetch never landed
+		}
+		r.cover(ctx, sum, ev, ev.Coverage, stage)
+	}
+}
+
+// currentEvent is the recorded event for a trip, or, where nothing is recorded
+// (a dry run), the trip itself with this run's split.
+func (r *Runner) currentEvent(ctx context.Context, t Trip, sum *Summary) Trip {
+	if ev, ok, err := r.Events.Event(ctx, t.Symbol, t.SessionDate); err == nil && ok {
+		return ev
+	}
+	if sp, ok := sum.Splits[t.Symbol]; ok {
+		if b, err := json.Marshal(sp); err == nil {
+			t.Split = b
+			if sp.Label != "" {
+				l := sp.Label
+				t.SplitLabel = &l
+			}
+		}
+	}
+	return t
+}
+
+func (r *Runner) cover(ctx context.Context, sum *Summary, ev Trip, prev []byte, stage string) {
+	body, err := r.Coverage.Collect(ctx, ev, prev, stage)
+	if err != nil {
+		if ctx.Err() == nil {
+			r.Log.Error("trigger: coverage", "symbol", ev.Symbol, "session", ev.SessionDate.Format(time.DateOnly), "stage", stage, "error", err)
+		}
+		return
+	}
+	if err := r.Events.SetCoverage(ctx, ev.Symbol, ev.SessionDate, body); err != nil {
+		r.Log.Error("trigger: record coverage", "symbol", ev.Symbol, "error", err)
+		return
+	}
+	sum.Coverages[ev.Symbol+" "+ev.SessionDate.Format(time.DateOnly)] = body
+	r.Log.Info("trigger: coverage", "symbol", ev.Symbol, "session", ev.SessionDate.Format(time.DateOnly), "stage", stage)
+}
+
 // ReadOnly wraps st so that nothing written through it reaches st: it answers
 // "would this insert" from what is recorded. It is how a dry run decides
 // without a dry-run branch in Run.
@@ -278,6 +378,13 @@ func (r readOnly) InsertEvent(ctx context.Context, t Trip) (bool, error) {
 // SetSplit reports that it would set the split, and sets nothing.
 func (r readOnly) SetSplit(context.Context, string, time.Time, *string, []byte) (bool, error) {
 	return true, nil
+}
+
+// SetCoverage reports success and stores nothing.
+func (r readOnly) SetCoverage(context.Context, string, time.Time, []byte) error { return nil }
+
+func (r readOnly) PendingCoverage(ctx context.Context, before time.Time) ([]Trip, error) {
+	return r.inner.PendingCoverage(ctx, before)
 }
 
 func (r readOnly) Event(ctx context.Context, symbol string, session time.Time) (Trip, bool, error) {

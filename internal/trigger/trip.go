@@ -60,6 +60,11 @@ type Trip struct {
 	// leaves them nil.
 	SplitLabel *string
 	Split      []byte
+
+	// Coverage is the news and filings fetched for the trip (internal/coverage),
+	// nil until the first fetch; CoverageFetchedAt is when it was last written.
+	Coverage          []byte
+	CoverageFetchedAt *time.Time
 }
 
 // SplitPending reports whether the event has not yet been split.

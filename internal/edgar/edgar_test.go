@@ -495,3 +495,60 @@ func TestEmbeddedSnapshot(t *testing.T) {
 		t.Error("the override, a foreign filer and a domestic filer must each normalise correctly")
 	}
 }
+
+// --- filings ---
+
+// The columns are the real submissions shape: parallel arrays, newest first,
+// acceptance time in UTC with milliseconds, items a comma-separated string.
+const recentJSON = `{"filings":{"recent":{
+ "accessionNumber":["0001-26-000005","0001-26-000004","0001-26-000003","0001-26-000002","0001-26-000001"],
+ "filingDate":["2026-10-16","2026-10-16","2026-10-15","2026-10-14","2026-10-01"],
+ "acceptanceDateTime":["2026-10-17T01:30:46.000Z","2026-10-16T21:10:00.000Z","2026-10-15T12:00:00.000Z","2026-10-14T20:15:00.000Z","2026-10-01T12:00:00.000Z"],
+ "form":["424B2","8-K","6-K","8-K/A","8-K"],
+ "items":["","2.02,9.01","","5.02","7.01"],
+ "primaryDocument":["p.htm","earn.htm","k.htm","a.htm","old.htm"],
+ "primaryDocDescription":["FORM 424B2","8-K","FORM 6-K","8-K/A","8-K"]}}}`
+
+func TestParseRecentAndSelect(t *testing.T) {
+	all, err := parseRecent(1045810, []byte(recentJSON))
+	if err != nil || len(all) != 5 {
+		t.Fatalf("%d filings, err %v", len(all), err)
+	}
+	if all[1].URL != "https://www.sec.gov/Archives/edgar/data/1045810/000126000004/earn.htm" {
+		t.Errorf("url = %s", all[1].URL)
+	}
+	if got := all[1].Items; len(got) != 2 || got[0] != "2.02" || got[1] != "9.01" {
+		t.Errorf("items = %v", got)
+	}
+
+	from, to := time.Date(2026, 10, 14, 0, 0, 0, 0, time.UTC), time.Date(2026, 10, 16, 0, 0, 0, 0, time.UTC)
+	got := Select(all, []string{"8-K"}, from, to)
+	if len(got) != 2 || got[0].Accession != "0001-26-000002" || got[1].Accession != "0001-26-000004" {
+		t.Errorf("8-Ks in the window = %+v, want the amendment and the 16 Oct filing, oldest first (the 424B2 and the 1 Oct 8-K are out)", got)
+	}
+	if k := Select(all, []string{"6-K"}, from, to); len(k) != 1 || k[0].Description != "FORM 6-K" {
+		t.Errorf("6-Ks = %+v", k)
+	}
+	if len(Select(all, []string{"8-K"}, from.AddDate(0, 0, -30), from.AddDate(0, 0, -20))) != 0 {
+		t.Error("an empty window selects nothing")
+	}
+}
+
+func TestParseRecentRejectsRaggedColumns(t *testing.T) {
+	if _, err := parseRecent(1, []byte(`{"filings":{"recent":{"form":["8-K"],"accessionNumber":[]}}}`)); err == nil {
+		t.Error("columns of different lengths must be an error, not a misaligned filing")
+	}
+}
+
+func TestItemTitles(t *testing.T) {
+	for code, want := range map[string]string{"2.02": "Results of Operations and Financial Condition", "5.07": "Submission of Matters to a Vote of Security Holders", "9.99": ""} {
+		if got := ItemTitle(code); got != want {
+			t.Errorf("ItemTitle(%s) = %q, want %q", code, got, want)
+		}
+	}
+	for _, code := range []string{"2.02", "5.02", "5.07"} { // the three the spec names
+		if ItemTitle(code) == "" {
+			t.Errorf("%s has no title", code)
+		}
+	}
+}

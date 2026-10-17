@@ -36,21 +36,25 @@ func (t *Timescale) InsertEvent(ctx context.Context, e trigger.Trip) (inserted b
 	return tag.RowsAffected() == 1, nil
 }
 
-// Event returns the recorded trip for (symbol, session), if any.
-func (t *Timescale) Event(ctx context.Context, symbol string, session time.Time) (trigger.Trip, bool, error) {
-	const q = `
-		SELECT symbol, session_date, closed_at,
-			symbol_return, benchmark, benchmark_return, benchmark_reason,
-			residual, sigma, z, threshold, window_sessions, caveats,
-			split_label, split
-		FROM events
-		WHERE symbol = $1 AND session_date = $2`
+const eventColumns = `
+	symbol, session_date, closed_at,
+	symbol_return, benchmark, benchmark_return, benchmark_reason,
+	residual, sigma, z, threshold, window_sessions, caveats,
+	split_label, split, coverage, coverage_fetched_at`
+
+func scanTrip(row pgx.Row) (trigger.Trip, error) {
 	var e trigger.Trip
-	err := t.pool.QueryRow(ctx, q, symbol, session).Scan(
+	err := row.Scan(
 		&e.Symbol, &e.SessionDate, &e.ClosedAt,
 		&e.SymbolReturn, &e.Benchmark, &e.BenchmarkReturn, &e.BenchmarkReason,
 		&e.Residual, &e.Sigma, &e.Z, &e.Threshold, &e.WindowSessions, &e.Caveats,
-		&e.SplitLabel, &e.Split)
+		&e.SplitLabel, &e.Split, &e.Coverage, &e.CoverageFetchedAt)
+	return e, err
+}
+
+// Event returns the recorded trip for (symbol, session), if any.
+func (t *Timescale) Event(ctx context.Context, symbol string, session time.Time) (trigger.Trip, bool, error) {
+	e, err := scanTrip(t.pool.QueryRow(ctx, `SELECT `+eventColumns+` FROM events WHERE symbol = $1 AND session_date = $2`, symbol, session))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return trigger.Trip{}, false, nil
 	}
@@ -58,6 +62,45 @@ func (t *Timescale) Event(ctx context.Context, symbol string, session time.Time)
 		return trigger.Trip{}, false, fmt.Errorf("store: read event: %w", err)
 	}
 	return e, true, nil
+}
+
+// pendingWindowDays is how far back PendingCoverage looks: a source that has not
+// answered in a fortnight is not going to.
+const pendingWindowDays = 14
+
+// PendingCoverage returns the events of the last fortnight before session whose
+// coverage is missing or not yet complete, oldest first.
+func (t *Timescale) PendingCoverage(ctx context.Context, before time.Time) ([]trigger.Trip, error) {
+	rows, err := t.pool.Query(ctx, `SELECT `+eventColumns+` FROM events
+		WHERE session_date < $1 AND session_date >= $1 - $2::int
+			AND (coverage IS NULL OR (coverage->>'complete') IS DISTINCT FROM 'true')
+		ORDER BY session_date, symbol`, before, pendingWindowDays)
+	if err != nil {
+		return nil, fmt.Errorf("store: pending coverage: %w", err)
+	}
+	defer rows.Close()
+	var out []trigger.Trip
+	for rows.Next() {
+		e, err := scanTrip(rows)
+		if err != nil {
+			return nil, fmt.Errorf("store: scan pending coverage: %w", err)
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}
+
+// SetCoverage records an event's coverage, replacing the earlier stage's.
+func (t *Timescale) SetCoverage(ctx context.Context, symbol string, session time.Time, coverage []byte) error {
+	tag, err := t.pool.Exec(ctx, `UPDATE events SET coverage = $3::jsonb, coverage_fetched_at = now()
+		WHERE symbol = $1 AND session_date = $2`, symbol, session, string(coverage))
+	if err != nil {
+		return fmt.Errorf("store: set coverage: %w", err)
+	}
+	if tag.RowsAffected() != 1 {
+		return fmt.Errorf("store: set coverage: no event for %s on %s", symbol, session.Format(time.DateOnly))
+	}
+	return nil
 }
 
 // SetSplit records an event's currency split (phase15.md step 4). It writes

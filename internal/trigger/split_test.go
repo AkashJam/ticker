@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math"
+	"strings"
 	"testing"
 	"time"
 )
@@ -325,5 +326,211 @@ func TestReadOnlyShowsTheSplitWithoutWritingIt(t *testing.T) {
 	}
 	if sum.Splits["AMX"].Status != "ok" || ev.splitWrites != 0 || ev.inserts != 0 {
 		t.Errorf("dry run: splits %v, writes %d, inserts %d", sum.Splits, ev.splitWrites, ev.inserts)
+	}
+}
+
+// --- coverage through the runner ---
+
+type fakeCoverage struct {
+	calls  []string
+	err    error
+	stages []string
+	prevs  [][]byte
+}
+
+// Collect returns a coverage that is complete only after the follow-up, as the
+// real one is when no source is in error.
+func (f *fakeCoverage) Collect(_ context.Context, ev Trip, prev []byte, stage string) ([]byte, error) {
+	f.calls = append(f.calls, ev.Symbol+" "+ev.SessionDate.Format(time.DateOnly))
+	f.stages = append(f.stages, stage)
+	f.prevs = append(f.prevs, prev)
+	if f.err != nil {
+		return nil, f.err
+	}
+	complete := "false"
+	if stage == StageFollowUp {
+		complete = "true"
+	}
+	return []byte(`{"stage":"` + stage + `","complete":` + complete + `}`), nil
+}
+
+func coverageRunner(t *testing.T, cov CoverageSource, clock *time.Time) (*Runner, *fakeEvents, fakeCandles, time.Time) {
+	t.Helper()
+	c, last, rs := splitMarket(t)
+	ev := newFakeEvents()
+	ev.clock = func() time.Time { return *clock }
+	r := runner(c, ev, nil)
+	r.Rates = &fakeRates{sets: map[string]RateSet{"AMX": rs}, errs: map[string]error{"CAT": &NoSplitError{Reason: NoSplitNoHomeCurrency}}}
+	r.SplitThreshold = 2
+	r.Coverage = cov
+	r.Now = func() time.Time { return *clock }
+	return r, ev, c, last
+}
+
+func TestRunCollectsCoverageForEachNewTripOnce(t *testing.T) {
+	now := time.Date(2026, 9, 1, 20, 30, 0, 0, time.UTC)
+	fc := &fakeCoverage{}
+	r, ev, _, last := coverageRunner(t, fc, &now)
+
+	sum, err := r.Run(context.Background(), last)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(fc.calls) != 2 || fc.stages[0] != StageTrip || ev.coverageWrites != 2 || len(sum.Coverages) != 2 {
+		t.Fatalf("calls %v, stages %v, writes %d", fc.calls, fc.stages, ev.coverageWrites)
+	}
+	for _, row := range ev.rows {
+		if row.Coverage == nil {
+			t.Errorf("%s has no coverage", row.Symbol)
+		}
+	}
+
+	// A second run for the same session neither refetches nor rewrites.
+	if _, err := r.Run(context.Background(), last); err != nil {
+		t.Fatal(err)
+	}
+	if len(fc.calls) != 2 || ev.coverageWrites != 2 {
+		t.Errorf("second run: calls %d, writes %d", len(fc.calls), ev.coverageWrites)
+	}
+}
+
+func TestCoverageSeesTheSplitTheTripJustGot(t *testing.T) {
+	now := time.Now()
+	var seen []Trip
+	r, _, _, last := coverageRunner(t, coverageFunc(func(_ context.Context, ev Trip, _ []byte, _ string) ([]byte, error) {
+		seen = append(seen, ev)
+		return []byte(`{}`), nil
+	}), &now)
+	if _, err := r.Run(context.Background(), last); err != nil {
+		t.Fatal(err)
+	}
+	for _, ev := range seen {
+		if ev.SplitPending() {
+			t.Errorf("%s reached the collector with its split pending though it had just been written", ev.Symbol)
+		}
+		if ev.Symbol == "AMX" && (ev.SplitLabel == nil || *ev.SplitLabel == "") {
+			t.Error("AMX must carry its label")
+		}
+	}
+}
+
+type coverageFunc func(context.Context, Trip, []byte, string) ([]byte, error)
+
+func (f coverageFunc) Collect(ctx context.Context, ev Trip, prev []byte, stage string) ([]byte, error) {
+	return f(ctx, ev, prev, stage)
+}
+
+func TestTheNextSessionRunFollowsUpEarlierEvents(t *testing.T) {
+	now := time.Date(2026, 9, 1, 20, 30, 0, 0, time.UTC)
+	fc := &fakeCoverage{}
+	r, ev, c, last := coverageRunner(t, fc, &now)
+	if _, err := r.Run(context.Background(), last); err != nil {
+		t.Fatal(err)
+	}
+
+	// The next session: a day later, with bars for it, and no new trips.
+	next := last.AddDate(0, 0, 1)
+	for sym, cl := range c {
+		cl[next] = cl[last]
+		c[sym] = cl
+	}
+	now = now.Add(24 * time.Hour)
+	fc.calls, fc.stages, fc.prevs = nil, nil, nil
+	if _, err := r.Run(context.Background(), next); err != nil {
+		t.Fatal(err)
+	}
+	if len(fc.calls) != 2 || fc.stages[0] != StageFollowUp || fc.prevs[0] == nil {
+		t.Fatalf("follow-up calls %v stages %v: both earlier events get one, with their coverage so far", fc.calls, fc.stages)
+	}
+	for _, row := range ev.rows {
+		if !strings.Contains(string(row.Coverage), `"complete":true`) {
+			t.Errorf("%s coverage = %s", row.Symbol, row.Coverage)
+		}
+	}
+
+	// Complete coverage is not fetched again.
+	fc.calls = nil
+	now = now.Add(24 * time.Hour)
+	if _, err := r.Run(context.Background(), next); err != nil {
+		t.Fatal(err)
+	}
+	if len(fc.calls) != 0 {
+		t.Errorf("complete coverage refetched: %v", fc.calls)
+	}
+}
+
+func TestRestartsDoNotBurnAttemptsWithinTheRetryGap(t *testing.T) {
+	now := time.Date(2026, 9, 1, 20, 30, 0, 0, time.UTC)
+	fc := &fakeCoverage{}
+	r, _, c, last := coverageRunner(t, fc, &now)
+	if _, err := r.Run(context.Background(), last); err != nil {
+		t.Fatal(err)
+	}
+	next := last.AddDate(0, 0, 1)
+	for sym, cl := range c {
+		cl[next] = cl[last]
+		c[sym] = cl
+	}
+	// The next session's run comes an hour after the trip fetch: too soon.
+	now = now.Add(time.Hour)
+	fc.calls = nil
+	if _, err := r.Run(context.Background(), next); err != nil {
+		t.Fatal(err)
+	}
+	if len(fc.calls) != 0 {
+		t.Errorf("fetched again %s after the last fetch; the gap is %s", time.Hour, RetryGap)
+	}
+	now = now.Add(RetryGap)
+	if _, err := r.Run(context.Background(), next); err != nil {
+		t.Fatal(err)
+	}
+	if len(fc.calls) != 2 {
+		t.Errorf("after the gap the follow-up must run: %v", fc.calls)
+	}
+}
+
+func TestACoverageFailureDoesNotFailTheRunAndIsRetried(t *testing.T) {
+	now := time.Date(2026, 9, 1, 20, 30, 0, 0, time.UTC)
+	fc := &fakeCoverage{err: errors.New("config unreadable")}
+	r, ev, _, last := coverageRunner(t, fc, &now)
+	if _, err := r.Run(context.Background(), last); err != nil {
+		t.Fatalf("a coverage failure must not fail the run: %v", err)
+	}
+	if ev.inserts != 2 || ev.coverageWrites != 0 {
+		t.Errorf("inserts %d, coverage writes %d: the trips stand and nothing half-written is stored", ev.inserts, ev.coverageWrites)
+	}
+	// Recovered: the next run of the same session fetches the missing trip-stage coverage.
+	fc.err = nil
+	if _, err := r.Run(context.Background(), last); err != nil {
+		t.Fatal(err)
+	}
+	if ev.coverageWrites != 2 {
+		t.Errorf("coverage writes = %d after recovery", ev.coverageWrites)
+	}
+}
+
+func TestADryRunShowsCoverageAndStoresNone(t *testing.T) {
+	now := time.Now()
+	fc := &fakeCoverage{}
+	r, ev, _, last := coverageRunner(t, fc, &now)
+	r.Events = ReadOnly(ev)
+	sum, err := r.Run(context.Background(), last)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sum.Coverages) != 2 || ev.coverageWrites != 0 || ev.inserts != 0 {
+		t.Errorf("coverages %d, writes %d, inserts %d", len(sum.Coverages), ev.coverageWrites, ev.inserts)
+	}
+}
+
+func TestWithoutACoverageSourceNothingIsFetched(t *testing.T) {
+	now := time.Now()
+	r, ev, _, last := coverageRunner(t, nil, &now)
+	r.Coverage = nil
+	if _, err := r.Run(context.Background(), last); err != nil {
+		t.Fatal(err)
+	}
+	if ev.coverageWrites != 0 {
+		t.Error("no source, no coverage")
 	}
 }

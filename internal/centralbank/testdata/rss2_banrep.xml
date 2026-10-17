@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0" xml:base="https://www.banrep.gov.co/es">
+  <channel>
+    <title>Banco de la República</title>
+    <link>https://www.banrep.gov.co/es</link>
+    <description/>
+    <language>es</language>
+    
+    <item>
+  <title>Reporte de Mercado Laboral - Reactivación de la creación de empleo y determinantes financieros de la demanda laboral empresarial durante la pandemia</title>
+  <link>https://www.banrep.gov.co/es/publicaciones-investigaciones/reporte-mercado-laboral/octubre-2021</link>
+  <description>…</description>
+  <pubDate>Fri, 05 Nov 2021 17:02:22 +0000</pubDate>
+    <dc:creator>jreyesgo</dc:creator>
+    <guid isPermaLink="false">56533 at https://www.banrep.gov.co</guid>
+    </item>
+<item>
+  <title>Informe de Política Monetaria - Abril de 2021</title>
+  <link>https://www.banrep.gov.co/es/publicaciones-investigaciones/informe-politica-monetaria/abril-2021</link>
+  <description>…</description>
+  <pubDate>Mon, 03 May 2021 17:41:22 +0000</pubDate>
+    <dc:creator>jreyesgo</dc:creator>
+    <guid isPermaLink="false">55299 at https://www.banrep.gov.co</guid>
+    </item>
+<item>
+  <title>2019: La consolidación de la recuperación - Informe del Gerente General, marzo de 2019</title>
+  <link>https://www.banrep.gov.co/es/2019-consolidacion-recuperacion-informe-del-gerente-general-marzo-2019</link>
+  <description>…</description>
+  <pubDate>Thu, 28 Mar 2019 20:02:20 +0000</pubDate>
+    <dc:creator>cbernapo</dc:creator>
+    <guid isPermaLink="false">49678 at https://www.banrep.gov.co</guid>
+    </item>
+
+  </channel>
+</rss>

@@ -1,0 +1,50 @@
+<?xml version="1.0"?><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:cb="http://www.cbwiki.net/wiki/index.php/Specification_1.2/" xmlns:georss="http://www.georss.org/georss" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.w3.org/1999/02/22-rdf-syntax-ns# rdf.xsd">
+<channel rdf:about="https://www.bankofcanada.ca/content_type/press-releases/feed/">
+    <title>Press Releases - Bank of Canada</title>
+    <link>https://www.bankofcanada.ca/rss-feeds/</link>
+    <description>Bank of Canada RSS Feeds</description>
+    <items>
+        <rdf:Seq>
+                        <rdf:li rdf:resource="https://www.bankofcanada.ca/2026/09/bank-canada-board-launches-process-fill-external-deputy-governor-position/"/>
+                            <rdf:li rdf:resource="https://www.bankofcanada.ca/2026/09/bank-canada-unveils-new-vertical-20-bank-note/"/>
+                            <rdf:li rdf:resource="https://www.bankofcanada.ca/2026/09/fad-press-release-2026-09-02/"/>
+                            <rdf:li rdf:resource="https://www.bankofcanada.ca/2026/07/g7-2026-cross-border-coordination-exercise-cbce/"/>
+                            <rdf:li rdf:resource="https://www.bankofcanada.ca/2026/07/bank-canada-publishes-2027-schedule-policy-interest-rate-announcements-other-major-publications/"/>
+                            <rdf:li rdf:resource="https://www.bankofcanada.ca/2026/07/fad-press-release-2026-07-15/"/>
+                            <rdf:li rdf:resource="https://www.bankofcanada.ca/2026/06/bank-canada-publishes-report-monetary-policy-framework-consultations/"/>
+                            <rdf:li rdf:resource="https://www.bankofcanada.ca/2026/06/fad-press-release-2026-06-10/"/>
+                            <rdf:li rdf:resource="https://www.bankofcanada.ca/2026/05/bank-canada-joins-bis-project-agora-test-improvements-wholesale-cross-border-payments/"/>
+                            <rdf:li rdf:resource="https://www.bankofcanada.ca/2026/05/bank-canada-museum-honours-two-canadian-educators-innovation-classroom/"/>
+                    </rdf:Seq>
+    </items>
+    <dc:language>en</dc:language>
+    <dc:date>2026-10-16T23:19:41+00:00</dc:date>
+</channel>
+<item rdf:about="https://www.bankofcanada.ca/2026/09/bank-canada-board-launches-process-fill-external-deputy-governor-position/">
+    <title>Bank of Canada Board launches process to fill external Deputy Governor position</title>
+    <link>https://www.bankofcanada.ca/2026/09/bank-canada-board-launches-process-fill-external-deputy-governor-position/</link>
+    <description>…</description>
+    <dc:date>2026-09-10T11:00:09+00:00</dc:date>
+    <dc:language>en</dc:language>
+
+        
+</item>
+<item rdf:about="https://www.bankofcanada.ca/2026/09/bank-canada-unveils-new-vertical-20-bank-note/">
+    <title>Bank of Canada unveils new vertical $20 bank note</title>
+    <link>https://www.bankofcanada.ca/2026/09/bank-canada-unveils-new-vertical-20-bank-note/</link>
+    <description>…</description>
+    <dc:date>2026-09-03T13:20:16+00:00</dc:date>
+    <dc:language>en</dc:language>
+
+        
+</item>
+<item rdf:about="https://www.bankofcanada.ca/2026/09/fad-press-release-2026-09-02/">
+    <title>Bank of Canada maintains the policy rate at 2¼%</title>
+    <link>https://www.bankofcanada.ca/2026/09/fad-press-release-2026-09-02/</link>
+    <description>…</description>
+    <dc:date>2026-09-02T09:47:53+00:00</dc:date>
+    <dc:language>en</dc:language>
+
+        
+</item>
+</rdf:RDF>

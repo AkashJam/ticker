@@ -19,7 +19,8 @@
       "centralBankFeed": {
         "url": "https://rbi.org.in/pressreleases_rss.xml",
         "format": "rss2",
-        "language": "en"
+        "language": "en",
+        "timezone": "Asia/Kolkata"
       },
       "centralBankFeedReason": null,
       "edgarCountry": "India",
@@ -160,7 +161,8 @@
       "centralBankFeed": {
         "url": "https://www.tcmb.gov.tr/wps/wcm/connect/EN/TCMB+EN/Bottom+Menu/Other/RSS/Press+Releases",
         "format": "atom",
-        "language": "en"
+        "language": "en",
+        "timezone": "Europe/Istanbul"
       },
       "centralBankFeedReason": null,
       "edgarCountry": "Turkey",
