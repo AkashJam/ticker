@@ -40,7 +40,7 @@ func QuoteChannel(symbol string) string {
 
 // QuoteCacheKey names the key holding a symbol's last-seen tick (§6.3:
 // quote:latest:{symbol}) — written by internal/ingest on every tick, read
-// by the snapshot and movers API handlers.
+// by the snapshot API handler.
 func QuoteCacheKey(symbol string) string {
 	return "quote:latest:" + symbol
 }

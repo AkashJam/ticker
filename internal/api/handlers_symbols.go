@@ -79,8 +79,8 @@ func (h *Handlers) GetSymbolSnapshot(c *gin.Context) {
 
 // snapshotFor combines the live quote cache (current price) with the daily
 // candle (day high/low and, from the prior day's close,
-// change/changePercent) — shared by GetSymbolSnapshot and GetMovers so
-// both compute a symbol's current standing the same way.
+// change/changePercent) — the one place a symbol's current standing is
+// computed.
 func (h *Handlers) snapshotFor(ctx context.Context, symbol string) (snapshotResponse, error) {
 	// Most recent 2 daily candles, oldest first: [yesterday, today] once
 	// the service has run past midnight once; just [today] on day one.

@@ -22,10 +22,11 @@ func NewRouter(h *Handlers, hub *sse.Hub) *gin.Engine {
 	r.GET("/symbols/:symbol", h.GetSymbolSnapshot)
 	r.GET("/symbols/:symbol/candles", h.GetCandles)
 	r.GET("/symbols/:symbol/indicators", h.GetIndicators)
-	r.GET("/market/movers", h.GetMovers)
 	r.GET("/atlas/cities", h.GetAtlasCities)
 	r.GET("/sensors", h.GetSensors)
 	r.GET("/market/state", h.GetMarketState)
+	r.GET("/market/events", h.GetEvents)
+	r.GET("/market/tape", h.GetTape)
 
 	r.GET("/stream", func(c *gin.Context) { hub.ServeHTTP(c.Writer, c.Request) })
 

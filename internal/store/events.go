@@ -116,3 +116,22 @@ func (t *Timescale) SetSplit(ctx context.Context, symbol string, session time.Ti
 	}
 	return tag.RowsAffected() == 1, nil
 }
+
+// Events returns the recorded events, newest session first. Within a session the
+// order is by symbol: the ledger is in time order and never ranked.
+func (t *Timescale) Events(ctx context.Context, limit int) ([]trigger.Trip, error) {
+	rows, err := t.pool.Query(ctx, `SELECT `+eventColumns+` FROM events ORDER BY session_date DESC, symbol LIMIT $1`, limit)
+	if err != nil {
+		return nil, fmt.Errorf("store: events: %w", err)
+	}
+	defer rows.Close()
+	out := []trigger.Trip{}
+	for rows.Next() {
+		e, err := scanTrip(rows)
+		if err != nil {
+			return nil, fmt.Errorf("store: scan event: %w", err)
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}

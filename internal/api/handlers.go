@@ -17,6 +17,7 @@ import (
 	"github.com/AkashJam/ticker/internal/reference"
 	"github.com/AkashJam/ticker/internal/source"
 	"github.com/AkashJam/ticker/internal/store"
+	"github.com/AkashJam/ticker/internal/trigger"
 )
 
 const indicatorHistoryLimit = 200
@@ -36,6 +37,10 @@ type Handlers struct {
 	// next opens. Nil reads open.
 	Session func(ctx context.Context) (closed bool, opensAt time.Time)
 	TS      *store.Timescale
+	// Events and Candles feed the ledger and the tape (phase15.md step 7). Both
+	// are the Timescale store in production and fakes in tests.
+	Events  EventReader
+	Candles trigger.RangeReader
 	Redis   *store.Redis
 	Cache   *indicators.Cache
 	Ready   func() error // aggregate readiness check (§8: GET /ready) — see server.go
@@ -46,6 +51,8 @@ type Handlers struct {
 	atlas atlasMemo
 	// sensors reuses the memo: the list changes with a deploy, not a request.
 	sensors atlasMemo
+	events  atlasMemo
+	tape    atlasMemo
 }
 
 // SymbolStore is what the symbol handlers need from the symbols table, as an
@@ -56,7 +63,7 @@ type SymbolStore interface {
 }
 
 func NewHandlers(meta *store.Meta, ts *store.Timescale, redis *store.Redis, cache *indicators.Cache, ready func() error, log *slog.Logger) *Handlers {
-	return &Handlers{Meta: meta, TS: ts, Redis: redis, Cache: cache, Ready: ready, Log: log}
+	return &Handlers{Meta: meta, TS: ts, Events: ts, Candles: ts, Redis: redis, Cache: cache, Ready: ready, Log: log}
 }
 
 const simPrefix = "SIM:"
