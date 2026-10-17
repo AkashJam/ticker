@@ -23,6 +23,7 @@ func NewRouter(h *Handlers, hub *sse.Hub) *gin.Engine {
 	r.GET("/symbols/:symbol/candles", h.GetCandles)
 	r.GET("/symbols/:symbol/indicators", h.GetIndicators)
 	r.GET("/atlas/cities", h.GetAtlasCities)
+	r.GET("/atlas/cities/:city", h.GetAtlasCity)
 	r.GET("/sensors", h.GetSensors)
 	r.GET("/market/state", h.GetMarketState)
 	r.GET("/market/events", h.GetEvents)

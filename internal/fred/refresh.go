@@ -188,3 +188,6 @@ func (r *Refresher) fetch(ctx context.Context, id string) ([]Obs, error) {
 	}
 	return nil, lastErr
 }
+
+// Fetch reads one series with the refresher's retries; the history job reuses it.
+func (r *Refresher) Fetch(ctx context.Context, id string) ([]Obs, error) { return r.fetch(ctx, id) }

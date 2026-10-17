@@ -54,6 +54,7 @@ type Handlers struct {
 	events  atlasMemo
 	tape    atlasMemo
 	records recordMemos
+	cities  cityMemos
 }
 
 // SymbolStore is what the symbol handlers need from the symbols table, as an

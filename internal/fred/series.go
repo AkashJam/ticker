@@ -32,3 +32,23 @@ func ToSeries(obs []Obs, step int) (change.Series, error) {
 	}
 	return s, nil
 }
+
+// ToHistory turns observations into a stored series that starts at the series'
+// first observation, whatever year that is (the city pages draw the whole
+// record, not the window /atlas compares). step is as for ToSeries. A skipped
+// period is still an error: the series is never interpolated.
+func ToHistory(obs []Obs, step int) (change.Series, error) {
+	if len(obs) == 0 {
+		return change.Series{}, ErrNoData
+	}
+	s := change.Series{Start: obs[0].Date.Format("2006-01"), Step: step}
+	prev := obs[0].Date
+	for n, o := range obs {
+		if n > 0 && !o.Date.Equal(prev.AddDate(0, step, 0)) {
+			return change.Series{}, fmt.Errorf("fred: gap before %s", o.Date.Format(time.DateOnly))
+		}
+		s.Values = append(s.Values, o.Value)
+		prev = o.Date
+	}
+	return s, nil
+}

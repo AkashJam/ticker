@@ -114,3 +114,49 @@ func TestAtlasCitiesIsMemoisedAndAnErrorIs500(t *testing.T) {
 		t.Errorf("no store = %d, want 500", code)
 	}
 }
+
+func cityRouter(h *Handlers) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.GET("/atlas/cities/:city", h.GetAtlasCity)
+	return r
+}
+
+// The city route answers from the embedded snapshots with Redis down, and 404s
+// anything that is not an Atlas country with a survey.
+func TestAtlasCityAnswersWithRedisDown(t *testing.T) {
+	h := testHandlers(reference.New(nil, reference.Embedded(), nil))
+	var resp atlas.CityResponse
+	if code := get(t, cityRouter(h), "/atlas/cities/japan", &resp); code != http.StatusOK {
+		t.Fatalf("GET /atlas/cities/japan = %d", code)
+	}
+	if resp.City != "Tokyo" || resp.Survey.Headline.Value != 130920 || resp.Charts.Shares.Series == nil || !resp.Verified {
+		t.Errorf("Tokyo = %+v", resp.Survey.Headline)
+	}
+	var upper atlas.CityResponse
+	if code := get(t, cityRouter(h), "/atlas/cities/Japan", &upper); code != http.StatusOK || upper.Slug != "japan" {
+		t.Errorf("a slug in any case: %d %q", code, upper.Slug)
+	}
+	// An unverified city is served and says so; the page ships on hasCityPage.
+	var ie atlas.CityResponse
+	if code := get(t, cityRouter(h), "/atlas/cities/ireland", &ie); code != http.StatusOK || ie.Verified || len(ie.Survey.OpenItems) == 0 {
+		t.Errorf("ireland: %d verified %v open %v", code, ie.Verified, ie.Survey.OpenItems)
+	}
+	// Chile is an Atlas row with no survey; Singapore has a survey and no row.
+	for _, slug := range []string{"chile", "singapore", "colombia", "nowhere", "japan%2F..", "SIM:NOVA"} {
+		if code := get(t, cityRouter(h), "/atlas/cities/"+slug, nil); code != http.StatusNotFound {
+			t.Errorf("/atlas/cities/%s = %d, want 404", slug, code)
+		}
+	}
+}
+
+// The comparison must not move: the new route adds beside it and reads none of
+// its stored series.
+func TestAtlasCitiesIsUnchangedByTheCityRoute(t *testing.T) {
+	h := testHandlers(reference.New(nil, reference.Embedded(), nil))
+	var resp atlas.Response
+	get(t, atlasRouter(h), "/atlas/cities", &resp)
+	if resp.End != "2024" || len(resp.Rows) != 23 {
+		t.Fatalf("end %s, %d rows", resp.End, len(resp.Rows))
+	}
+}

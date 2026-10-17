@@ -28,6 +28,7 @@ import (
 	"github.com/AkashJam/ticker/internal/ecb"
 	"github.com/AkashJam/ticker/internal/edgar"
 	"github.com/AkashJam/ticker/internal/fred"
+	"github.com/AkashJam/ticker/internal/history"
 	"github.com/AkashJam/ticker/internal/news"
 	"github.com/AkashJam/ticker/internal/reference"
 	"github.com/AkashJam/ticker/internal/source"
@@ -164,6 +165,14 @@ func main() {
 				Flags: append([]cli.Flag{&cli.StringFlag{Name: "out", Usage: "write JSON here instead of Redis; this is how embedded/ecb.json is made"}}, sharedFlags...),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					return runECB(ctx, configFromCmd(cmd), cmd.String("out"))
+				},
+			},
+			{
+				Name:  "history",
+				Usage: "fetch the long history behind the city pages (FRED from each series' first observation, ECB from 1999) and write it to --out, or to Redis without it, then exit",
+				Flags: append([]cli.Flag{&cli.StringFlag{Name: "out", Usage: "write JSON here instead of Redis; this is how embedded/history.json is made"}}, sharedFlags...),
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					return runHistory(ctx, configFromCmd(cmd), cmd.String("out"))
 				},
 			},
 			{
@@ -592,6 +601,42 @@ func runECB(ctx context.Context, cfg flags.Config, out string) error {
 		return err
 	}
 	fmt.Printf("ecb: wrote %s asOf=%s currencies=%d\n", out, ds.AsOf, len(ds.Currencies))
+	return nil
+}
+
+// runHistory is a manual run of the long-history fetcher, as runFred is for the
+// 2010-start series. With --out it writes the dataset to a file, which is how
+// the embedded snapshot is made; without it the dataset goes to Redis.
+func runHistory(ctx context.Context, cfg flags.Config, out string) error {
+	log := newLogger(cfg.LogLevel)
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	var cache reference.Cache
+	if out == "" {
+		if cfg.RedisAddr == "" {
+			return fmt.Errorf("history: REDIS_ADDR (or --redis-addr) is required without --out")
+		}
+		cache = store.NewRedis(cfg.RedisAddr)
+	}
+	st := reference.New(cache, reference.Embedded(), log)
+	refresher := history.NewRefresher(fred.NewRefresher(fred.NewClient(), st, log), ecb.NewRefresher(ecb.NewClient(), fred.NewClient(), st, log), st, log)
+
+	if out == "" {
+		return refresher.Refresh(ctx)
+	}
+	ds, err := refresher.Build(ctx)
+	if err != nil {
+		return err
+	}
+	b, err := json.Marshal(ds)
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(out, append(b, '\n'), 0o644); err != nil {
+		return err
+	}
+	fmt.Printf("history: wrote %s countries=%d currencies=%d bytes=%d\n", out, len(ds.Rows), len(ds.Currencies), len(b))
 	return nil
 }
 

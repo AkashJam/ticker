@@ -153,9 +153,19 @@ func (s *State) publishedDays(ym string) int {
 // for 2010, so Israel's series starts in January 2011 and a window that needs
 // 2010 is not served for it: a gap is never filled.
 func (s *State) monthly(code string) (change.Series, bool) {
+	return s.monthlyFrom(code, change.FirstYear)
+}
+
+// HistoryFirstYear is the first year of the ECB's reference rates: the city
+// pages draw the whole record from here.
+const HistoryFirstYear = 1999
+
+// monthlyFrom is monthly from a chosen first year. The rule is the same: from
+// the first full month, to the last complete one, and a gap inside is not filled.
+func (s *State) monthlyFrom(code string, firstYear int) (change.Series, bool) {
 	sums := s.Sums[code]
 	var out change.Series
-	for m := time.Date(change.FirstYear, time.January, 1, 0, 0, 0, 0, time.UTC); ; m = m.AddDate(0, 1, 0) {
+	for m := time.Date(firstYear, time.January, 1, 0, 0, 0, 0, time.UTC); ; m = m.AddDate(0, 1, 0) {
 		ym := m.Format("2006-01")
 		end, _ := monthEnd(ym)
 		if end.After(s.Last) {
@@ -220,6 +230,26 @@ func (s *State) Compute(generatedAt time.Time) Dataset {
 	return ds
 }
 
+// ComputeHistory is Compute from HistoryFirstYear: the same currencies and the
+// same rules, with the whole record in each series.
+func (s *State) ComputeHistory(generatedAt time.Time) Dataset {
+	ds := Dataset{
+		GeneratedAt: generatedAt.UTC().Format(time.RFC3339),
+		Base:        "EUR",
+		AsOf:        s.Last.Format(time.DateOnly),
+		Currencies:  make(map[string]Currency, len(s.Wanted)),
+	}
+	for _, c := range s.Wanted {
+		series, ok := s.monthlyFrom(c, HistoryFirstYear)
+		if !ok {
+			ds.Currencies[c] = Currency{AsOf: ds.AsOf, AnnualAverage: map[string]float64{}, Source: Source, Reason: "not published by the ECB"}
+			continue
+		}
+		ds.Currencies[c] = Currency{Series: &series, AsOf: series.AsOf(), AnnualAverage: map[string]float64{}, Source: Source}
+	}
+	return ds
+}
+
 // ChileSource names Chile's derived figure.
 const ChileSource = "OECD via FRED CCUSMA02CLM618N × ECB USD per EUR"
 
@@ -254,6 +284,18 @@ func ViaUSD(pesosPerUSD, usdPerEUR change.Series) (change.Series, string) {
 		return change.Series{}, "no overlap"
 	}
 	return out, ""
+}
+
+// TrimTo returns s from the month of other's first value on, so a series that
+// begins before the ECB's dollar (1999) can be derived through it.
+func TrimTo(s, other change.Series) change.Series {
+	sy, sm := startYM(s)
+	oy, om := startYM(other)
+	drop := (oy*12 + om) - (sy*12 + sm)
+	if drop <= 0 || drop >= len(s.Values) {
+		return s
+	}
+	return change.Series{Start: other.Start, Step: s.Step, Values: s.Values[drop:]}
 }
 
 func startYM(s change.Series) (year, month int) {

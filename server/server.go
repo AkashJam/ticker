@@ -19,6 +19,7 @@ import (
 	"github.com/AkashJam/ticker/internal/ecb"
 	"github.com/AkashJam/ticker/internal/edgar"
 	"github.com/AkashJam/ticker/internal/fred"
+	"github.com/AkashJam/ticker/internal/history"
 	"github.com/AkashJam/ticker/internal/indicators"
 	"github.com/AkashJam/ticker/internal/ingest"
 	"github.com/AkashJam/ticker/internal/reference"
@@ -192,6 +193,7 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 	fredRefresher := fred.NewRefresher(fred.NewClient(), refStore, log)
 	ecbRefresher := ecb.NewRefresher(ecb.NewClient(), fred.NewClient(), refStore, log)
 	wbRefresher := worldbank.NewRefresher(worldbank.NewClient(), refStore, log)
+	historyRefresher := history.NewRefresher(fredRefresher, ecbRefresher, refStore, log)
 	jobs := []reference.Job{
 		{
 			Name:  "fred",
@@ -202,6 +204,11 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 			Name:  "ecb",
 			Run:   ecbRefresher.Refresh,
 			Stale: func(ctx context.Context) bool { return ecbRefresher.Stale(ctx, 24*time.Hour) },
+		},
+		{ // the city pages' long record; after ecb, whose stored state it advances in memory
+			Name:  "history",
+			Run:   historyRefresher.Refresh,
+			Stale: func(ctx context.Context) bool { return historyRefresher.Stale(ctx, 24*time.Hour) },
 		},
 		{ // after ecb: everyday spending converts at the ECB's annual average
 			Name:  "worldbank",

@@ -1,0 +1,1323 @@
+{
+  "generatedAt": "2026-10-17T00:00:00Z",
+  "rows": [
+    {
+      "openItems": [],
+      "secondLines": [],
+      "parts": null,
+      "splitNote": "ISTAT publishes the threshold as one total per household type, region and municipality type; the components exist only as national averages across all households.",
+      "nextRelease": "mid-October 2026 (the 2025 report)",
+      "slug": "italy",
+      "verified": true,
+      "instrument": "ISTAT absolute poverty threshold",
+      "publisher": "ISTAT",
+      "headline": {
+        "value": 1224.64,
+        "currency": "EUR",
+        "year": 2024,
+        "label": "Monthly absolute poverty threshold, one person aged 30–59, Lombardy, metropolitan-area centre",
+        "method": "The monthly spending below which a household cannot buy the basket ISTAT defines as essential: food, an adequately sized heated home, and a residual of clothing, transport, communication, health and education."
+      },
+      "housing": {
+        "tag": "included_not_separate",
+        "note": "Housing is inside the threshold; ISTAT publishes it as one total."
+      },
+      "sources": [
+        {
+          "label": "ISTAT IstatData, dataflow 34_211_DF_DCCV_SOGLIAPOVA_2",
+          "url": "https://esploradati.istat.it/SDMXWS/rest/data/IT1,34_211_DF_DCCV_SOGLIAPOVA_2,1.0/A.ITC4..15.40.2",
+          "detail": "REF_AREA ITC4, household typology 40, municipality size 2",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [],
+      "secondLines": [
+        {
+          "label": "Excluding housing",
+          "value": 954
+        },
+        {
+          "label": "In social housing",
+          "value": 1424
+        }
+      ],
+      "parts": [
+        {
+          "label": "Housing, private rent",
+          "amount": 618,
+          "share": 39.34
+        },
+        {
+          "label": "Transport",
+          "amount": 297,
+          "share": 18.91
+        },
+        {
+          "label": "Food",
+          "amount": 220,
+          "share": 14
+        },
+        {
+          "label": "Social life",
+          "amount": 150,
+          "share": 9.55
+        },
+        {
+          "label": "Equipment",
+          "amount": 112,
+          "share": 7.13
+        },
+        {
+          "label": "Clothing",
+          "amount": 69,
+          "share": 4.39
+        },
+        {
+          "label": "Health",
+          "amount": 61,
+          "share": 3.88
+        },
+        {
+          "label": "Hygiene and beauty",
+          "amount": 37,
+          "share": 2.36
+        },
+        {
+          "label": "Banking",
+          "amount": 7,
+          "share": 0.45
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": null,
+      "slug": "france",
+      "verified": true,
+      "instrument": "ONPES reference budget",
+      "publisher": "CREDOC and IRES for the ONPES",
+      "headline": {
+        "value": 1571,
+        "currency": "EUR",
+        "year": 2014,
+        "label": "Reference budget for medium-sized French cities (priced in Dijon and Tours), one working adult living alone, renting privately",
+        "method": "Citizen consensus groups agree what a decent minimum participation in social life requires, and CREDOC prices it."
+      },
+      "housing": {
+        "tag": "private_rent",
+        "note": "A medium-city rent: the budget was priced in Dijon and Tours."
+      },
+      "sources": [
+        {
+          "label": "CREDOC and IRES, Budgets de référence ONPES, final report, July 2014, chapter 5",
+          "url": "https://www.credoc.fr/download/pdf/Sou/Budgets_de_Reference.pdf",
+          "detail": "budget table by function; the €1,571 / €1,424 table the report headlines",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [],
+      "secondLines": [
+        {
+          "label": "Excluding housing",
+          "value": 1706.12
+        }
+      ],
+      "parts": [
+        {
+          "label": "Rent",
+          "amount": 1646.41,
+          "share": 49.11,
+          "derived": "£379.94 a week × 52 ÷ 12"
+        },
+        {
+          "label": "Transport",
+          "amount": 311.83,
+          "share": 9.3,
+          "derived": "£71.96 a week × 52 ÷ 12"
+        },
+        {
+          "label": "Other items",
+          "amount": 1394.29,
+          "share": 41.59,
+          "derived": "£321.76 a week × 52 ÷ 12"
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": null,
+      "slug": "united-kingdom",
+      "verified": true,
+      "instrument": "Minimum Income Standard for London",
+      "publisher": "Loughborough CRSP for Trust for London",
+      "headline": {
+        "value": 3352.48,
+        "currency": "GBP",
+        "year": 2025,
+        "label": "Monthly minimum income standard, one working-age adult living alone, Inner London, renting a one-bedroom flat privately at the lower-quartile rent",
+        "method": "Members of the public agree what a minimum socially acceptable standard of living requires; the budget is priced. £773.65 a week × 52 ÷ 12."
+      },
+      "housing": {
+        "tag": "private_rent",
+        "note": "One-bedroom flat at the lower-quartile rent, Inner London."
+      },
+      "sources": [
+        {
+          "label": "Padley, Davis et al., A Minimum Income Standard for London 2025, Trust for London, 2026",
+          "url": "https://trustforlondon.org.uk/documents/1027/A_Minimum_Income_Standard_for_London_2025_final.pdf",
+          "detail": "Figure 4 data labels; Table 4",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [
+        "Cite MHLW's public-assistance overview page for the component definitions."
+      ],
+      "secondLines": [
+        {
+          "label": "Excluding housing",
+          "value": 77220
+        }
+      ],
+      "parts": [
+        {
+          "label": "Housing, up to (a ceiling)",
+          "amount": 53700,
+          "share": 41.02,
+          "hatched": true
+        },
+        {
+          "label": "Personal: food, clothing",
+          "amount": 46930,
+          "share": 35.85
+        },
+        {
+          "label": "Household: utilities, furnishings",
+          "amount": 27790,
+          "share": 21.23
+        },
+        {
+          "label": "Special supplement",
+          "amount": 2500,
+          "share": 1.91
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": null,
+      "slug": "japan",
+      "verified": true,
+      "instrument": "Public assistance standard (seikatsu hogo)",
+      "publisher": "MHLW",
+      "headline": {
+        "value": 130920,
+        "currency": "JPY",
+        "year": 2026,
+        "label": "Monthly public-assistance standard, one person aged 20–40, Tokyo 23 wards",
+        "method": "The state's legal floor for living costs, reviewed every five years against the spending of low-income households; applies from October 2026."
+      },
+      "housing": {
+        "tag": "welfare_ceiling",
+        "note": "Housing assistance is paid at actual rent up to a ceiling of ¥53,700; the real share is lower for a cheaper flat."
+      },
+      "sources": [
+        {
+          "label": "MHLW, 生活保護制度における生活扶助基準額の算出方法（令和8年10月）",
+          "url": "https://www.mhlw.go.jp/content/001152601.pdf",
+          "detail": "class 1, class 2, special supplement and the Tokyo housing ceiling",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [],
+      "secondLines": [
+        {
+          "label": "Before tax",
+          "value": 6622.42
+        },
+        {
+          "label": "Excluding housing",
+          "value": 2193.25
+        }
+      ],
+      "parts": [
+        {
+          "label": "Housing",
+          "amount": 2960.42,
+          "share": 57.44,
+          "derived": "$35,525 a year ÷ 12"
+        },
+        {
+          "label": "Food",
+          "amount": 593,
+          "share": 11.51,
+          "derived": "$7,116 a year ÷ 12"
+        },
+        {
+          "label": "Transportation",
+          "amount": 392.5,
+          "share": 7.62,
+          "derived": "$4,710 a year ÷ 12"
+        },
+        {
+          "label": "Other",
+          "amount": 392.92,
+          "share": 7.62,
+          "derived": "$4,715 a year ÷ 12"
+        },
+        {
+          "label": "Medical",
+          "amount": 391.25,
+          "share": 7.59,
+          "derived": "$4,695 a year ÷ 12"
+        },
+        {
+          "label": "Civic",
+          "amount": 288,
+          "share": 5.59,
+          "derived": "$3,456 a year ÷ 12"
+        },
+        {
+          "label": "Internet and mobile",
+          "amount": 135.58,
+          "share": 2.63,
+          "derived": "$1,627 a year ÷ 12"
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": null,
+      "slug": "united-states",
+      "verified": true,
+      "instrument": "Living Wage Calculator",
+      "publisher": "MIT",
+      "headline": {
+        "value": 5153.67,
+        "currency": "USD",
+        "year": 2026,
+        "label": "Monthly living wage after tax, one adult, no children, New York County (Manhattan)",
+        "method": "The income one full-time worker needs to cover a basic budget without public assistance; a market-cost budget, more generous than a poverty line."
+      },
+      "housing": {
+        "tag": "private_rent",
+        "note": "Market rent in New York County."
+      },
+      "sources": [
+        {
+          "label": "MIT Living Wage Calculator, New York County",
+          "url": "https://livingwage.mit.edu/counties/36061",
+          "detail": "data updated 15 February 2026",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [
+        "Cite DIEESE's methodology note for the three-adult convention and the 35.71% weight directly."
+      ],
+      "secondLines": [],
+      "parts": [
+        {
+          "label": "Food",
+          "amount": 922.51,
+          "share": 35.71,
+          "derived": "share from DIEESE's POF 1994/95, São Paulo, lowest income tercile, applied to the headline as DIEESE's own construction does"
+        },
+        {
+          "label": "Housing",
+          "amount": 658.75,
+          "share": 25.5,
+          "derived": "share from DIEESE's POF 1994/95, São Paulo, lowest income tercile, applied to the headline as DIEESE's own construction does"
+        },
+        {
+          "label": "Clothing",
+          "amount": 226.82,
+          "share": 8.78,
+          "derived": "share from DIEESE's POF 1994/95, São Paulo, lowest income tercile, applied to the headline as DIEESE's own construction does"
+        },
+        {
+          "label": "Transport",
+          "amount": 199.95,
+          "share": 7.74,
+          "derived": "share from DIEESE's POF 1994/95, São Paulo, lowest income tercile, applied to the headline as DIEESE's own construction does"
+        },
+        {
+          "label": "Health",
+          "amount": 169.21,
+          "share": 6.55,
+          "derived": "share from DIEESE's POF 1994/95, São Paulo, lowest income tercile, applied to the headline as DIEESE's own construction does"
+        },
+        {
+          "label": "Household equipment",
+          "amount": 143.63,
+          "share": 5.56,
+          "derived": "share from DIEESE's POF 1994/95, São Paulo, lowest income tercile, applied to the headline as DIEESE's own construction does"
+        },
+        {
+          "label": "Personal",
+          "amount": 138.98,
+          "share": 5.38,
+          "derived": "share from DIEESE's POF 1994/95, São Paulo, lowest income tercile, applied to the headline as DIEESE's own construction does"
+        },
+        {
+          "label": "Education",
+          "amount": 83.96,
+          "share": 3.25,
+          "derived": "share from DIEESE's POF 1994/95, São Paulo, lowest income tercile, applied to the headline as DIEESE's own construction does"
+        },
+        {
+          "label": "Recreation",
+          "amount": 31.78,
+          "share": 1.23,
+          "derived": "share from DIEESE's POF 1994/95, São Paulo, lowest income tercile, applied to the headline as DIEESE's own construction does"
+        },
+        {
+          "label": "Miscellaneous",
+          "amount": 7.75,
+          "share": 0.3,
+          "derived": "share from DIEESE's POF 1994/95, São Paulo, lowest income tercile, applied to the headline as DIEESE's own construction does"
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": null,
+      "slug": "brazil",
+      "verified": true,
+      "instrument": "Necessary minimum wage (salário mínimo necessário)",
+      "publisher": "DIEESE",
+      "headline": {
+        "value": 2583.34,
+        "currency": "BRL",
+        "year": 2026,
+        "label": "Monthly cost for one adult-equivalent, derived from DIEESE's family-of-four figure",
+        "method": "The wage the Constitution says a minimum wage must cover, estimated from the cost of the basic food basket scaled by food's share of family spending. Derived: R$ 7,750.01 ÷ 3 adult-equivalents.",
+        "derived": "R$ 7,750.01 (family of four, September 2026) ÷ 3 adult-equivalents, DIEESE's own convention"
+      },
+      "housing": {
+        "tag": "included_not_separate",
+        "note": "Housing is inside the total; its share comes from DIEESE's own family-budget survey."
+      },
+      "sources": [
+        {
+          "label": "DIEESE, Pesquisa Nacional da Cesta Básica de Alimentos, September 2026",
+          "url": "https://www.dieese.org.br/analisecestabasica/2026/202609cestabasica.pdf",
+          "detail": "p. 4 and the São Paulo row of the capitals table",
+          "retrieved": "2026-10-14"
+        },
+        {
+          "label": "DIEESE, Estrutura de consumo por estrato de renda",
+          "url": "https://www.dieese.org.br/metodologia/pof3.html",
+          "detail": "POF 1994/95, municipality of São Paulo, estrato 1",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [
+        "Cite the NBS definition of the housing category directly.",
+        "Move to 2025 when the 2026 yearbook publishes the split."
+      ],
+      "secondLines": [
+        {
+          "label": "Excluding housing",
+          "value": 3004
+        }
+      ],
+      "parts": [
+        {
+          "label": "Housing",
+          "amount": 1577.67,
+          "share": 34.43,
+          "derived": "¥18,932 a year ÷ 12"
+        },
+        {
+          "label": "Food, tobacco and alcohol",
+          "amount": 1156.42,
+          "share": 25.24,
+          "derived": "¥13,877 a year ÷ 12"
+        },
+        {
+          "label": "Education, culture and recreation",
+          "amount": 477.75,
+          "share": 10.43,
+          "derived": "¥5,733 a year ÷ 12"
+        },
+        {
+          "label": "Transport and communication",
+          "amount": 478.83,
+          "share": 10.45,
+          "derived": "¥5,746 a year ÷ 12"
+        },
+        {
+          "label": "Health care",
+          "amount": 380.83,
+          "share": 8.31,
+          "derived": "¥4,570 a year ÷ 12"
+        },
+        {
+          "label": "Household goods and services",
+          "amount": 188.17,
+          "share": 4.11,
+          "derived": "¥2,258 a year ÷ 12"
+        },
+        {
+          "label": "Clothing",
+          "amount": 167.58,
+          "share": 3.66,
+          "derived": "¥2,011 a year ÷ 12"
+        },
+        {
+          "label": "Other goods and services",
+          "amount": 154.42,
+          "share": 3.37,
+          "derived": "¥1,853 a year ÷ 12"
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": "2026 yearbook (the 2025 split)",
+      "slug": "china",
+      "verified": true,
+      "instrument": "Urban per-capita consumption expenditure",
+      "publisher": "NBS / Shanghai Statistics Bureau",
+      "headline": {
+        "value": 4581.67,
+        "currency": "CNY",
+        "year": 2024,
+        "label": "Average monthly consumption per person, urban residents of Shanghai (¥54,980 a year)",
+        "method": "Average consumption, not a minimum: what urban residents actually spend per head, from the household survey. 2024 is used because its total and split are one vintage; 2025's total is ¥57,076 and its split arrives with the 2026 yearbook."
+      },
+      "housing": {
+        "tag": "imputed_rent",
+        "note": "China's housing category includes the imputed rent of owner-occupied homes, so it is not cash rent."
+      },
+      "sources": [
+        {
+          "label": "Shanghai Statistical Yearbook 2025, table 9.14",
+          "url": "https://tjj.sh.gov.cn/tjnj/2025tjnj/C0914.htm",
+          "detail": "城镇常住居民人均消费支出及构成, 2021–2024",
+          "retrieved": "2026-10-14"
+        },
+        {
+          "label": "Shanghai Statistics Bureau, 2025 total",
+          "url": "https://tjj.sh.gov.cn/ydsj71/20260120/39ae4cd58421478d897b739d83f39c10.html",
+          "detail": "published 21 January 2026",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [],
+      "secondLines": [],
+      "parts": [
+        {
+          "label": "Food",
+          "amount": 2660.83,
+          "share": 36.14,
+          "derived": "food share from Table 3.9, non-food shares from Table 3.10U converted to a share of the total"
+        },
+        {
+          "label": "Other, including rent, consumer services and taxes",
+          "amount": 1310.54,
+          "share": 17.8,
+          "derived": "food share from Table 3.9, non-food shares from Table 3.10U converted to a share of the total"
+        },
+        {
+          "label": "Conveyance",
+          "amount": 603.73,
+          "share": 8.2,
+          "derived": "food share from Table 3.9, non-food shares from Table 3.10U converted to a share of the total"
+        },
+        {
+          "label": "Miscellaneous goods and entertainment",
+          "amount": 515.38,
+          "share": 7,
+          "derived": "food share from Table 3.9, non-food shares from Table 3.10U converted to a share of the total"
+        },
+        {
+          "label": "Education",
+          "amount": 508.02,
+          "share": 6.9,
+          "derived": "food share from Table 3.9, non-food shares from Table 3.10U converted to a share of the total"
+        },
+        {
+          "label": "Fuel and light",
+          "amount": 463.84,
+          "share": 6.3,
+          "derived": "food share from Table 3.9, non-food shares from Table 3.10U converted to a share of the total"
+        },
+        {
+          "label": "Medical",
+          "amount": 449.12,
+          "share": 6.1,
+          "derived": "food share from Table 3.9, non-food shares from Table 3.10U converted to a share of the total"
+        },
+        {
+          "label": "Durable goods",
+          "amount": 449.12,
+          "share": 6.1,
+          "derived": "food share from Table 3.9, non-food shares from Table 3.10U converted to a share of the total"
+        },
+        {
+          "label": "Clothing and footwear",
+          "amount": 397.58,
+          "share": 5.4,
+          "derived": "food share from Table 3.9, non-food shares from Table 3.10U converted to a share of the total"
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": null,
+      "slug": "india",
+      "verified": true,
+      "instrument": "Household Consumption Expenditure Survey (HCES)",
+      "publisher": "MoSPI",
+      "headline": {
+        "value": 7362.56,
+        "currency": "INR",
+        "year": 2024,
+        "label": "Average monthly consumption per person, urban Maharashtra, 2023–24 (the state, not Mumbai)",
+        "method": "Average monthly per-capita consumption expenditure without imputation of free items received; per head across all ages, not one adult."
+      },
+      "housing": {
+        "tag": "averaged_all_residents",
+        "note": "Rent is ₹668.24 of ₹7,362.56 (9.1%), averaged over all residents, most of whom pay no market rent; it sits inside 'other'. HCES Statement 3U, Maharashtra column."
+      },
+      "sources": [
+        {
+          "label": "MoSPI, NSS Report 592, Survey on Household Consumption Expenditure: 2023–24",
+          "url": "https://mospi.gov.in/sites/default/files/publication_reports/Final_Report_HCES_2023-24L.pdf",
+          "detail": "Table 3.2 (MPCE), Table 3.9 (food share), Table 3.10U (non-food), Statement 3U (rent)",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [
+        "Check whether a later quarter has been published."
+      ],
+      "secondLines": [
+        {
+          "label": "Excluding housing",
+          "value": 1929.2
+        }
+      ],
+      "parts": [
+        {
+          "label": "Housing",
+          "amount": 937.41,
+          "share": 32.7,
+          "derived": "A$216.32 a week × 52 ÷ 12"
+        },
+        {
+          "label": "Everything else",
+          "amount": 1929.2,
+          "share": 67.3,
+          "derived": "A$445.20 a week × 52 ÷ 12"
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": null,
+      "slug": "australia",
+      "verified": true,
+      "instrument": "Henderson poverty line",
+      "publisher": "Melbourne Institute",
+      "headline": {
+        "value": 2866.59,
+        "currency": "AUD",
+        "year": 2025,
+        "label": "Monthly poverty line, single person in the workforce, after tax, national (A$661.52 a week)",
+        "method": "A relative income line set in 1973 and indexed to per-capita household disposable income, carried forward; not a priced basket."
+      },
+      "housing": {
+        "tag": "survey_component",
+        "note": "Housing is a component of the line; its level is not stated."
+      },
+      "sources": [
+        {
+          "label": "Melbourne Institute, Poverty Lines: Australia, June Quarter 2025, Table 1",
+          "url": "https://melbourneinstitute.unimelb.edu.au/__data/assets/pdf_file/0016/5430004/Poverty-Lines-Australia-June-Quarter-2025.pdf",
+          "detail": "read from the Internet Archive copy captured 11 Dec 2025",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [
+        "Owner to confirm R2,962 against P031012026.pdf in a browser (condition set 2026-10-14)."
+      ],
+      "secondLines": [],
+      "parts": [
+        {
+          "label": "Food",
+          "amount": 868,
+          "share": 29.3
+        },
+        {
+          "label": "Non-food",
+          "amount": 2094,
+          "share": 70.7
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": null,
+      "slug": "south-africa",
+      "verified": false,
+      "instrument": "National poverty lines (upper bound)",
+      "publisher": "Stats SA",
+      "headline": {
+        "value": 2962,
+        "currency": "ZAR",
+        "year": 2026,
+        "label": "Monthly upper-bound poverty line per person, national, May 2026 prices",
+        "method": "The food poverty line (the cost of 2,100 kcal a day) plus the average non-food spending of households whose food spending is near that line."
+      },
+      "housing": {
+        "tag": "included_not_separate",
+        "note": "No housing line."
+      },
+      "sources": [
+        {
+          "label": "Stats SA, National Poverty Lines 2026",
+          "url": "https://www.statssa.gov.za/publications/P03101/P031012026.pdf",
+          "detail": "not yet read from the primary source",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [
+        "Add the two source URLs."
+      ],
+      "secondLines": [
+        {
+          "label": "Excluding housing",
+          "value": 563
+        }
+      ],
+      "parts": [
+        {
+          "label": "Rent ceiling",
+          "amount": 449,
+          "share": 44.37,
+          "hatched": true
+        },
+        {
+          "label": "Food",
+          "amount": 195.36,
+          "share": 19.3,
+          "derived": "34.7% of €563: RBEG §5's 2018-based structure applied to the uprated basic need; the law earmarks no specific euro amount"
+        },
+        {
+          "label": "Leisure",
+          "amount": 55.17,
+          "share": 5.45,
+          "derived": "9.8% of €563: RBEG §5's 2018-based structure applied to the uprated basic need; the law earmarks no specific euro amount"
+        },
+        {
+          "label": "Transport",
+          "amount": 50.67,
+          "share": 5.01,
+          "derived": "9% of €563: RBEG §5's 2018-based structure applied to the uprated basic need; the law earmarks no specific euro amount"
+        },
+        {
+          "label": "Communication",
+          "amount": 50.11,
+          "share": 4.95,
+          "derived": "8.9% of €563: RBEG §5's 2018-based structure applied to the uprated basic need; the law earmarks no specific euro amount"
+        },
+        {
+          "label": "Energy and repairs",
+          "amount": 47.86,
+          "share": 4.73,
+          "derived": "8.5% of €563: RBEG §5's 2018-based structure applied to the uprated basic need; the law earmarks no specific euro amount"
+        },
+        {
+          "label": "Clothing",
+          "amount": 46.73,
+          "share": 4.62,
+          "derived": "8.3% of €563: RBEG §5's 2018-based structure applied to the uprated basic need; the law earmarks no specific euro amount"
+        },
+        {
+          "label": "Other",
+          "amount": 45.04,
+          "share": 4.45,
+          "derived": "8% of €563: RBEG §5's 2018-based structure applied to the uprated basic need; the law earmarks no specific euro amount"
+        },
+        {
+          "label": "Furnishing",
+          "amount": 34.34,
+          "share": 3.39,
+          "derived": "6.1% of €563: RBEG §5's 2018-based structure applied to the uprated basic need; the law earmarks no specific euro amount"
+        },
+        {
+          "label": "Health",
+          "amount": 21.39,
+          "share": 2.11,
+          "derived": "3.8% of €563: RBEG §5's 2018-based structure applied to the uprated basic need; the law earmarks no specific euro amount"
+        },
+        {
+          "label": "Restaurants",
+          "amount": 14.64,
+          "share": 1.45,
+          "derived": "2.6% of €563: RBEG §5's 2018-based structure applied to the uprated basic need; the law earmarks no specific euro amount"
+        },
+        {
+          "label": "Education",
+          "amount": 2.25,
+          "share": 0.22,
+          "derived": "0.4% of €563: RBEG §5's 2018-based structure applied to the uprated basic need; the law earmarks no specific euro amount"
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": null,
+      "slug": "germany",
+      "verified": true,
+      "instrument": "Bürgergeld basic need plus Berlin AV-Wohnen rent ceiling",
+      "publisher": "BMAS (RBEG §5) and Jobcenter Berlin",
+      "headline": {
+        "value": 1012,
+        "currency": "EUR",
+        "year": 2026,
+        "label": "Monthly basic need plus the Berlin rent ceiling, one adult",
+        "method": "The statutory basic need (€563) plus the rent ceiling for one person (€449, gross cold rent; heating is paid at actual cost and excluded)."
+      },
+      "housing": {
+        "tag": "welfare_ceiling",
+        "note": "The Berlin AV-Wohnen ceiling for one person is €449 (€494 in social housing, plus a €24 climate bonus for class C or better)."
+      },
+      "sources": [
+        {
+          "label": "Jobcenter Berlin, AV-Wohnen table",
+          "url": "",
+          "detail": "rent ceiling for one person",
+          "retrieved": "2026-10-14"
+        },
+        {
+          "label": "RBEG §5",
+          "url": "",
+          "detail": "the 2018-based structure of the basic need",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [
+        "Check for a January 2026 edition.",
+        "Add the source URL."
+      ],
+      "secondLines": [
+        {
+          "label": "Excluding housing",
+          "value": 1111
+        }
+      ],
+      "parts": [
+        {
+          "label": "Rent",
+          "amount": 636,
+          "share": 36.41
+        },
+        {
+          "label": "Health insurance",
+          "amount": 179,
+          "share": 10.25
+        },
+        {
+          "label": "Energy",
+          "amount": 143,
+          "share": 8.19
+        },
+        {
+          "label": "Reserves",
+          "amount": 219,
+          "share": 12.54
+        },
+        {
+          "label": "Food",
+          "amount": 272,
+          "share": 15.57
+        },
+        {
+          "label": "Other household costs",
+          "amount": 38,
+          "share": 2.18
+        },
+        {
+          "label": "Social participation",
+          "amount": 128,
+          "share": 7.33
+        },
+        {
+          "label": "Phone, TV and internet",
+          "amount": 64,
+          "share": 3.66
+        },
+        {
+          "label": "Other insurance",
+          "amount": 26,
+          "share": 1.49
+        },
+        {
+          "label": "Water",
+          "amount": 17,
+          "share": 0.97
+        },
+        {
+          "label": "Transport",
+          "amount": 22,
+          "share": 1.26
+        },
+        {
+          "label": "Bank",
+          "amount": 3,
+          "share": 0.17
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": null,
+      "slug": "netherlands",
+      "verified": false,
+      "instrument": "Minimum example budget (minimumvoorbeeldbegrotingen)",
+      "publisher": "Nibud",
+      "headline": {
+        "value": 1747,
+        "currency": "EUR",
+        "year": 2025,
+        "label": "Monthly spending at social-assistance level, one adult, national (not Amsterdam-specific), July 2025",
+        "method": "Nibud's example budget for a household living on a social-assistance income."
+      },
+      "housing": {
+        "tag": "survey_component",
+        "note": "Rent €636, 'a rent that often occurs for this household'."
+      },
+      "sources": [
+        {
+          "label": "Nibud, Minimumvoorbeeldbegrotingen juli 2025",
+          "url": "",
+          "detail": "via NVVK",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [
+        "Read the split from the MESL 2025/2026 report tables.",
+        "Add the source URL.",
+        "2026 estimate is €629 a week."
+      ],
+      "secondLines": [],
+      "parts": null,
+      "splitNote": "MESL itemises housing; the category split in the 2025/2026 report tables has not been read yet.",
+      "nextRelease": null,
+      "slug": "ireland",
+      "verified": false,
+      "instrument": "Minimum Essential Standard of Living (MESL)",
+      "publisher": "Vincentian MESL Research Centre",
+      "headline": {
+        "value": 2621.67,
+        "currency": "EUR",
+        "year": 2025,
+        "label": "Monthly minimum essential standard, one adult, urban Ireland (not Dublin-specific), private rented (€605 a week)",
+        "method": "Members of the public agree what a household needs for a minimum acceptable standard of living; the budget is priced. €605 a week × 52 ÷ 12."
+      },
+      "housing": {
+        "tag": "private_rent",
+        "note": "Itemised in MESL."
+      },
+      "sources": [
+        {
+          "label": "MESL, NMW 2027 submission",
+          "url": "",
+          "detail": "",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [
+        "Read SSB table 09895 directly.",
+        "Transcribe SIFO's ten categories.",
+        "Add the source URLs."
+      ],
+      "secondLines": [],
+      "parts": [
+        {
+          "label": "Rent, added",
+          "amount": 15260,
+          "share": 54.17,
+          "derived": "SSB's average rent, one-bedroom flat, Oslo and Bærum, 2025"
+        },
+        {
+          "label": "SIFO reference budget, ten categories",
+          "amount": 12909,
+          "share": 45.83
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": null,
+      "slug": "norway",
+      "verified": false,
+      "instrument": "SIFO reference budget plus SSB average rent",
+      "publisher": "SIFO (OsloMet) and SSB",
+      "headline": {
+        "value": 28169,
+        "currency": "NOK",
+        "year": 2026,
+        "label": "Monthly reference budget plus the average rent for a one-bedroom flat, Oslo and Bærum",
+        "method": "SIFO's reference budget leaves housing out, so SSB's average rent for a one-bedroom flat (2 rooms, Oslo and Bærum, 2025) is added.",
+        "derived": "kr 12,909 (SIFO, 2026) + kr 15,260 (SSB, 2025)"
+      },
+      "housing": {
+        "tag": "derived_rent",
+        "note": "Rent is added, not part of SIFO's budget."
+      },
+      "sources": [
+        {
+          "label": "SIFO calculator API",
+          "url": "",
+          "detail": "reference budget, one adult",
+          "retrieved": "2026-10-14"
+        },
+        {
+          "label": "SSB table 09895",
+          "url": "",
+          "detail": "average rent; secondary-reported so far",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [
+        "Transcribe the other eight categories.",
+        "Add the source URL."
+      ],
+      "secondLines": [
+        {
+          "label": "Excluding housing",
+          "value": 1208.08
+        }
+      ],
+      "parts": [
+        {
+          "label": "Housing: community fees and energy",
+          "amount": 739.04,
+          "share": 37.96
+        },
+        {
+          "label": "Eight other categories",
+          "amount": 1208.08,
+          "share": 62.04
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": null,
+      "slug": "poland",
+      "verified": true,
+      "instrument": "Social minimum (minimum socjalne)",
+      "publisher": "IPiSS",
+      "headline": {
+        "value": 1947.12,
+        "currency": "PLN",
+        "year": 2025,
+        "label": "Monthly social minimum, one-person household, 2025 average",
+        "method": "A priced basket of needs agreed as the minimum for social inclusion."
+      },
+      "housing": {
+        "tag": "survey_component",
+        "note": "Housing-community flat fees and energy, not market rent."
+      },
+      "sources": [
+        {
+          "label": "IPiSS, Minimum socjalne 2025 średnioroczne",
+          "url": "",
+          "detail": "",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [
+        "Add the source URLs."
+      ],
+      "secondLines": [
+        {
+          "label": "Excluding shelter",
+          "value": 1503.71
+        }
+      ],
+      "parts": [
+        {
+          "label": "Shelter",
+          "amount": 1116.29,
+          "share": 42.61,
+          "derived": "C$26,791 a year for the reference family ÷ 24 (one person, a month)"
+        },
+        {
+          "label": "Food",
+          "amount": 624.5,
+          "share": 23.84,
+          "derived": "C$14,988 a year for the reference family ÷ 24 (one person, a month)"
+        },
+        {
+          "label": "Other",
+          "amount": 379.29,
+          "share": 14.48,
+          "derived": "C$9,103 a year for the reference family ÷ 24 (one person, a month)"
+        },
+        {
+          "label": "Transport",
+          "amount": 311.21,
+          "share": 11.88,
+          "derived": "C$7,469 a year for the reference family ÷ 24 (one person, a month)"
+        },
+        {
+          "label": "Clothing",
+          "amount": 127.67,
+          "share": 4.87,
+          "derived": "C$3,064 a year for the reference family ÷ 24 (one person, a month)"
+        },
+        {
+          "label": "Communication",
+          "amount": 61,
+          "share": 2.33,
+          "derived": "C$1,464 a year for the reference family ÷ 24 (one person, a month)"
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": null,
+      "slug": "canada",
+      "verified": true,
+      "instrument": "Market Basket Measure",
+      "publisher": "Statistics Canada",
+      "headline": {
+        "value": 2620,
+        "currency": "CAD",
+        "year": 2025,
+        "label": "Monthly poverty threshold for one person, Toronto (C$31,440 a year)",
+        "method": "The cost of a basket of goods and services; StatCan scales the whole threshold for one person from the reference family of four (C$62,880)."
+      },
+      "housing": {
+        "tag": "survey_component",
+        "note": "Shelter is 42.6% of the reference family's threshold."
+      },
+      "sources": [
+        {
+          "label": "Statistics Canada tables 11-10-0104 and 11-10-0066",
+          "url": "",
+          "detail": "",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [
+        "Add the source URL."
+      ],
+      "secondLines": [],
+      "parts": [
+        {
+          "label": "Food",
+          "amount": 2590.61,
+          "share": 52.32
+        },
+        {
+          "label": "Non-food, including housing",
+          "amount": 2361.05,
+          "share": 47.68,
+          "includesHousing": true
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": null,
+      "slug": "mexico",
+      "verified": true,
+      "instrument": "Urban income poverty line",
+      "publisher": "INEGI",
+      "headline": {
+        "value": 4951.66,
+        "currency": "MXN",
+        "year": 2026,
+        "label": "Monthly urban income poverty line per person, September 2026",
+        "method": "The cost of the food basket plus the non-food basket for an urban resident."
+      },
+      "housing": {
+        "tag": "included_not_separate",
+        "note": "Housing is inside non-food. The full 2018 basket put housing at 9.9%; those shares are not applied to today's total."
+      },
+      "sources": [
+        {
+          "label": "INEGI bulletin 624/26",
+          "url": "",
+          "detail": "",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [
+        "Read the MOLIT notice's table for the Seoul ceiling.",
+        "Add the source URLs."
+      ],
+      "secondLines": [],
+      "parts": [
+        {
+          "label": "Livelihood benefit",
+          "amount": 820556,
+          "share": 68.98
+        },
+        {
+          "label": "Housing ceiling, Seoul",
+          "amount": 369000,
+          "share": 31.02,
+          "hatched": true
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": null,
+      "slug": "korea",
+      "verified": false,
+      "instrument": "Livelihood benefit plus Seoul housing-benefit ceiling",
+      "publisher": "MOHW and MOLIT",
+      "headline": {
+        "value": 1189556,
+        "currency": "KRW",
+        "year": 2026,
+        "label": "Monthly livelihood benefit plus the Seoul housing-benefit ceiling, single person",
+        "method": "The state's benefit standard for a one-person household plus the rent subsidy ceiling for Seoul."
+      },
+      "housing": {
+        "tag": "welfare_ceiling",
+        "note": "The Seoul ceiling is ₩369,000 (31.0%)."
+      },
+      "sources": [
+        {
+          "label": "MOHW livelihood benefit standard",
+          "url": "",
+          "detail": "",
+          "retrieved": "2026-10-14"
+        },
+        {
+          "label": "MOLIT notice 2025-506",
+          "url": "",
+          "detail": "housing-benefit ceiling",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [
+        "Add the source URL."
+      ],
+      "secondLines": [],
+      "parts": null,
+      "splitNote": "Türk-İş publishes the single-worker cost as one total.",
+      "nextRelease": null,
+      "slug": "turkiye",
+      "verified": true,
+      "instrument": "Single-worker living cost",
+      "publisher": "Türk-İş",
+      "headline": {
+        "value": 48884.82,
+        "currency": "TRY",
+        "year": 2026,
+        "label": "Monthly cost of living for a single worker, Ankara, September 2026",
+        "method": "Türk-İş prices a worker's monthly living costs in Ankara."
+      },
+      "housing": {
+        "tag": "included_not_separate",
+        "note": "Published as one total."
+      },
+      "sources": [
+        {
+          "label": "Türk-İş, Açlık ve yoksulluk sınırı, report 2026.09",
+          "url": "",
+          "detail": "",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [
+        "Add the source URL."
+      ],
+      "secondLines": [],
+      "parts": null,
+      "splitNote": "The line is half the median disposable income, so no basket stands behind it.",
+      "nextRelease": null,
+      "slug": "israel",
+      "verified": true,
+      "instrument": "Poverty line, single person",
+      "publisher": "National Insurance Institute",
+      "headline": {
+        "value": 3547,
+        "currency": "ILS",
+        "year": 2024,
+        "label": "Monthly poverty line, single person, 2024",
+        "method": "50% of median disposable income per standard person: a relative income threshold with no basket behind it."
+      },
+      "housing": {
+        "tag": "included_not_separate",
+        "note": "A relative income line; housing is not itemised."
+      },
+      "sources": [
+        {
+          "label": "National Insurance Institute, 2024 poverty report press release",
+          "url": "",
+          "detail": "",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    },
+    {
+      "openItems": [
+        "Singapore has no Atlas row, no OECD share series and no World Bank or ECB coverage: it needs a country-table row, its own fetch coverage and a decision on which charts it can show before it can have a page.",
+        "Transcribe the nine other groups.",
+        "Add the source URL."
+      ],
+      "secondLines": [],
+      "parts": [
+        {
+          "label": "Food",
+          "amount": 476.64,
+          "share": 24,
+          "derived": "24.0% of household spending excluding imputed rent, applied to the per-member figure"
+        },
+        {
+          "label": "Housing and related, excluding imputed rent",
+          "amount": 312.75,
+          "share": 15.75,
+          "derived": "S$934 of S$5,931 (15.7%), applied to the per-member figure"
+        },
+        {
+          "label": "Nine other groups",
+          "amount": 1197.56,
+          "share": 60.3,
+          "derived": "the rest of household spending, applied to the per-member figure"
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": null,
+      "slug": "singapore",
+      "verified": false,
+      "instrument": "Household Expenditure Survey 2023",
+      "publisher": "SingStat",
+      "headline": {
+        "value": 1986,
+        "currency": "SGD",
+        "year": 2023,
+        "label": "Monthly household expenditure per household member, excluding imputed rent",
+        "method": "Average spending per household member, from the Household Expenditure Survey 2023."
+      },
+      "housing": {
+        "tag": "imputed_rent_excluded",
+        "note": "Excludes imputed rent: most households own their home. With it, housing and related spending is S$2,122 of S$7,119 (29.8%)."
+      },
+      "sources": [
+        {
+          "label": "SingStat, Household Expenditure Survey 2023 report and key indicators",
+          "url": "",
+          "detail": "",
+          "retrieved": "2026-10-14"
+        }
+      ]
+    }
+  ]
+}
