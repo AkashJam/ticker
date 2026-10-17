@@ -146,7 +146,7 @@
     },
     {
       "slug": "turkiye",
-      "city": "Istanbul",
+      "city": "Ankara",
       "country": "Türkiye",
       "code": "TR",
       "currency": "TRY",
@@ -250,7 +250,7 @@
     },
     {
       "slug": "france",
-      "city": "Paris",
+      "city": "Dijon",
       "country": "France",
       "code": "FR",
       "currency": null,
