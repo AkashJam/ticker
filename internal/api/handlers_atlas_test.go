@@ -159,6 +159,26 @@ func TestAtlasCityAnswersWithRedisDown(t *testing.T) {
 	}
 }
 
+// The display rates (Phase 16 step 6): one ECB annual average per non-euro country,
+// none for the euro area and none for Chile, whose rate is derived through the dollar.
+func TestAtlasCitiesCarryTheDisplayRates(t *testing.T) {
+	h := testHandlers(reference.New(nil, reference.Embedded(), nil))
+	var resp atlas.Response
+	get(t, atlasRouter(h), "/atlas/cities", &resp)
+	jp, ok := resp.Rates["japan"]
+	if !ok || jp.Currency != "JPY" || jp.PerEur < 100 || jp.PerEur > 250 || jp.Year != 2025 || jp.Source == "" {
+		t.Errorf("japan rate %+v ok=%v", jp, ok)
+	}
+	for _, euro := range []string{"italy", "france", "germany", "netherlands", "ireland"} {
+		if _, ok := resp.Rates[euro]; ok {
+			t.Errorf("%s is in the euro area and has no rate", euro)
+		}
+	}
+	if _, ok := resp.Rates["chile"]; ok {
+		t.Error("chile has no ECB average, so no display rate")
+	}
+}
+
 // The comparison must not move: the new route adds beside it and reads none of
 // its stored series.
 func TestAtlasCitiesIsUnchangedByTheCityRoute(t *testing.T) {

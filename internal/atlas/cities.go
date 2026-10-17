@@ -66,12 +66,27 @@ type Row struct {
 	LifeExpectancy      Sourced `json:"lifeExpectancy"`
 }
 
+// DisplayRate is the one rate a view shown in a home city's currency uses
+// (Phase 16 step 6): local units per €1, the ECB's annual average of the latest
+// complete year, the rule the city pages convert at. One dated rate for the whole
+// view, never a rate per cell.
+type DisplayRate struct {
+	Currency string  `json:"currency"`
+	PerEur   float64 `json:"perEur"`
+	Year     int     `json:"year"`
+	Source   string  `json:"source"`
+}
+
 // Response is GET /atlas/cities (portfolio.md §8).
 type Response struct {
 	GeneratedAt string   `json:"generatedAt"`
 	Windows     []string `json:"windows"`
 	End         string   `json:"end"`
 	Rows        []Row    `json:"rows"`
+	// Rates is by country slug, for each country with a currency of its own and an
+	// ECB annual average. A euro-area country, and one with no average (Chile,
+	// derived through the dollar), has none.
+	Rates map[string]DisplayRate `json:"rates"`
 }
 
 // Build assembles the response from the three stored datasets. countries must
@@ -87,6 +102,7 @@ func Build(countries []reference.Country, f fred.Dataset, e ecb.Dataset, w world
 		Windows:     Windows,
 		End:         strconv.Itoa(end),
 		Rows:        make([]Row, 0, len(countries)),
+		Rates:       displayRates(countries, e),
 	}
 	for _, c := range countries {
 		fr, wr := f.Rows[c.Code], w.Rows[c.Code]
@@ -159,4 +175,22 @@ func latest(times ...string) string {
 		}
 	}
 	return best
+}
+
+func displayRates(countries []reference.Country, e ecb.Dataset) map[string]DisplayRate {
+	out := map[string]DisplayRate{}
+	for _, c := range countries {
+		if c.Currency == nil {
+			continue
+		}
+		cur := e.Currencies[*c.Currency]
+		if cur.Series == nil {
+			continue
+		}
+		year := cur.Series.LastCompleteYear()
+		if rate, ok := cur.AnnualAverage[strconv.Itoa(year)]; ok && rate > 0 {
+			out[c.Slug] = DisplayRate{Currency: *c.Currency, PerEur: rate, Year: year, Source: ecb.Source}
+		}
+	}
+	return out
 }
