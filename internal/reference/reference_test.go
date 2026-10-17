@@ -2,10 +2,12 @@ package reference
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"io/fs"
 	"log/slog"
+	"slices"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -209,9 +211,7 @@ func TestCountryTable(t *testing.T) {
 				thin[*c.Sensor] = true
 			}
 		}
-		if c.NewsTopic != nil {
-			t.Errorf("%s: newsTopic is Phase 15's to fill", c.Slug)
-		}
+		checkNewsConfig(t, c)
 	}
 	if sensors != 13 || atlasSensors != 11 {
 		t.Errorf("%d sensors, %d with an Atlas row; want 13 and 11", sensors, atlasSensors)
@@ -250,5 +250,93 @@ func TestEmbeddedHasOnlyKnownFiles(t *testing.T) {
 	m, err := fs.Glob(Embedded(), "*.json")
 	if err != nil || len(m) < 2 {
 		t.Fatalf("glob=%v err=%v", m, err)
+	}
+}
+
+// checkNewsConfig pins Phase 15 step 5's fields: a sensor's row carries both
+// news phrases, a central bank feed or the reason it has none, and the filer's
+// EDGAR country; a row without a sensor carries none of them.
+func checkNewsConfig(t *testing.T, c Country) {
+	t.Helper()
+	if c.Sensor == nil {
+		if c.EconomyQuery != nil || c.SectorQuery != nil || c.CentralBankFeed != nil || c.CentralBankFeedReason != nil || c.EdgarCountry != nil || c.EdgarOverride {
+			t.Errorf("%s: no sensor, but news configuration is set", c.Slug)
+		}
+		return
+	}
+	if c.EconomyQuery == nil || *c.EconomyQuery == "" || c.SectorQuery == nil || *c.SectorQuery == "" {
+		t.Errorf("%s: a sensor needs an economy and a sector query", c.Slug)
+	}
+	if (c.CentralBankFeed == nil) == (c.CentralBankFeedReason == nil) {
+		t.Errorf("%s: want exactly one of a central bank feed and the reason it has none", c.Slug)
+	}
+	if f := c.CentralBankFeed; f != nil {
+		if !strings.HasPrefix(f.URL, "https://") || len(f.Language) != 2 {
+			t.Errorf("%s: feed %+v", c.Slug, f)
+		}
+		switch f.Format {
+		case "rss2", "rss1", "atom":
+		default:
+			t.Errorf("%s: feed format %q", c.Slug, f.Format)
+		}
+	}
+	if c.EdgarCountry == nil || *c.EdgarCountry == "" {
+		t.Errorf("%s: a sensor needs its EDGAR country", c.Slug)
+	}
+	if c.EdgarOverride != (*c.Sensor == "BAP") {
+		t.Errorf("%s: edgarOverride = %v; only BAP files in one country and senses another", c.Slug, c.EdgarOverride)
+	}
+}
+
+func TestNewsConfigCounts(t *testing.T) {
+	all, err := New(nil, Embedded(), nil).Countries(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	feeds := 0
+	var none []string
+	for _, c := range all {
+		if c.Sensor == nil {
+			continue
+		}
+		if c.CentralBankFeed != nil {
+			feeds++
+		} else {
+			none = append(none, *c.Sensor)
+		}
+	}
+	slices.Sort(none)
+	if feeds != 8 || !slices.Equal(none, []string{"AMX", "BAP", "BCH", "KB", "TLK"}) {
+		t.Errorf("%d feeds, none for %v; want 8, and none for AMX BAP BCH KB TLK (phase8.md)", feeds, none)
+	}
+}
+
+func TestGlobalSensorsCarryATopic(t *testing.T) {
+	sensors, err := New(nil, Embedded(), nil).Sensors(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range sensors {
+		switch s.Group {
+		case "global":
+			if s.NewsTopic == nil || *s.NewsTopic == "" {
+				t.Errorf("%s: a global sensor needs a topic", s.Symbol)
+			}
+			if s.NewsTopicProvisional != (s.Symbol == "CAT") {
+				t.Errorf("%s: provisional = %v; only CAT's wording is provisional (research/news-queries.md)", s.Symbol, s.NewsTopicProvisional)
+			}
+		default:
+			if s.NewsTopic != nil {
+				t.Errorf("%s: a country sensor uses its country's queries, not a topic", s.Symbol)
+			}
+		}
+	}
+	// None of it is served.
+	b, err := json.Marshal(sensors)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(b), "newsTopic") || strings.Contains(string(b), "chip stocks") {
+		t.Error("the topic is configuration and must not be served by GET /sensors")
 	}
 }

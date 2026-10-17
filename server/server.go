@@ -16,6 +16,7 @@ import (
 	"github.com/AkashJam/ticker/internal/aggregate"
 	"github.com/AkashJam/ticker/internal/api"
 	"github.com/AkashJam/ticker/internal/ecb"
+	"github.com/AkashJam/ticker/internal/edgar"
 	"github.com/AkashJam/ticker/internal/fred"
 	"github.com/AkashJam/ticker/internal/indicators"
 	"github.com/AkashJam/ticker/internal/ingest"
@@ -179,7 +180,7 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 	fredRefresher := fred.NewRefresher(fred.NewClient(), refStore, log)
 	ecbRefresher := ecb.NewRefresher(ecb.NewClient(), fred.NewClient(), refStore, log)
 	wbRefresher := worldbank.NewRefresher(worldbank.NewClient(), refStore, log)
-	refScheduler := reference.NewScheduler([]reference.Job{
+	jobs := []reference.Job{
 		{
 			Name:  "fred",
 			Run:   fredRefresher.Refresh,
@@ -195,7 +196,25 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 			Run:   wbRefresher.Refresh,
 			Stale: func(ctx context.Context) bool { return wbRefresher.Stale(ctx, 24*time.Hour) },
 		},
-	}, leader, sweep.NewPinger(cfg.HealthchecksReferenceURL, log), log)
+	}
+	// The EDGAR identity check (phase15.md step 5) needs a contact to give SEC.
+	// Without one it is off, loudly, and nothing else is affected.
+	if cfg.FetchContact == "" {
+		log.Warn("server: EDGAR identity check disabled — FETCH_CONTACT is not set")
+	} else {
+		edgarClient, err := edgar.NewClient(cfg.FetchContact)
+		if err != nil {
+			pool.Close()
+			return nil, fmt.Errorf("server: %w", err)
+		}
+		edgarRefresher := edgar.NewRefresher(edgarClient, refStore, log)
+		jobs = append(jobs, reference.Job{
+			Name:  "edgar",
+			Run:   edgarRefresher.Refresh,
+			Stale: func(ctx context.Context) bool { return edgarRefresher.Stale(ctx, 24*time.Hour) },
+		})
+	}
+	refScheduler := reference.NewScheduler(jobs, leader, sweep.NewPinger(cfg.HealthchecksReferenceURL, log), log)
 
 	handlers.Ref = refStore
 	handlers.Source = cfg.Source

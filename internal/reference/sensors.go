@@ -35,6 +35,12 @@ type Sensor struct {
 	// from region: Türkiye sits between the Netherlands and India, and Canada
 	// comes before Mexico (bearing.md #102).
 	Order int `json:"order"`
+
+	// NewsTopic is a global sensor's Google News phrase (nil for a country
+	// sensor, which uses its country's queries). It is server-side
+	// configuration and is not served.
+	NewsTopic            *string `json:"-"`
+	NewsTopicProvisional bool    `json:"-"`
 }
 
 type sensorRow struct {
@@ -46,6 +52,9 @@ type sensorRow struct {
 	LiquidityUsdM *float64 `json:"liquidityUsdM"`
 	LiquidityAsOf *string  `json:"liquidityAsOf"`
 	Order         int      `json:"order"`
+
+	NewsTopic            *string `json:"newsTopic"`
+	NewsTopicProvisional bool    `json:"newsTopicProvisional"`
 }
 
 // Sensors returns the eighteen in display order. Country, region and liquidity
@@ -74,6 +83,7 @@ func (s *Store) Sensors(ctx context.Context) ([]Sensor, error) {
 		sn := Sensor{
 			Symbol: r.Symbol, Name: r.Name, Group: r.Group, Theme: r.Theme, Note: r.Note,
 			LiquidityUsdM: r.LiquidityUsdM, LiquidityAsOf: r.LiquidityAsOf, Order: r.Order,
+			NewsTopic: r.NewsTopic, NewsTopicProvisional: r.NewsTopicProvisional,
 		}
 		if r.Group == "country" {
 			c, ok := bySensor[r.Symbol]

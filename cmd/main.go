@@ -24,7 +24,9 @@ import (
 
 	"github.com/AkashJam/ticker/flags"
 	"github.com/AkashJam/ticker/internal/ecb"
+	"github.com/AkashJam/ticker/internal/edgar"
 	"github.com/AkashJam/ticker/internal/fred"
+	"github.com/AkashJam/ticker/internal/news"
 	"github.com/AkashJam/ticker/internal/reference"
 	"github.com/AkashJam/ticker/internal/source"
 	"github.com/AkashJam/ticker/internal/store"
@@ -59,9 +61,10 @@ func main() {
 	referenceHealthchecksFlag := &cli.StringFlag{Name: "healthchecks-reference-url", Sources: cli.EnvVars("HEALTHCHECKS_REFERENCE_URL")}
 	triggerThresholdFlag := &cli.FloatFlag{Name: "trigger-threshold", Value: 2.5, Sources: cli.EnvVars("TRIGGER_THRESHOLD"), Usage: "|z| a sensor's residual move must pass on the close to be recorded as an event"}
 	splitThresholdFlag := &cli.FloatFlag{Name: "split-threshold", Value: 2, Sources: cli.EnvVars("SPLIT_THRESHOLD"), Usage: "|z| a currency or stock part must pass on its own to count in a trip's currency-split label"}
+	fetchContactFlag := &cli.StringFlag{Name: "fetch-contact", Sources: cli.EnvVars("FETCH_CONTACT"), Usage: "name and address SEC EDGAR may contact about this client, sent in the User-Agent; empty disables the EDGAR job"}
 	consumerFlag := &cli.StringFlag{Name: "consumer", Sources: cli.EnvVars("CONSUMER"), Usage: "ticks:raw consumer group member name; defaults to hostname-pid"}
 
-	sharedFlags := []cli.Flag{sourceFlag, envFlag, addrFlag, aggWindowFlag, logLevelFlag, dbDSNFlag, redisAddrFlag, healthchecksFlag, finnhubKeyFlag, sweepHealthchecksFlag, referenceHealthchecksFlag, triggerThresholdFlag, splitThresholdFlag, consumerFlag}
+	sharedFlags := []cli.Flag{sourceFlag, envFlag, addrFlag, aggWindowFlag, logLevelFlag, dbDSNFlag, redisAddrFlag, healthchecksFlag, finnhubKeyFlag, sweepHealthchecksFlag, referenceHealthchecksFlag, triggerThresholdFlag, splitThresholdFlag, fetchContactFlag, consumerFlag}
 
 	configFromCmd := func(cmd *cli.Command) flags.Config {
 		return flags.Config{
@@ -73,6 +76,7 @@ func main() {
 			HealthchecksReferenceURL: cmd.String("healthchecks-reference-url"),
 			TriggerThreshold:         cmd.Float("trigger-threshold"),
 			SplitThreshold:           cmd.Float("split-threshold"),
+			FetchContact:             cmd.String("fetch-contact"),
 		}
 	}
 
@@ -112,6 +116,20 @@ func main() {
 					}
 					return runSweep(ctx, configFromCmd(cmd), mode, cmd.Bool("dry-run"))
 				},
+			},
+			{
+				Name:  "edgar",
+				Usage: "fetch the sensors' EDGAR identities, run the drift check, and write the dataset to --out, or to Redis without it, then exit",
+				Flags: append([]cli.Flag{&cli.StringFlag{Name: "out", Usage: "write JSON here instead of Redis; this is how embedded/edgar.json is made"}}, sharedFlags...),
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					return runEdgar(ctx, configFromCmd(cmd), cmd.String("out"))
+				},
+			},
+			{
+				Name:   "newscheck",
+				Usage:  "run every news phrase against Google News RSS and print items and distinct outlets, read-only, then exit; run it once from the production container",
+				Flags:  sharedFlags,
+				Action: func(ctx context.Context, cmd *cli.Command) error { return runNewsCheck(ctx, configFromCmd(cmd)) },
 			},
 			{
 				Name:  "trigger",
@@ -374,6 +392,113 @@ func runSigma(ctx context.Context, cfg flags.Config) error {
 		if err, ok := errs[sym]; ok {
 			fmt.Printf("%-6s not evaluated: %v\n", sym, err)
 		}
+	}
+	return nil
+}
+
+// runEdgar is a manual run of the EDGAR identity job. With --out it writes the
+// dataset to a file, which is how the embedded snapshot is generated; without it
+// the dataset goes to Redis. It reports the drift it found and does not ping
+// healthchecks.io: that check watches the scheduled run. The contact is sent to
+// SEC and is never printed.
+func runEdgar(ctx context.Context, cfg flags.Config, out string) error {
+	log := newLogger(cfg.LogLevel)
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	client, err := edgar.NewClient(cfg.FetchContact)
+	if err != nil {
+		return fmt.Errorf("edgar: %w (set it in the environment; it is sent to SEC in the User-Agent)", err)
+	}
+	var cache reference.Cache
+	if out == "" {
+		if cfg.RedisAddr == "" {
+			return fmt.Errorf("edgar: REDIS_ADDR (or --redis-addr) is required without --out")
+		}
+		cache = store.NewRedis(cfg.RedisAddr)
+	}
+	refresher := edgar.NewRefresher(client, reference.New(cache, reference.Embedded(), log), log)
+
+	if out == "" {
+		return refresher.Refresh(ctx)
+	}
+	ds, err := refresher.Build(ctx)
+	if err != nil {
+		return err
+	}
+	b, err := json.MarshalIndent(ds, "", "  ")
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(out, append(b, '\n'), 0o644); err != nil {
+		return err
+	}
+	fmt.Printf("edgar: wrote %s sensors=%d drift=%d\n", out, len(ds.Sensors), len(ds.Drift))
+	for _, d := range ds.Drift {
+		fmt.Printf("  %-5s %-17s %s\n", d.Symbol, d.Kind, d.Detail)
+	}
+	return nil
+}
+
+// runNewsCheck runs every news phrase in the reference tables against Google
+// News RSS and prints items and distinct outlets over two days, as
+// research/news-queries.md recorded them. It writes nothing. Run it once from
+// the production container: the spec asks that the phrases be tested from the
+// address that will use them.
+func runNewsCheck(ctx context.Context, cfg flags.Config) error {
+	log := newLogger(cfg.LogLevel)
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	ref := reference.New(nil, reference.Embedded(), log)
+	countries, err := ref.Countries(ctx)
+	if err != nil {
+		return err
+	}
+	sensors, err := ref.Sensors(ctx)
+	if err != nil {
+		return err
+	}
+	type phrase struct{ kind, symbol, text string }
+	var phrases []phrase
+	for _, c := range countries {
+		if c.Sensor == nil {
+			continue
+		}
+		phrases = append(phrases, phrase{"economy", *c.Sensor, *c.EconomyQuery}, phrase{"sector", *c.Sensor, *c.SectorQuery})
+	}
+	for _, s := range sensors {
+		if s.NewsTopic != nil {
+			label := "topic"
+			if s.NewsTopicProvisional {
+				label = "topic*"
+			}
+			phrases = append(phrases, phrase{label, s.Symbol, *s.NewsTopic})
+		}
+	}
+
+	client := news.NewClient()
+	failed := 0
+	fmt.Printf("%-8s %-5s %6s %8s  %s\n", "kind", "sym", "items", "outlets", "phrase")
+	for i, p := range phrases {
+		if i > 0 {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(time.Second):
+			}
+		}
+		items, err := client.Search(ctx, p.text, 48*time.Hour)
+		if err != nil {
+			failed++
+			fmt.Printf("%-8s %-5s %6s %8s  %s  (%v)\n", p.kind, p.symbol, "-", "-", p.text, err)
+			continue
+		}
+		fmt.Printf("%-8s %-5s %6d %8d  %s\n", p.kind, p.symbol, len(items), news.DistinctOutlets(items), p.text)
+	}
+	fmt.Println("(* provisional wording)")
+	if failed > 0 {
+		return fmt.Errorf("newscheck: %d of %d phrases failed", failed, len(phrases))
 	}
 	return nil
 }

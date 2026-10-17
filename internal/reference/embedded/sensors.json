@@ -1,6 +1,6 @@
 {
   "source": "portfolio.md §15 Phase 14 step 2 (bearing.md #95, #102); mockups/market-v2/market-launch.html for the names and themes",
-  "asOf": "2026-10-15",
+  "asOf": "2026-10-17",
   "rows": [
     {"symbol": "RY",   "name": "Royal Bank of Canada", "group": "country", "order": 1},
     {"symbol": "AMX",  "name": "América Móvil",        "group": "country", "note": "telecom", "order": 2},
@@ -15,10 +15,10 @@
     {"symbol": "TLK",  "name": "Telkom Indonesia",     "group": "country", "note": "telecom", "liquidityUsdM": 11, "liquidityAsOf": "2026-10-09", "order": 11},
     {"symbol": "KB",   "name": "KB Financial Group",   "group": "country", "liquidityUsdM": 25, "liquidityAsOf": "2026-10-09", "order": 12},
     {"symbol": "MUFG", "name": "Mitsubishi UFJ",       "group": "country", "order": 13},
-    {"symbol": "NVDA", "name": "NVIDIA",               "group": "global", "theme": "Semiconductors",   "order": 14},
-    {"symbol": "AAPL", "name": "Apple",                "group": "global", "theme": "China supply",     "order": 15},
-    {"symbol": "XOM",  "name": "Exxon Mobil",          "group": "global", "theme": "Oil",              "order": 16},
-    {"symbol": "JPM",  "name": "JPMorgan Chase",       "group": "global", "theme": "Global credit",    "order": 17},
-    {"symbol": "CAT",  "name": "Caterpillar",          "group": "global", "theme": "Industrial cycle", "order": 18}
+    {"symbol": "NVDA", "name": "NVIDIA",               "group": "global", "theme": "Semiconductors",   "newsTopic": "semiconductor OR \"chip stocks\"", "order": 14},
+    {"symbol": "AAPL", "name": "Apple",                "group": "global", "theme": "China supply",     "newsTopic": "Apple (China OR Foxconn OR tariffs OR \"supply chain\")", "order": 15},
+    {"symbol": "XOM",  "name": "Exxon Mobil",          "group": "global", "theme": "Oil",              "newsTopic": "\"crude oil\" OR \"oil prices\"", "order": 16},
+    {"symbol": "JPM",  "name": "JPMorgan Chase",       "group": "global", "theme": "Global credit",    "newsTopic": "\"Wall Street banks\" OR \"credit markets\" OR \"bank earnings\"", "order": 17},
+    {"symbol": "CAT",  "name": "Caterpillar",          "group": "global", "theme": "Industrial cycle", "newsTopic": "\"mining equipment\" OR \"industrial stocks\" OR \"manufacturing PMI\"", "newsTopicProvisional": true, "order": 18}
   ]
 }

@@ -47,6 +47,11 @@ type Config struct {
 	// SplitThreshold is the |z| a currency or stock part must pass on its own
 	// to count in an event's currency-split label (bearing.md #90, 2).
 	SplitThreshold float64
+	// FetchContact identifies this service to SEC EDGAR, which asks automated
+	// clients for a real name and contact address in the User-Agent and throttles
+	// or blocks those that give none. It is sent to a third party, so it is the
+	// owner's to choose. Empty disables the EDGAR job; never log it.
+	FetchContact string
 	// Consumer names this instance in the ticks:raw consumer group. Empty
 	// falls back to aggregate.New's hostname-pid default, correct for
 	// today's single-aggregator deployment; ADR-003's revisit trigger (a

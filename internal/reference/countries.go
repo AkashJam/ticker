@@ -17,7 +17,27 @@ type Country struct {
 	HasCityPage bool    `json:"hasCityPage"`
 	Region      string  `json:"region"`    // americas | europe | asia-pacific | africa | middle-east; geography only, the sensors' display order is sensors.json
 	Liquidity   *string `json:"liquidity"` // "thin" for the four thin ADR listings
-	NewsTopic   *string `json:"newsTopic"` // Phase 15 fills this
+
+	// The next fields are the trigger's news and filing configuration (Phase 15
+	// step 5). They exist only on a sensor's row; the rest hold nil.
+	EconomyQuery *string `json:"economyQuery"` // Google News phrase for a currency-led trip
+	SectorQuery  *string `json:"sectorQuery"`  // Google News phrase for a stock-led trip
+	// CentralBankFeed is the country's central bank press feed, or nil with the
+	// reason in CentralBankFeedReason.
+	CentralBankFeed       *Feed   `json:"centralBankFeed"`
+	CentralBankFeedReason *string `json:"centralBankFeedReason"`
+	// EdgarCountry is the business country EDGAR gives the sensor's filer, as
+	// EDGAR spells it. EdgarOverride is true where that is not the sensor's
+	// country (BAP files in Bermuda and senses Peru).
+	EdgarCountry  *string `json:"edgarCountry"`
+	EdgarOverride bool    `json:"edgarOverride"`
+}
+
+// Feed is a central bank press-release feed.
+type Feed struct {
+	URL      string `json:"url"`
+	Format   string `json:"format"`   // rss2 | rss1 | atom
+	Language string `json:"language"` // ISO 639-1
 }
 
 // CountriesName is the dataset the table is stored and embedded as.
