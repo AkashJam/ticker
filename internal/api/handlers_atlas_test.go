@@ -39,10 +39,19 @@ func TestAtlasCitiesAnswersWithRedisDown(t *testing.T) {
 		t.Fatalf("end %s, %d rows, windows %v", resp.End, len(resp.Rows), resp.Windows)
 	}
 	by := map[string]atlas.Row{}
+	pages := 0
+	defer func() {
+		if pages != 15 || !by["japan"].HasCityPage || by["ireland"].HasCityPage {
+			t.Errorf("%d rows with a city page; japan %v, ireland %v", pages, by["japan"].HasCityPage, by["ireland"].HasCityPage)
+		}
+	}()
 	for _, r := range resp.Rows {
 		by[r.Slug] = r
-		if r.Slug == "" || r.HasCityPage {
-			t.Errorf("%s: slug %q hasCityPage %v", r.Code, r.Slug, r.HasCityPage)
+		if r.Slug == "" {
+			t.Errorf("%s: empty slug", r.Code)
+		}
+		if r.HasCityPage {
+			pages++
 		}
 	}
 	it := by["italy"]

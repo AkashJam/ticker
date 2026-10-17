@@ -133,6 +133,36 @@ func TestOnlyTheOpenItemsAreUnverified(t *testing.T) {
 	}
 }
 
+// hasCityPage is derived from the verified record, so it cannot outrun the data.
+func TestCityPagesFollowTheVerifiedRecords(t *testing.T) {
+	st := New(nil, Embedded(), nil)
+	ctx := context.Background()
+	rows, err := st.Surveys(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	verified := map[string]bool{}
+	for _, s := range rows {
+		verified[s.Slug] = s.Verified
+	}
+	all, err := st.Countries(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pages := 0
+	for _, c := range all {
+		if c.HasCityPage != (c.Atlas && verified[c.Slug]) {
+			t.Errorf("%s: hasCityPage %v, verified %v", c.Slug, c.HasCityPage, verified[c.Slug])
+		}
+		if c.HasCityPage {
+			pages++
+		}
+	}
+	if pages != 15 {
+		t.Errorf("%d city pages, want 15 (the verified records with an Atlas row)", pages)
+	}
+}
+
 func TestSurveyLookup(t *testing.T) {
 	st := New(nil, Embedded(), nil)
 	s, ok, err := st.Survey(context.Background(), "japan")

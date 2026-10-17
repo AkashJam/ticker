@@ -189,9 +189,6 @@ func TestCountryTable(t *testing.T) {
 		if !regions[c.Region] {
 			t.Errorf("%s: unknown region %q", c.Slug, c.Region)
 		}
-		if c.HasCityPage {
-			t.Errorf("%s: hasCityPage is true, but no city page has shipped (bearing.md #101)", c.Slug)
-		}
 		if c.Atlas != (c.City != nil) {
 			t.Errorf("%s: atlas=%v but city=%v", c.Slug, c.Atlas, c.City)
 		}

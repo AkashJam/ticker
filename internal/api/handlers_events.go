@@ -31,6 +31,9 @@ type eventCountry struct {
 	Slug  string `json:"slug"`
 	Name  string `json:"name"`
 	Atlas bool   `json:"atlas"` // false for Colombia and Peru: a row in the table, none on /atlas
+	// CityPage is whether /atlas/{slug} exists, so a ledger entry links there and
+	// not to the comparison row.
+	CityPage bool `json:"cityPage"`
 }
 
 type eventPrice struct {
@@ -288,7 +291,7 @@ func (lk eventLookups) body(t trigger.Trip, canary []time.Time) eventBody {
 	}
 	ev.ID = strings.ToLower(t.Symbol)
 	if cn, ok := lk.byCountry[t.Symbol]; ok {
-		ev.Country = &eventCountry{Slug: cn.Slug, Name: cn.Country, Atlas: cn.Atlas}
+		ev.Country = &eventCountry{Slug: cn.Slug, Name: cn.Country, Atlas: cn.Atlas, CityPage: cn.HasCityPage}
 		ev.ID = cn.Slug
 	} else {
 		ev.Theme = sn.Theme

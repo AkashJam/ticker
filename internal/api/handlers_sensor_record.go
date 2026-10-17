@@ -138,7 +138,7 @@ func (h *Handlers) buildRecord(ctx context.Context, lk eventLookups, symbol stri
 	sn := lk.bySensor[symbol]
 	res.Name = sn.Name
 	if cn, ok := lk.byCountry[symbol]; ok {
-		res.Country = &eventCountry{Slug: cn.Slug, Name: cn.Country, Atlas: cn.Atlas}
+		res.Country = &eventCountry{Slug: cn.Slug, Name: cn.Country, Atlas: cn.Atlas, CityPage: cn.HasCityPage}
 	} else {
 		res.Theme = sn.Theme
 	}

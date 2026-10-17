@@ -1,20 +1,27 @@
 package reference
 
-import "context"
+import (
+	"context"
+	"errors"
+	"io/fs"
+)
 
 // Country is one row of the country reference table (bearing.md #95): the one
 // place the Atlas rows, the sensor reference, the home band and ⌘K read their
 // countries from, so the links between the pages cannot drift.
 type Country struct {
-	Slug        string  `json:"slug"` // the row's address: /atlas#italy
-	City        *string `json:"city"` // nil for a country with no Atlas row
-	Country     string  `json:"country"`
-	Code        string  `json:"code"`     // ISO 3166 alpha-2
-	Currency    *string `json:"currency"` // nil for the euro area
-	EuroArea    bool    `json:"euroArea"`
-	Sensor      *string `json:"sensor"` // market-sensor symbol, if any
-	Atlas       bool    `json:"atlas"`  // false for a sensor country with no OECD series
-	HasCityPage bool    `json:"hasCityPage"`
+	Slug     string  `json:"slug"` // the row's address: /atlas#italy
+	City     *string `json:"city"` // nil for a country with no Atlas row
+	Country  string  `json:"country"`
+	Code     string  `json:"code"`     // ISO 3166 alpha-2
+	Currency *string `json:"currency"` // nil for the euro area
+	EuroArea bool    `json:"euroArea"`
+	Sensor   *string `json:"sensor"` // market-sensor symbol, if any
+	Atlas    bool    `json:"atlas"`  // false for a sensor country with no OECD series
+	// HasCityPage is derived, not stored: a country has a city page when its survey
+	// record is verified (Phase 16 step 4). Closing an open item is one edit, in
+	// surveys.json, and the page, the /atlas link, the ⌘K entry and the market link follow.
+	HasCityPage bool    `json:"-"`
 	Region      string  `json:"region"`    // americas | europe | asia-pacific | africa | middle-east; geography only, the sensors' display order is sensors.json
 	Liquidity   *string `json:"liquidity"` // "thin" for the four thin ADR listings
 
@@ -54,6 +61,17 @@ func (s *Store) Countries(ctx context.Context) ([]Country, error) {
 	}
 	if _, err := s.Get(ctx, CountriesName, &t); err != nil {
 		return nil, err
+	}
+	surveys, err := s.Surveys(ctx)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return nil, err // a store with no surveys file has no city pages, and is not an error
+	}
+	verified := make(map[string]bool, len(surveys))
+	for _, sv := range surveys {
+		verified[sv.Slug] = sv.Verified
+	}
+	for i := range t.Rows {
+		t.Rows[i].HasCityPage = t.Rows[i].Atlas && verified[t.Rows[i].Slug]
 	}
 	return t.Rows, nil
 }
