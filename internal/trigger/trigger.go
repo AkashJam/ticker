@@ -268,3 +268,9 @@ func EvaluateOn(all map[string]Closes, sensors []string, session time.Time) (res
 	}
 	return results, errs
 }
+
+// LiveFrom is the first session the trigger judged in production (the deploy of
+// 17 October judged Friday the 16th). Daily bars exist from 1 July, but nothing
+// before this date was ever tested, so a count of events is only a rate over the
+// sessions from here (phase16.md step 2, decision 5).
+var LiveFrom = time.Date(2026, 10, 16, 0, 0, 0, 0, time.UTC)

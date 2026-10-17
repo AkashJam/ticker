@@ -18,9 +18,12 @@ type Sensor struct {
 	Group  string `json:"group"` // country | global
 	// Country is the sensor's country, from the country table; nil for a
 	// global sensor, which is about a theme rather than a place.
-	Country   *string `json:"country"`
-	Theme     *string `json:"theme"`     // global sensors only
-	Region    *string `json:"region"`    // from the country table; nil for global
+	Country *string `json:"country"`
+	Theme   *string `json:"theme"`  // global sensors only
+	Region  *string `json:"region"` // from the country table; nil for global
+	// Slug is the country's address (japan), the form the site's links to the sensor's
+	// page use; nil for a global sensor, which is addressed by its symbol.
+	Slug      *string `json:"slug"`
 	Liquidity *string `json:"liquidity"` // "thin" for the four thin ADR listings, from the country table
 	// Note qualifies the company where the table must, e.g. "telecom" or "was
 	// Bancolombia".
@@ -91,7 +94,8 @@ func (s *Store) Sensors(ctx context.Context) ([]Sensor, error) {
 				return nil, fmt.Errorf("reference: sensor %s has no row in the country table", r.Symbol)
 			}
 			country, region := c.Country, c.Region
-			sn.Country, sn.Region, sn.Liquidity = &country, &region, c.Liquidity
+			slug := c.Slug
+			sn.Country, sn.Region, sn.Liquidity, sn.Slug = &country, &region, c.Liquidity, &slug
 		}
 		out = append(out, sn)
 	}

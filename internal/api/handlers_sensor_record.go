@@ -36,7 +36,12 @@ type recordResponse struct {
 	Series           recordSeries `json:"series"`
 	SessionsObserved int          `json:"sessionsObserved"`
 	LatestSession    *string      `json:"latestSession"`
-	EventCount       int          `json:"eventCount"`
+	// JudgedFrom is the first session the trigger tested, and SessionsJudged how
+	// many of the series' sessions are on or after it: the denominator of any rate
+	// of events. The series is longer, because the bars were seeded from 1 July.
+	JudgedFrom     string `json:"judgedFrom"`
+	SessionsJudged int    `json:"sessionsJudged"`
+	EventCount     int    `json:"eventCount"`
 	// Events are every trip the sensor has recorded, newest session first, in the
 	// ledger's event shape without the band.
 	Events []eventBody `json:"events"`
@@ -187,6 +192,12 @@ func (h *Handlers) fillSeries(ctx context.Context, res *recordResponse) error {
 		res.Series.Close = append(res.Series.Close, sym[d])
 	}
 	res.SessionsObserved = len(res.Series.Dates)
+	res.JudgedFrom = trigger.LiveFrom.Format(time.DateOnly)
+	for _, d := range res.Series.Dates {
+		if d >= res.JudgedFrom {
+			res.SessionsJudged++
+		}
+	}
 	if n := res.SessionsObserved; n > 0 {
 		first, last := res.Series.Dates[0], res.Series.Dates[n-1]
 		res.BaseSession, res.LatestSession = &first, &last

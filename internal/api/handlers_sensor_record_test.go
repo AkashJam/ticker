@@ -22,6 +22,8 @@ type recordBody struct {
 	LatestSession   *string `json:"latestSession"`
 	EventCount      int     `json:"eventCount"`
 	Sessions        int     `json:"sessionsObserved"`
+	JudgedFrom      string  `json:"judgedFrom"`
+	Judged          int     `json:"sessionsJudged"`
 	Series          struct {
 		Dates          []string  `json:"dates"`
 		Close          []float64 `json:"close"`
@@ -88,6 +90,10 @@ func TestRecordSeriesIsAlignedFromTheFirstSharedBar(t *testing.T) {
 	}
 	if body.LatestSession == nil || *body.LatestSession != session.Format(time.DateOnly) {
 		t.Errorf("latestSession %v", body.LatestSession)
+	}
+	// The fixture's 70 bars end on 8 Sep, before the trigger's go-live: nothing judged.
+	if body.JudgedFrom != "2026-10-16" || body.Judged != 0 {
+		t.Errorf("judgedFrom %q judged %d", body.JudgedFrom, body.Judged)
 	}
 }
 

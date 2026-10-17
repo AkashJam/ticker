@@ -40,10 +40,10 @@ func TestSensorsAnswersWithRedisDown(t *testing.T) {
 	for _, s := range got {
 		byTicker[s.Symbol] = s
 	}
-	if m := byTicker["MUFG"]; m.Country == nil || *m.Country != "Japan" || m.Name != "Mitsubishi UFJ" || m.Theme != nil {
+	if m := byTicker["MUFG"]; m.Slug == nil || *m.Slug != "japan" || m.Country == nil || *m.Country != "Japan" || m.Name != "Mitsubishi UFJ" || m.Theme != nil {
 		t.Errorf("MUFG = %+v", m)
 	}
-	if n := byTicker["NVDA"]; n.Country != nil || n.Theme == nil || *n.Theme != "Semiconductors" {
+	if n := byTicker["NVDA"]; n.Slug != nil || n.Country != nil || n.Theme == nil || *n.Theme != "Semiconductors" {
 		t.Errorf("NVDA = %+v", n)
 	}
 }
