@@ -149,10 +149,12 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 		// The threshold job judges each session once its bars are written
 		// (phase15.md step 3). Its failures are logged and counted, never the
 		// sweep's: the sweep succeeded, and a restart re-judges the newest session.
+		refForTrigger := reference.New(redis, reference.Embedded(), log)
 		judge := &trigger.Runner{
 			Candles: ts, Events: ts, Loc: loc, Threshold: cfg.TriggerThreshold, Log: log,
+			Rates: &ecb.RateSource{Store: refForTrigger, Feed: ecb.NewClient()}, SplitThreshold: cfg.SplitThreshold,
 			Thin: func(ctx context.Context) (map[string]bool, error) {
-				sensors, err := reference.New(redis, reference.Embedded(), log).Sensors(ctx)
+				sensors, err := refForTrigger.Sensors(ctx)
 				if err != nil {
 					return nil, err
 				}

@@ -41,14 +41,16 @@ func (t *Timescale) Event(ctx context.Context, symbol string, session time.Time)
 	const q = `
 		SELECT symbol, session_date, closed_at,
 			symbol_return, benchmark, benchmark_return, benchmark_reason,
-			residual, sigma, z, threshold, window_sessions, caveats
+			residual, sigma, z, threshold, window_sessions, caveats,
+			split_label, split
 		FROM events
 		WHERE symbol = $1 AND session_date = $2`
 	var e trigger.Trip
 	err := t.pool.QueryRow(ctx, q, symbol, session).Scan(
 		&e.Symbol, &e.SessionDate, &e.ClosedAt,
 		&e.SymbolReturn, &e.Benchmark, &e.BenchmarkReturn, &e.BenchmarkReason,
-		&e.Residual, &e.Sigma, &e.Z, &e.Threshold, &e.WindowSessions, &e.Caveats)
+		&e.Residual, &e.Sigma, &e.Z, &e.Threshold, &e.WindowSessions, &e.Caveats,
+		&e.SplitLabel, &e.Split)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return trigger.Trip{}, false, nil
 	}
@@ -56,4 +58,18 @@ func (t *Timescale) Event(ctx context.Context, symbol string, session time.Time)
 		return trigger.Trip{}, false, fmt.Errorf("store: read event: %w", err)
 	}
 	return e, true, nil
+}
+
+// SetSplit records an event's currency split (phase15.md step 4). It writes
+// only where the event has none, so a split, once made, is never rewritten, and
+// set reports whether this call wrote it. label is NULL for a "no split" answer.
+func (t *Timescale) SetSplit(ctx context.Context, symbol string, session time.Time, label *string, split []byte) (set bool, err error) {
+	const q = `
+		UPDATE events SET split_label = $3, split = $4::jsonb
+		WHERE symbol = $1 AND session_date = $2 AND split IS NULL`
+	tag, err := t.pool.Exec(ctx, q, symbol, session, label, string(split))
+	if err != nil {
+		return false, fmt.Errorf("store: set split: %w", err)
+	}
+	return tag.RowsAffected() == 1, nil
 }

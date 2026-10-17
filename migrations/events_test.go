@@ -46,3 +46,28 @@ func TestEventsMigrationShape(t *testing.T) {
 		t.Error("down migration does not drop events")
 	}
 }
+
+// Migration 000008 adds the label for a trip no part of which passes alone, and
+// leaves the other three.
+func TestEventsSplitNeitherMigration(t *testing.T) {
+	up, err := migrations.FS.ReadFile("000008_events_split_neither.up.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	down, err := migrations.FS.ReadFile("000008_events_split_neither.down.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(up), "CHECK (split_label IN ('currency-led', 'stock-led', 'both', 'neither'))") {
+		t.Error("up migration does not allow 'neither'")
+	}
+	if !strings.Contains(string(down), "CHECK (split_label IN ('currency-led', 'stock-led', 'both'))") ||
+		strings.Contains(strings.ReplaceAll(string(down), "--", "\n--"), "neither'))") {
+		t.Error("down migration must restore the three labels")
+	}
+	for _, f := range [][]byte{up, down} {
+		if !strings.Contains(string(f), "DROP CONSTRAINT events_split_label_check") {
+			t.Error("migration does not replace the label constraint")
+		}
+	}
+}

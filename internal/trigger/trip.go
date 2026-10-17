@@ -54,7 +54,16 @@ type Trip struct {
 	Threshold       float64
 	WindowSessions  int
 	Caveats         []string
+
+	// SplitLabel and Split are the currency split, set once by step 4 and nil
+	// until then. They are filled when a recorded event is read back; NewTrip
+	// leaves them nil.
+	SplitLabel *string
+	Split      []byte
 }
+
+// SplitPending reports whether the event has not yet been split.
+func (t Trip) SplitPending() bool { return t.Split == nil }
 
 // Fire reports whether a z passes the threshold. The comparison is strict: a
 // move of exactly the threshold does not trip.

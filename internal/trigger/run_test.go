@@ -42,6 +42,8 @@ type fakeEvents struct {
 	rows    map[string]Trip
 	inserts int
 	failOn  string
+
+	splitWrites int
 }
 
 func newFakeEvents() *fakeEvents { return &fakeEvents{rows: map[string]Trip{}} }
@@ -58,6 +60,18 @@ func (f *fakeEvents) InsertEvent(_ context.Context, t Trip) (bool, error) {
 	}
 	f.rows[k] = t
 	f.inserts++
+	return true, nil
+}
+
+func (f *fakeEvents) SetSplit(_ context.Context, sym string, d time.Time, label *string, split []byte) (bool, error) {
+	k := key(sym, d)
+	row, ok := f.rows[k]
+	if !ok || row.Split != nil {
+		return false, nil
+	}
+	row.SplitLabel, row.Split = label, split
+	f.rows[k] = row
+	f.splitWrites++
 	return true, nil
 }
 

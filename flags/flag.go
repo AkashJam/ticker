@@ -44,6 +44,9 @@ type Config struct {
 	// close to be recorded as an event (portfolio.md §15 Phase 15). It is stored
 	// on every event, so changing it never rewrites what an old event says fired it.
 	TriggerThreshold float64
+	// SplitThreshold is the |z| a currency or stock part must pass on its own
+	// to count in an event's currency-split label (bearing.md #90, 2).
+	SplitThreshold float64
 	// Consumer names this instance in the ticks:raw consumer group. Empty
 	// falls back to aggregate.New's hostname-pid default, correct for
 	// today's single-aggregator deployment; ADR-003's revisit trigger (a
@@ -80,6 +83,9 @@ func (c Config) ValidateTrigger() error {
 func (c Config) validateThreshold() error {
 	if !(c.TriggerThreshold > 0 && c.TriggerThreshold <= MaxTriggerThreshold) {
 		return fmt.Errorf("flags: --trigger-threshold must be in (0, %d], got %v", MaxTriggerThreshold, c.TriggerThreshold)
+	}
+	if !(c.SplitThreshold > 0 && c.SplitThreshold <= MaxTriggerThreshold) {
+		return fmt.Errorf("flags: --split-threshold must be in (0, %d], got %v", MaxTriggerThreshold, c.SplitThreshold)
 	}
 	return nil
 }

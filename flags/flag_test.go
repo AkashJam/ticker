@@ -15,6 +15,7 @@ func validConfig() Config {
 		RedisAddr:    "localhost:6379",
 
 		TriggerThreshold: 2.5,
+		SplitThreshold:   2,
 	}
 }
 
@@ -58,6 +59,8 @@ func TestValidate(t *testing.T) {
 		{"negative threshold", func(c *Config) { c.TriggerThreshold = -2.5 }, true},
 		{"absurd threshold", func(c *Config) { c.TriggerThreshold = 25 }, true},
 		{"NaN threshold", func(c *Config) { c.TriggerThreshold = math.NaN() }, true},
+		{"zero split threshold", func(c *Config) { c.SplitThreshold = 0 }, true},
+		{"absurd split threshold", func(c *Config) { c.SplitThreshold = 11 }, true},
 		{"the bound itself is allowed", func(c *Config) { c.TriggerThreshold = MaxTriggerThreshold }, false},
 	}
 	for _, tt := range tests {

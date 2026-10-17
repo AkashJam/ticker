@@ -58,9 +58,10 @@ func main() {
 	sweepHealthchecksFlag := &cli.StringFlag{Name: "healthchecks-sweep-url", Sources: cli.EnvVars("HEALTHCHECKS_SWEEP_URL")}
 	referenceHealthchecksFlag := &cli.StringFlag{Name: "healthchecks-reference-url", Sources: cli.EnvVars("HEALTHCHECKS_REFERENCE_URL")}
 	triggerThresholdFlag := &cli.FloatFlag{Name: "trigger-threshold", Value: 2.5, Sources: cli.EnvVars("TRIGGER_THRESHOLD"), Usage: "|z| a sensor's residual move must pass on the close to be recorded as an event"}
+	splitThresholdFlag := &cli.FloatFlag{Name: "split-threshold", Value: 2, Sources: cli.EnvVars("SPLIT_THRESHOLD"), Usage: "|z| a currency or stock part must pass on its own to count in a trip's currency-split label"}
 	consumerFlag := &cli.StringFlag{Name: "consumer", Sources: cli.EnvVars("CONSUMER"), Usage: "ticks:raw consumer group member name; defaults to hostname-pid"}
 
-	sharedFlags := []cli.Flag{sourceFlag, envFlag, addrFlag, aggWindowFlag, logLevelFlag, dbDSNFlag, redisAddrFlag, healthchecksFlag, finnhubKeyFlag, sweepHealthchecksFlag, referenceHealthchecksFlag, triggerThresholdFlag, consumerFlag}
+	sharedFlags := []cli.Flag{sourceFlag, envFlag, addrFlag, aggWindowFlag, logLevelFlag, dbDSNFlag, redisAddrFlag, healthchecksFlag, finnhubKeyFlag, sweepHealthchecksFlag, referenceHealthchecksFlag, triggerThresholdFlag, splitThresholdFlag, consumerFlag}
 
 	configFromCmd := func(cmd *cli.Command) flags.Config {
 		return flags.Config{
@@ -71,6 +72,7 @@ func main() {
 			FinnhubAPIKey: cmd.String("finnhub-api-key"), HealthchecksSweepURL: cmd.String("healthchecks-sweep-url"),
 			HealthchecksReferenceURL: cmd.String("healthchecks-reference-url"),
 			TriggerThreshold:         cmd.Float("trigger-threshold"),
+			SplitThreshold:           cmd.Float("split-threshold"),
 		}
 	}
 
@@ -285,6 +287,7 @@ func runTrigger(ctx context.Context, cfg flags.Config, sessionArg string, dryRun
 	}
 	judge := &trigger.Runner{
 		Candles: ts, Events: events, Loc: loc, Threshold: cfg.TriggerThreshold, Log: log,
+		Rates: &ecb.RateSource{Store: refStore, Feed: ecb.NewClient()}, SplitThreshold: cfg.SplitThreshold,
 		Thin: func(ctx context.Context) (map[string]bool, error) {
 			sensors, err := refStore.Sensors(ctx)
 			if err != nil {
@@ -308,6 +311,14 @@ func runTrigger(ctx context.Context, cfg flags.Config, sessionArg string, dryRun
 			bench = "vs " + *t.Benchmark
 		}
 		fmt.Printf("  %-5s z %+6.2f  residual %+7.3f%%  sigma %6.3f%%  %s  caveats %v\n", t.Symbol, t.Z, t.Residual*100, t.Sigma*100, bench, t.Caveats)
+		if sp, ok := sum.Splits[t.Symbol]; ok {
+			if sp.Status == "none" {
+				fmt.Printf("        no split: %s\n", sp.Reason)
+			} else {
+				fmt.Printf("        %s (%s, fix %s, %s): currency %+.3f%% z %+.2f, stock %+.3f%% z %+.2f\n", sp.Label, sp.Currency, sp.FixDate, sp.Source,
+					sp.CurrencyPart.Value*100, sp.CurrencyPart.Z, sp.StockPart.Value*100, sp.StockPart.Z)
+			}
+		}
 	}
 	fmt.Printf("%s %d, already recorded %d", verb, sum.Inserted, sum.Existing)
 	if dryRun {
