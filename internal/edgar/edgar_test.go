@@ -110,7 +110,11 @@ func newServer(t *testing.T, rec *recorded, status int) *Client {
 	})
 	mux.HandleFunc("/subs/", func(w http.ResponseWriter, r *http.Request) {
 		rec.note(r)
-		_, _ = io.WriteString(w, `{"cik":"0000320193","name":"Apple Inc.","tickers":["AAPL"],"addresses":{"business":{"stateOrCountryDescription":"CA"}}}`)
+		if strings.Contains(r.URL.Path, "1000275") { // a foreign filer, as EDGAR really answers
+			_, _ = io.WriteString(w, `{"cik":"0001000275","name":"ROYAL BANK OF CANADA","tickers":["RY"],"addresses":{"business":{"stateOrCountry":null,"stateOrCountryDescription":null,"isForeignLocation":1,"country":"Ontario, Canada","countryCode":"A6"}}}`)
+			return
+		}
+		_, _ = io.WriteString(w, `{"cik":"0000320193","name":"Apple Inc.","tickers":["AAPL"],"addresses":{"business":{"stateOrCountry":"CA","stateOrCountryDescription":"CA","isForeignLocation":null,"country":null,"countryCode":null}}}`)
 	})
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
@@ -154,6 +158,24 @@ func TestClientParsesAndIdentifiesItself(t *testing.T) {
 	}
 	if rec.hits[1] != "/subs/CIK0000320193.json" {
 		t.Errorf("submissions path = %s, want a ten-digit zero-padded CIK", rec.hits[1])
+	}
+}
+
+// EDGAR fills addresses.business.country for a foreign filer and leaves
+// stateOrCountryDescription null; for a domestic one it is the other way round.
+// Reading only one of them left six sensors with no country on the first real run.
+func TestClientReadsTheCountryFieldEDGARFilled(t *testing.T) {
+	c := newServer(t, &recorded{}, 0)
+	foreign, err := c.Submissions(context.Background(), 1000275)
+	if err != nil || foreign.BusinessCountry != "Ontario, Canada" {
+		t.Errorf("foreign filer = %+v, %v", foreign, err)
+	}
+	domestic, err := c.Submissions(context.Background(), 320193)
+	if err != nil || domestic.BusinessCountry != "CA" {
+		t.Errorf("domestic filer = %+v, %v", domestic, err)
+	}
+	if got := businessCountry("  ", " "); got != "" {
+		t.Errorf("both blank = %q", got)
 	}
 }
 
@@ -451,5 +473,25 @@ func TestStaleAndFresh(t *testing.T) {
 	}
 	if (Dataset{}).Fresh(time.Now(), MaxAge) {
 		t.Error("a dataset with no stamp is not fresh")
+	}
+}
+
+// The embedded snapshot is the floor the job and step 6 read before the first
+// run: eighteen sensors, each with a ten-digit CIK, none with drift.
+func TestEmbeddedSnapshot(t *testing.T) {
+	var ds Dataset
+	if _, err := reference.New(nil, reference.Embedded(), quiet()).Get(context.Background(), DatasetName, &ds); err != nil {
+		t.Fatal(err)
+	}
+	if len(ds.Sensors) != 18 || len(ds.Drift) != 0 || ds.Source == "" || ds.AsOf == "" {
+		t.Fatalf("snapshot: %d sensors, %d drift, source %q, asOf %q", len(ds.Sensors), len(ds.Drift), ds.Source, ds.AsOf)
+	}
+	for sym, e := range ds.Sensors {
+		if len(e.CIK) != 10 || e.ISO == "" || e.Name == "" {
+			t.Errorf("%s = %+v", sym, e)
+		}
+	}
+	if ds.Sensors["BAP"].ISO != "BM" || ds.Sensors["RY"].ISO != "CA" || ds.Sensors["NVDA"].ISO != "US" {
+		t.Error("the override, a foreign filer and a domestic filer must each normalise correctly")
 	}
 }

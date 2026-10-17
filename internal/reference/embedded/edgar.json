@@ -1,0 +1,116 @@
+{
+  "source": "SEC EDGAR company_tickers.json and the submissions API",
+  "generatedAt": "2026-10-17T12:45:53Z",
+  "asOf": "2026-10-17",
+  "sensors": {
+    "AAPL": {
+      "cik": "0000320193",
+      "name": "Apple Inc.",
+      "country": "CA",
+      "iso": "US"
+    },
+    "AMX": {
+      "cik": "0001129137",
+      "name": "AMERICA MOVIL SAB DE CV/",
+      "country": "Mexico",
+      "iso": "MX"
+    },
+    "BAP": {
+      "cik": "0001001290",
+      "name": "CREDICORP LTD",
+      "country": "Bermuda",
+      "iso": "BM"
+    },
+    "BCH": {
+      "cik": "0001161125",
+      "name": "BANK OF CHILE",
+      "country": "Chile",
+      "iso": "CL"
+    },
+    "CAT": {
+      "cik": "0000018230",
+      "name": "CATERPILLAR INC",
+      "country": "TX",
+      "iso": "US"
+    },
+    "CIB": {
+      "cik": "0002058897",
+      "name": "Grupo Cibest S.A.",
+      "country": "Colombia",
+      "iso": "CO"
+    },
+    "HDB": {
+      "cik": "0001144967",
+      "name": "HDFC BANK LTD",
+      "country": "India",
+      "iso": "IN"
+    },
+    "ING": {
+      "cik": "0001039765",
+      "name": "ING GROEP NV",
+      "country": "Netherlands",
+      "iso": "NL"
+    },
+    "ITUB": {
+      "cik": "0001132597",
+      "name": "Itau Unibanco Holding S.A.",
+      "country": "Brazil",
+      "iso": "BR"
+    },
+    "JPM": {
+      "cik": "0000019617",
+      "name": "JPMORGAN CHASE \u0026 CO",
+      "country": "NY",
+      "iso": "US"
+    },
+    "KB": {
+      "cik": "0001445930",
+      "name": "KB Financial Group Inc.",
+      "country": "Korea, Republic of",
+      "iso": "KR"
+    },
+    "LYG": {
+      "cik": "0001160106",
+      "name": "Lloyds Banking Group plc",
+      "country": "United Kingdom",
+      "iso": "GB"
+    },
+    "MUFG": {
+      "cik": "0000067088",
+      "name": "MITSUBISHI UFJ FINANCIAL GROUP INC",
+      "country": "Japan",
+      "iso": "JP"
+    },
+    "NVDA": {
+      "cik": "0001045810",
+      "name": "NVIDIA CORP",
+      "country": "CA",
+      "iso": "US"
+    },
+    "RY": {
+      "cik": "0001000275",
+      "name": "ROYAL BANK OF CANADA",
+      "country": "Ontario, Canada",
+      "iso": "CA"
+    },
+    "TKC": {
+      "cik": "0001071321",
+      "name": "TURKCELL ILETISIM HIZMETLERI A S",
+      "country": "Turkey",
+      "iso": "TR"
+    },
+    "TLK": {
+      "cik": "0001001807",
+      "name": "PERUSAHAAN PERSEROAN PERSERO PT TELEKOMUNIKASI INDONESIA TBK",
+      "country": "Indonesia",
+      "iso": "ID"
+    },
+    "XOM": {
+      "cik": "0002115436",
+      "name": "ExxonMobil Holdings Corp",
+      "country": "TX",
+      "iso": "US"
+    }
+  },
+  "drift": []
+}

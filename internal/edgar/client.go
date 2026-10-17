@@ -56,10 +56,14 @@ type TickerRow struct {
 
 // Submission is the part of a submissions record the drift check reads.
 type Submission struct {
-	CIK             int
-	Name            string
-	Tickers         []string
-	BusinessCountry string // addresses.business.stateOrCountryDescription
+	CIK     int
+	Name    string
+	Tickers []string
+	// BusinessCountry is where the filer does business, as EDGAR spells it. A
+	// foreign filer's is addresses.business.country ("Ontario, Canada");
+	// stateOrCountryDescription is null for it. A domestic filer's is
+	// stateOrCountryDescription, a two-letter state code, and country is null.
+	BusinessCountry string
 }
 
 // Client calls EDGAR. It is safe for sequential use; it paces its own calls.
@@ -184,6 +188,7 @@ func (c *Client) Submissions(ctx context.Context, cik int) (Submission, error) {
 		Tickers   []string `json:"tickers"`
 		Addresses struct {
 			Business struct {
+				Country                   string `json:"country"`
 				StateOrCountryDescription string `json:"stateOrCountryDescription"`
 			} `json:"business"`
 		} `json:"addresses"`
@@ -193,6 +198,15 @@ func (c *Client) Submissions(ctx context.Context, cik int) (Submission, error) {
 	}
 	return Submission{
 		CIK: cik, Name: raw.Name, Tickers: raw.Tickers,
-		BusinessCountry: raw.Addresses.Business.StateOrCountryDescription,
+		BusinessCountry: businessCountry(raw.Addresses.Business.Country, raw.Addresses.Business.StateOrCountryDescription),
 	}, nil
+}
+
+// businessCountry picks the field EDGAR filled: country for a foreign filer,
+// stateOrCountryDescription for a domestic one.
+func businessCountry(country, stateOrCountry string) string {
+	if c := strings.TrimSpace(country); c != "" {
+		return c
+	}
+	return strings.TrimSpace(stateOrCountry)
 }
