@@ -41,8 +41,8 @@ func TestAtlasCitiesAnswersWithRedisDown(t *testing.T) {
 	by := map[string]atlas.Row{}
 	pages := 0
 	defer func() {
-		if pages != 15 || !by["japan"].HasCityPage || by["ireland"].HasCityPage {
-			t.Errorf("%d rows with a city page; japan %v, ireland %v", pages, by["japan"].HasCityPage, by["ireland"].HasCityPage)
+		if pages != 17 || !by["japan"].HasCityPage || by["korea"].HasCityPage {
+			t.Errorf("%d rows with a city page; japan %v, korea %v", pages, by["japan"].HasCityPage, by["korea"].HasCityPage)
 		}
 	}()
 	for _, r := range resp.Rows {
@@ -147,9 +147,9 @@ func TestAtlasCityAnswersWithRedisDown(t *testing.T) {
 		t.Errorf("a slug in any case: %d %q", code, upper.Slug)
 	}
 	// An unverified city is served and says so; the page ships on hasCityPage.
-	var ie atlas.CityResponse
-	if code := get(t, cityRouter(h), "/atlas/cities/ireland", &ie); code != http.StatusOK || ie.Verified || len(ie.Survey.OpenItems) == 0 {
-		t.Errorf("ireland: %d verified %v open %v", code, ie.Verified, ie.Survey.OpenItems)
+	var kr atlas.CityResponse
+	if code := get(t, cityRouter(h), "/atlas/cities/korea", &kr); code != http.StatusOK || kr.Verified || len(kr.Survey.OpenItems) == 0 {
+		t.Errorf("korea: %d verified %v open %v", code, kr.Verified, kr.Survey.OpenItems)
 	}
 	// Chile is an Atlas row with no survey; Singapore has a survey and no row.
 	for _, slug := range []string{"chile", "singapore", "colombia", "nowhere", "japan%2F..", "SIM:NOVA"} {

@@ -133,7 +133,7 @@ func TestOnlyTheOpenItemsAreUnverified(t *testing.T) {
 		}
 	}
 	slices.Sort(unverified)
-	want := []string{"ireland", "korea", "netherlands", "norway", "singapore", "south-africa"}
+	want := []string{"korea", "norway", "singapore", "south-africa"}
 	if !slices.Equal(unverified, want) {
 		t.Errorf("unverified %v, want %v: close an item by setting its flag and editing this list", unverified, want)
 	}
@@ -164,8 +164,8 @@ func TestCityPagesFollowTheVerifiedRecords(t *testing.T) {
 			pages++
 		}
 	}
-	if pages != 15 {
-		t.Errorf("%d city pages, want 15 (the verified records with an Atlas row)", pages)
+	if pages != 17 {
+		t.Errorf("%d city pages, want 17 (the verified records with an Atlas row)", pages)
 	}
 }
 

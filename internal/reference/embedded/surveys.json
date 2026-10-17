@@ -802,8 +802,8 @@
     },
     {
       "openItems": [
-        "Check for a January 2026 edition.",
-        "Add the source URL."
+        "Look for a 2026 edition (the NVVK site republishes them) and replace the July 2025 figures if one exists.",
+        "Add the URL of the NVVK copy."
       ],
       "secondLines": [
         {
@@ -874,16 +874,16 @@
         }
       ],
       "splitNote": null,
-      "nextRelease": null,
+      "nextRelease": "Nibud draws the budgets up every year, so a 2026 edition may already exist: it was not found on nibud.nl on 17 Oct 2026",
       "slug": "netherlands",
-      "verified": false,
+      "verified": true,
       "instrument": "Minimum example budget (minimumvoorbeeldbegrotingen)",
       "publisher": "Nibud",
       "headline": {
         "value": 1747,
         "currency": "EUR",
         "year": 2025,
-        "label": "Monthly spending at social-assistance level, one adult, national (not Amsterdam-specific), July 2025",
+        "label": "Monthly spending at social-assistance level, one adult, national (not Amsterdam-specific), the July 2025 edition",
         "method": "Nibud's example budget for a household living on a social-assistance income."
       },
       "housing": {
@@ -892,52 +892,143 @@
       },
       "sources": [
         {
-          "label": "Nibud, Minimumvoorbeeldbegrotingen juli 2025",
+          "label": "Nibud, Minimumvoorbeeldbegrotingen juli 2025 (the single-adult budget, as republished by NVVK)",
           "url": "",
-          "detail": "via NVVK",
+          "detail": "the published figures were read from the NVVK copy; Nibud supplies the budgets as datasets, with no public download",
           "retrieved": "2026-10-14"
+        },
+        {
+          "label": "Nibud, Referentiebegrotingen: what a minimum example budget is",
+          "url": "https://www.nibud.nl/samenwerken/cijfers-en-rekentools/referentiebegrotingen/",
+          "detail": "the product page; it states the method and that the budgets are made for any household type, but carries no figures",
+          "retrieved": "2026-10-17"
         }
       ]
     },
     {
-      "openItems": [
-        "Read the split from the MESL 2025/2026 report tables.",
-        "Add the source URL.",
-        "2026 estimate is €629 a week."
+      "openItems": [],
+      "secondLines": [
+        {
+          "label": "Excluding housing",
+          "value": 1156.18
+        }
       ],
-      "secondLines": [],
-      "parts": null,
-      "splitNote": "MESL itemises housing; the category split in the 2025/2026 report tables has not been read yet.",
-      "nextRelease": null,
+      "parts": [
+        {
+          "label": "Housing: private rent, one-bedroom flat",
+          "amount": 1569.79,
+          "share": 57.59,
+          "derived": "€362.26 a week × 52 ÷ 12; 90% of the Dublin average one-bedroom rent (RTB, accessed 3 May 2026)"
+        },
+        {
+          "label": "Food",
+          "amount": 260.82,
+          "share": 9.57,
+          "derived": "€60.19 a week × 52 ÷ 12"
+        },
+        {
+          "label": "Social inclusion and participation",
+          "amount": 241.67,
+          "share": 8.87,
+          "derived": "€55.77 a week × 52 ÷ 12"
+        },
+        {
+          "label": "Household energy",
+          "amount": 144.95,
+          "share": 5.32,
+          "derived": "€33.45 a week × 52 ÷ 12"
+        },
+        {
+          "label": "Transport",
+          "amount": 144.39,
+          "share": 5.3,
+          "derived": "€33.32 a week × 52 ÷ 12"
+        },
+        {
+          "label": "Personal care",
+          "amount": 76.01,
+          "share": 2.79,
+          "derived": "€17.54 a week × 52 ÷ 12"
+        },
+        {
+          "label": "Clothing",
+          "amount": 68.25,
+          "share": 2.5,
+          "derived": "€15.75 a week × 52 ÷ 12"
+        },
+        {
+          "label": "Communications",
+          "amount": 54.17,
+          "share": 1.99,
+          "derived": "€12.50 a week × 52 ÷ 12"
+        },
+        {
+          "label": "Household goods",
+          "amount": 48.23,
+          "share": 1.77,
+          "derived": "€11.13 a week × 52 ÷ 12"
+        },
+        {
+          "label": "Savings and contingencies",
+          "amount": 43.33,
+          "share": 1.59,
+          "derived": "€10.00 a week × 52 ÷ 12"
+        },
+        {
+          "label": "Personal costs",
+          "amount": 39.22,
+          "share": 1.44,
+          "derived": "€9.05 a week × 52 ÷ 12"
+        },
+        {
+          "label": "Household services",
+          "amount": 22.23,
+          "share": 0.82,
+          "derived": "€5.13 a week × 52 ÷ 12"
+        },
+        {
+          "label": "Health and insurance, net of the medical card",
+          "amount": 12.91,
+          "share": 0.47,
+          "derived": "health €11.04 + insurance €18.42 − the full medical card deduction €26.48 = €2.98 a week × 52 ÷ 12; MESL deducts the card from the core budget as a whole (€293.29 gross, €266.81 net)"
+        }
+      ],
+      "splitNote": null,
+      "nextRelease": "MESL 2027 (annual update)",
       "slug": "ireland",
-      "verified": false,
+      "verified": true,
       "instrument": "Minimum Essential Standard of Living (MESL)",
       "publisher": "Vincentian MESL Research Centre",
       "headline": {
-        "value": 2621.67,
+        "value": 2726.01,
         "currency": "EUR",
-        "year": 2025,
-        "label": "Monthly minimum essential standard, one adult, urban Ireland (not Dublin-specific), private rented (€605 a week)",
-        "method": "Members of the public agree what a household needs for a minimum acceptable standard of living; the budget is priced. €605 a week × 52 ÷ 12."
+        "year": 2026,
+        "label": "Monthly minimum essential standard, one working-age adult living alone, urban Ireland, full-time on the minimum wage, renting privately (€629.08 a week)",
+        "method": "Members of the public agree what a household needs for a minimum acceptable standard of living; the budget is priced. €629.08 a week × 52 ÷ 12. Housing is a one-bedroom flat at 90% of the Dublin average rent."
       },
       "housing": {
         "tag": "private_rent",
-        "note": "Itemised in MESL."
+        "note": "A one-bedroom flat at 90% of the Dublin average rent (RTB, accessed 3 May 2026): €362.26 a week."
       },
       "sources": [
         {
-          "label": "MESL, NMW 2027 submission",
-          "url": "",
-          "detail": "",
-          "retrieved": "2026-10-14"
+          "label": "Vincentian MESL Research Centre, MESL 2026: Annual Update Report",
+          "url": "https://budgeting.ie/pdf/mesl-2026-report/",
+          "detail": "Table 3, Summary of MESL Income Adequacy Assessment: Single Adult, urban, employed (NMW) €629",
+          "retrieved": "2026-10-17"
+        },
+        {
+          "label": "MESL 2026 Appendix Tables",
+          "url": "https://budgeting.ie/pdf/mesl-2026-appendix/",
+          "detail": "Appendix Tables 1A (core weekly expenditure budget, single adult), 8A (urban employed scenarios: €629.08 total, €362.26 housing) and 22A (private rent costs)",
+          "retrieved": "2026-10-17"
         }
       ]
     },
     {
       "openItems": [
-        "Read SSB table 09895 directly.",
         "Transcribe SIFO's ten categories.",
-        "Add the source URLs."
+        "Add the SIFO calculator URL, and re-read SIFO's kr 12,909 and its ten categories (the endpoint was not found from the sandbox on 2026-10-17)."
       ],
       "secondLines": [],
       "parts": [
@@ -979,10 +1070,10 @@
           "retrieved": "2026-10-14"
         },
         {
-          "label": "SSB table 09895",
-          "url": "",
-          "detail": "average rent; secondary-reported so far",
-          "retrieved": "2026-10-14"
+          "label": "SSB table 09895: Rental market survey, average rents (NOK) by price zone, number of rooms and year",
+          "url": "https://data.ssb.no/api/v0/en/table/09895",
+          "detail": "Oslo and Bærum municipality, 2 rooms, average monthly rent, 2025 = NOK 15,260; table updated 2025-12-22. Read directly from the API",
+          "retrieved": "2026-10-17"
         }
       ]
     },
