@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math"
+	"strings"
 	"testing"
 
 	"github.com/AkashJam/ticker/internal/ecb"
@@ -167,5 +168,83 @@ func TestEveryAtlasCityWithASurveyBuilds(t *testing.T) {
 	}
 	if _, err := BuildCity("chile", in); !errors.Is(err, ErrNoCity) {
 		t.Errorf("chile: %v", err)
+	}
+}
+
+func TestAffordabilityNamesBothLegsAndTheirGap(t *testing.T) {
+	in := embeddedInput(t)
+	// Tokyo: an October 2026 standard against 2024 spending, two years apart, in a
+	// country whose prices rose 3.2%: stated, not flagged.
+	tk, err := BuildCity("japan", in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := tk.Affordability
+	if a.Ratio == nil || a.Cost.Eur == nil || a.Spending.Value == nil || a.Measure != "floor" {
+		t.Fatalf("tokyo %+v", a)
+	}
+	near(t, "ratio", a.Ratio, *a.Cost.Eur / *a.Spending.Value * 100, 0.06)
+	if a.GapYears != 2 || a.Direction != "cost-newer" || a.Cost.PriceYear != 2026 || a.Cost.Basis != "survey" || a.Spending.AsOf != "2024" || a.Caveat != "" {
+		t.Errorf("tokyo legs %+v", a)
+	}
+	// Dijon: carried to the latest CPI year, so the legs share a year.
+	dj, _ := BuildCity("france", in)
+	if g := dj.Affordability; g.GapYears != 0 || g.Direction != "same" || g.Cost.Basis != "carried" || g.Cost.PriceYear != dj.Cost.Carried.Year || g.Ratio == nil {
+		t.Errorf("dijon %+v", g)
+	}
+}
+
+func TestAffordabilityFlagsAFastMovingPriceLevel(t *testing.T) {
+	in := embeddedInput(t)
+	// Türkiye: a September 2026 lira figure against 2025 spending, with prices
+	// rising fast: the ratio is overstated, and the page says so with the figure.
+	tr, err := BuildCity("turkiye", in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := tr.Affordability
+	if a.Ratio == nil || a.Direction != "cost-newer" || a.GapYears < 1 || a.Inflation.Value == nil || *a.Inflation.Value <= InflationFlag {
+		t.Fatalf("turkiye %+v", a)
+	}
+	if !strings.Contains(a.Caveat, "Türkiye's prices rose") || !strings.Contains(a.Caveat, "overstated") {
+		t.Errorf("caveat %q", a.Caveat)
+	}
+}
+
+func TestAffordabilityWordsAverageSurveysApart(t *testing.T) {
+	in := embeddedInput(t)
+	for slug, want := range map[string]string{"china": "average", "india": "average", "japan": "floor", "italy": "floor"} {
+		r, err := BuildCity(slug, in)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if r.Affordability.Measure != want {
+			t.Errorf("%s measure %q, want %q", slug, r.Affordability.Measure, want)
+		}
+	}
+}
+
+func TestEveryVerifiedCityHasARatioAndNoRatioIsInventedForAMissingLeg(t *testing.T) {
+	in := embeddedInput(t)
+	for _, s := range in.Surveys {
+		if !s.Verified || s.Slug == "singapore" {
+			continue
+		}
+		r, err := BuildCity(s.Slug, in)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if r.Affordability.Ratio == nil || r.Affordability.Reason != "" {
+			t.Errorf("%s: %+v", s.Slug, r.Affordability)
+		}
+	}
+	// A leg that is missing gives a reason and no ratio.
+	broken := embeddedInput(t)
+	row := broken.WB.Rows["JP"]
+	row.EverydaySpendingEur.Value = nil
+	broken.WB.Rows["JP"] = row
+	r, _ := BuildCity("japan", broken)
+	if r.Affordability.Ratio != nil || r.Affordability.Reason == "" {
+		t.Errorf("missing spending: %+v", r.Affordability)
 	}
 }

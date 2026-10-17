@@ -34,11 +34,12 @@ type CityResponse struct {
 	// ships only for a verified city, and hasCityPage flips with it.
 	Verified bool `json:"verified"`
 
-	Survey      CitySurvey      `json:"survey"`
-	Cost        CityCost        `json:"cost"`
-	Charts      CityCharts      `json:"charts"`
-	Macro       CityMacro       `json:"macro"`
-	Composition CityComposition `json:"composition"`
+	Survey        CitySurvey      `json:"survey"`
+	Cost          CityCost        `json:"cost"`
+	Affordability Affordability   `json:"affordability"`
+	Charts        CityCharts      `json:"charts"`
+	Macro         CityMacro       `json:"macro"`
+	Composition   CityComposition `json:"composition"`
 }
 
 // CitySurvey is the survey record as the page draws it, plus the euro value of
@@ -198,7 +199,8 @@ func BuildCity(slug string, in CityInput) (CityResponse, error) {
 			Housing: sv.Housing, Parts: sv.Parts, SplitNote: sv.SplitNote, Sources: sv.Sources,
 			NextRelease: sv.NextRelease, OpenItems: nonNil(sv.OpenItems),
 		},
-		Cost: cost,
+		Cost:          cost,
+		Affordability: buildAffordability(country.Country, *sv, cost, wb),
 		Charts: CityCharts{
 			Shares:   chartOf(hist.Shares, in.History, func(r history.Row) fred.Measure { return r.Shares }),
 			Currency: currencyChart(*country, in.History),
@@ -356,4 +358,94 @@ func oldest(years ...string) string {
 		}
 	}
 	return o
+}
+
+// InflationFlag is the one-year inflation, in percent, above which a gap between
+// the two legs of the affordability ratio is called out: a year of prices that
+// fast moves the ratio by more than the rounding.
+const InflationFlag = 10.0
+
+// Affordability is the cost of living as a share of the country's everyday
+// spending per person (Phase 16 step 5). It is derived from two sources of
+// different dates, so it is returned with both legs, the years between them, and
+// a caveat where a fast-moving price level makes that gap matter. It is a city
+// page figure and never part of /atlas.
+type Affordability struct {
+	// Ratio is a percentage, to one decimal. Null, with a Reason, where a leg is missing.
+	Ratio *float64 `json:"ratio"`
+	// Measure is "floor" for a poverty line, a benchmark or a priced budget and
+	// "average" for a survey of average consumption, which the page words differently.
+	Measure  string     `json:"measure"`
+	Cost     AffordCost `json:"cost"`
+	Spending Sourced    `json:"spending"`
+	// GapYears is the cost leg's price year less the spending leg's year.
+	GapYears  int     `json:"gapYears"`
+	Direction string  `json:"direction"` // same | cost-newer | spending-newer
+	Inflation Sourced `json:"inflation"`
+	Caveat    string  `json:"caveat,omitempty"`
+	Reason    string  `json:"reason,omitempty"`
+}
+
+// AffordCost is the numerator: the euro figure the cost chain ends in.
+type AffordCost struct {
+	Eur       *float64 `json:"eur"`
+	PriceYear int      `json:"priceYear"`
+	Basis     string   `json:"basis"` // carried | survey
+	RateYear  int      `json:"rateYear"`
+}
+
+func buildAffordability(name string, sv reference.Survey, cost CityCost, wb worldbank.Row) Affordability {
+	a := Affordability{
+		Measure: "floor", Spending: sourced(wb.EverydaySpendingEur), Inflation: sourced(wb.Inflation),
+		Cost: AffordCost{Eur: cost.Euro.Value, PriceYear: sv.Headline.Year, Basis: cost.Euro.Basis, RateYear: cost.Euro.Year},
+	}
+	if sv.Measure == reference.MeasureAverage {
+		a.Measure = "average"
+	}
+	if cost.Euro.Basis == "carried" {
+		a.Cost.PriceYear = cost.Carried.Year
+	}
+	spendYear, err := strconv.Atoi(a.Spending.AsOf)
+	switch {
+	case cost.Euro.Value == nil:
+		a.Reason = "the cost of living could not be converted to euros: " + firstNonEmpty(cost.Euro.Reason, "no ECB rate")
+		return a
+	case a.Spending.Value == nil || *a.Spending.Value == 0 || err != nil:
+		a.Reason = "the country's everyday spending is unpublished"
+		return a
+	}
+	r := math.Round(*cost.Euro.Value / *a.Spending.Value * 1000) / 10
+	a.Ratio = &r
+	a.GapYears = a.Cost.PriceYear - spendYear
+	switch {
+	case a.GapYears > 0:
+		a.Direction = "cost-newer"
+	case a.GapYears < 0:
+		a.Direction = "spending-newer"
+	default:
+		a.Direction = "same"
+	}
+	if a.GapYears != 0 && a.Inflation.Value != nil && *a.Inflation.Value > InflationFlag {
+		more := "overstated, since the cost leg is the newer and prices rose in between"
+		if a.Direction == "spending-newer" {
+			more = "understated, since the spending leg is the newer and prices rose in between"
+		}
+		a.Caveat = fmt.Sprintf("%s's prices rose %.1f%% in %s, so with the legs %d %s apart the ratio is %s.",
+			name, *a.Inflation.Value, a.Inflation.AsOf, abs(a.GapYears), plural(abs(a.GapYears), "year"), more)
+	}
+	return a
+}
+
+func abs(n int) int {
+	if n < 0 {
+		return -n
+	}
+	return n
+}
+
+func plural(n int, word string) string {
+	if n == 1 {
+		return word
+	}
+	return word + "s"
 }

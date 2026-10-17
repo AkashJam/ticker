@@ -412,10 +412,15 @@
       ]
     },
     {
+      "slug": "china",
+      "verified": true,
       "openItems": [
         "Cite the NBS definition of the housing category directly.",
         "Move to 2025 when the 2026 yearbook publishes the split."
       ],
+      "instrument": "Urban per-capita consumption expenditure",
+      "publisher": "NBS / Shanghai Statistics Bureau",
+      "measure": "average",
       "secondLines": [
         {
           "label": "Excluding housing",
@@ -474,10 +479,6 @@
       ],
       "splitNote": null,
       "nextRelease": "2026 yearbook (the 2025 split)",
-      "slug": "china",
-      "verified": true,
-      "instrument": "Urban per-capita consumption expenditure",
-      "publisher": "NBS / Shanghai Statistics Bureau",
       "headline": {
         "value": 4581.67,
         "currency": "CNY",
@@ -505,7 +506,12 @@
       ]
     },
     {
+      "slug": "india",
+      "verified": true,
       "openItems": [],
+      "instrument": "Household Consumption Expenditure Survey (HCES)",
+      "publisher": "MoSPI",
+      "measure": "average",
       "secondLines": [],
       "parts": [
         {
@@ -565,10 +571,6 @@
       ],
       "splitNote": null,
       "nextRelease": null,
-      "slug": "india",
-      "verified": true,
-      "instrument": "Household Consumption Expenditure Survey (HCES)",
-      "publisher": "MoSPI",
       "headline": {
         "value": 7362.56,
         "currency": "INR",

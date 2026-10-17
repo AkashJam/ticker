@@ -29,6 +29,9 @@ var HousingTags = []string{
 	HousingAveragedAllResidents, HousingDerivedRent, HousingSurveyComponent, HousingIncludedNotSeparate, HousingNotInSurvey,
 }
 
+// MeasureAverage marks a survey that reports average consumption.
+const MeasureAverage = "average"
+
 // SurveyHeadline is the survey's own total: the figure a city page leads with.
 type SurveyHeadline struct {
 	Value    float64 `json:"value"`    // a month, in Currency
@@ -76,11 +79,15 @@ type SurveySource struct {
 // (research/city-surveys.md is the working file); Verified is false while an item
 // the owner must close is open, and an unverified city gets no page.
 type Survey struct {
-	Slug        string         `json:"slug"`
-	Verified    bool           `json:"verified"`
-	OpenItems   []string       `json:"openItems"`
-	Instrument  string         `json:"instrument"`
-	Publisher   string         `json:"publisher"`
+	Slug       string   `json:"slug"`
+	Verified   bool     `json:"verified"`
+	OpenItems  []string `json:"openItems"`
+	Instrument string   `json:"instrument"`
+	Publisher  string   `json:"publisher"`
+	// Measure is MeasureAverage where the figure is what residents actually spend
+	// on average (Shanghai, Mumbai) and empty where it is a floor or a priced budget.
+	// The affordability block words the two differently.
+	Measure     string         `json:"measure,omitempty"`
 	Headline    SurveyHeadline `json:"headline"`
 	SecondLines []SecondLine   `json:"secondLines"`
 	Housing     SurveyHousing  `json:"housing"`

@@ -75,6 +75,12 @@ func TestSurveyRecords(t *testing.T) {
 				t.Errorf("%s: a source without a label or a retrieval date: %+v", s.Slug, src)
 			}
 		}
+		if s.Measure != "" && s.Measure != MeasureAverage {
+			t.Errorf("%s: measure %q", s.Slug, s.Measure)
+		}
+		if (s.Measure == MeasureAverage) != (s.Slug == "china" || s.Slug == "india") {
+			t.Errorf("%s: measure %q; only Shanghai's and Mumbai's surveys report an average", s.Slug, s.Measure)
+		}
 		if s.Instrument == "" || s.Publisher == "" {
 			t.Errorf("%s: no instrument or publisher", s.Slug)
 		}
