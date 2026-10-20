@@ -16,22 +16,22 @@ import (
 	"github.com/AkashJam/ticker/internal/worldbank"
 )
 
-// atlasTTL is how long a built response is reused. The datasets refresh once a
+// memoTTL is how long a built response is reused. The datasets refresh once a
 // day, so a minute costs nothing in freshness and saves re-parsing three blobs
 // on every request.
-const atlasTTL = time.Minute
+const memoTTL = time.Minute
 
-// atlasMemo holds the last response, as the bytes that were sent.
-type atlasMemo struct {
+// memo holds the last response, as the bytes that were sent.
+type memo struct {
 	mu   sync.Mutex
 	at   time.Time
 	body []byte
 }
 
-func (m *atlasMemo) get(now time.Time, build func() ([]byte, error)) ([]byte, error) {
+func (m *memo) get(now time.Time, build func() ([]byte, error)) ([]byte, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if m.body != nil && now.Sub(m.at) < atlasTTL {
+	if m.body != nil && now.Sub(m.at) < memoTTL {
 		return m.body, nil
 	}
 	body, err := build()
@@ -40,6 +40,26 @@ func (m *atlasMemo) get(now time.Time, build func() ([]byte, error)) ([]byte, er
 	}
 	m.body, m.at = body, now
 	return body, nil
+}
+
+// memoSet keeps one memo per key. Callers key it by a value taken from a
+// reference table (a country slug, a canonical symbol), never by raw request
+// input, so the map cannot outgrow that table.
+type memoSet struct {
+	mu sync.Mutex
+	m  map[string]*memo
+}
+
+func (s *memoSet) of(key string) *memo {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.m == nil {
+		s.m = map[string]*memo{}
+	}
+	if s.m[key] == nil {
+		s.m[key] = &memo{}
+	}
+	return s.m[key]
 }
 
 // GetAtlasCities handles GET /atlas/cities (§8): twenty-three rows, eight

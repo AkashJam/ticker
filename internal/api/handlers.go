@@ -48,13 +48,13 @@ type Handlers struct {
 	// Ref serves /atlas/cities from the reference datasets, falling back to the
 	// embedded snapshots when Redis cannot answer.
 	Ref   *reference.Store
-	atlas atlasMemo
+	atlas memo
 	// sensors reuses the memo: the list changes with a deploy, not a request.
-	sensors atlasMemo
-	events  atlasMemo
-	tape    atlasMemo
-	records recordMemos
-	cities  cityMemos
+	sensors memo
+	events  memo
+	tape    memo
+	records memoSet
+	cities  memoSet
 }
 
 // SymbolStore is what the symbol handlers need from the symbols table, as an

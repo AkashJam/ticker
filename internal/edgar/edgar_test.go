@@ -456,7 +456,7 @@ func (f *flakySource) Tickers(ctx context.Context) (map[string]TickerRow, error)
 	return f.fakeSource.Tickers(ctx)
 }
 
-func TestStaleAndFresh(t *testing.T) {
+func TestStale(t *testing.T) {
 	r, _ := newRefresher(goodSource())
 	if !r.Stale(context.Background(), MaxAge) {
 		t.Error("with nothing stored the dataset is stale (the embedded copy is a floor)")
@@ -470,9 +470,6 @@ func TestStaleAndFresh(t *testing.T) {
 	r.Now = func() time.Time { return time.Date(2026, 10, 25, 6, 0, 0, 0, time.UTC) }
 	if !r.Stale(context.Background(), MaxAge) {
 		t.Error("eight days old must be stale")
-	}
-	if (Dataset{}).Fresh(time.Now(), MaxAge) {
-		t.Error("a dataset with no stamp is not fresh")
 	}
 }
 

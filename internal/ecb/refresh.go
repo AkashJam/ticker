@@ -180,13 +180,7 @@ func (r *Refresher) Refresh(ctx context.Context) error {
 // Stale reports whether the stored dataset is missing or older than maxAge.
 // The embedded fallback counts as missing: it is a floor, not a refresh.
 func (r *Refresher) Stale(ctx context.Context, maxAge time.Duration) bool {
-	var ds Dataset
-	src, err := r.Store.Get(ctx, DatasetName, &ds)
-	if err != nil || src != reference.SourceLive {
-		return true
-	}
-	at, err := time.Parse(time.RFC3339, ds.GeneratedAt)
-	return err != nil || r.Now().Sub(at) > maxAge
+	return reference.Stale(ctx, r.Store, DatasetName, r.Now(), maxAge, func(d Dataset) string { return d.GeneratedAt })
 }
 
 func sameSet(a, b []string) bool {

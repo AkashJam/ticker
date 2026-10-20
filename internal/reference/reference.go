@@ -99,3 +99,16 @@ func (s *Store) Put(ctx context.Context, name string, v any) error {
 	}
 	return s.cache.CacheSet(ctx, CacheKey(name), string(b), s.ttl)
 }
+
+// Stale reports whether dataset name is missing or older than maxAge, by the
+// build time generatedAt reads from it. The embedded fallback counts as missing:
+// it is a floor, not a refresh. An unparsable build time counts as stale.
+func Stale[D any](ctx context.Context, s *Store, name string, now time.Time, maxAge time.Duration, generatedAt func(D) string) bool {
+	var ds D
+	src, err := s.Get(ctx, name, &ds)
+	if err != nil || src != SourceLive {
+		return true
+	}
+	at, err := time.Parse(time.RFC3339, generatedAt(ds))
+	return err != nil || now.Sub(at) > maxAge
+}

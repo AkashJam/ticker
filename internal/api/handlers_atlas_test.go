@@ -118,7 +118,7 @@ func TestAtlasCitiesIsMemoisedAndAnErrorIs500(t *testing.T) {
 		t.Errorf("second call = %d, want the memoised body", code)
 	}
 
-	h.atlas.at = time.Now().Add(-2 * atlasTTL) // expired, and there is no store
+	h.atlas.at = time.Now().Add(-2 * memoTTL) // expired, and there is no store
 	if code := get(t, r, "/atlas/cities", nil); code != http.StatusInternalServerError {
 		t.Errorf("no store = %d, want 500", code)
 	}

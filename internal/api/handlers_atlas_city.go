@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,25 +16,6 @@ import (
 	"github.com/AkashJam/ticker/internal/history"
 	"github.com/AkashJam/ticker/internal/worldbank"
 )
-
-// cityMemos keeps one memo per city; the key is a slug from the reference table,
-// so the map cannot outgrow the twenty-three.
-type cityMemos struct {
-	mu sync.Mutex
-	m  map[string]*atlasMemo
-}
-
-func (c *cityMemos) of(slug string) *atlasMemo {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.m == nil {
-		c.m = map[string]*atlasMemo{}
-	}
-	if c.m[slug] == nil {
-		c.m[slug] = &atlasMemo{}
-	}
-	return c.m[slug]
-}
 
 // GetAtlasCity handles GET /atlas/cities/{city} (§8): one city's page data, by
 // the country's slug. Like the comparison it reads the reference store, which

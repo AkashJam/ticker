@@ -337,3 +337,34 @@ func TestGlobalSensorsCarryATopic(t *testing.T) {
 		t.Error("the topic is configuration and must not be served by GET /sensors")
 	}
 }
+
+func TestStale(t *testing.T) {
+	now := time.Date(2026, 10, 17, 12, 0, 0, 0, time.UTC)
+	built := func(age time.Duration) string {
+		return `{"source":"live","asOf":"` + now.Add(-age).Format(time.RFC3339) + `","n":2}`
+	}
+	at := func(b blob) string { return b.AsOf }
+	cases := []struct {
+		name  string
+		cache func() *fakeCache
+		want  bool
+	}{
+		{"fresh live", func() *fakeCache { c := newFakeCache(); c.data[CacheKey("demo")] = built(time.Hour); return c }, false},
+		{"exactly the max age", func() *fakeCache { c := newFakeCache(); c.data[CacheKey("demo")] = built(24 * time.Hour); return c }, false},
+		{"older than the max age", func() *fakeCache { c := newFakeCache(); c.data[CacheKey("demo")] = built(25 * time.Hour); return c }, true},
+		{"embedded fallback counts as missing", newFakeCache, true},
+		{"cache down", func() *fakeCache { c := newFakeCache(); c.getErr = errors.New("down"); return c }, true},
+		{"unparsable build time", func() *fakeCache {
+			c := newFakeCache()
+			c.data[CacheKey("demo")] = `{"source":"live","asOf":"yesterday","n":2}`
+			return c
+		}, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := Stale(context.Background(), testStore(tc.cache()), "demo", now, 24*time.Hour, at); got != tc.want {
+				t.Errorf("Stale = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -45,25 +44,6 @@ type recordResponse struct {
 	// Events are every trip the sensor has recorded, newest session first, in the
 	// ledger's event shape without the band.
 	Events []eventBody `json:"events"`
-}
-
-// recordMemos keeps one memo per sensor. The key is the canonical symbol, so the
-// map cannot grow past the eighteen.
-type recordMemos struct {
-	mu sync.Mutex
-	m  map[string]*atlasMemo
-}
-
-func (r *recordMemos) of(symbol string) *atlasMemo {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if r.m == nil {
-		r.m = map[string]*atlasMemo{}
-	}
-	if r.m[symbol] == nil {
-		r.m[symbol] = &atlasMemo{}
-	}
-	return r.m[symbol]
 }
 
 // GetSensorRecord handles GET /market/sensors/{symbol} (§8): one sensor's
