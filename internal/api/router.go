@@ -18,7 +18,6 @@ func NewRouter(h *Handlers, hub *sse.Hub) *gin.Engine {
 	r.GET("/ready", h.GetReady)
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	r.GET("/symbols", h.GetSymbols)
 	r.GET("/symbols/:symbol", h.GetSymbolSnapshot)
 	r.GET("/symbols/:symbol/candles", h.GetCandles)
 	r.GET("/symbols/:symbol/indicators", h.GetIndicators)

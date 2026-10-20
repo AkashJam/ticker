@@ -8,28 +8,17 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-
-	"github.com/AkashJam/ticker/internal/source"
 )
 
-// fakeSymbols is the symbols table: the four simulator rows (tracked) and two
-// of the 28 sweep symbols (untracked until the release).
-type fakeSymbols struct {
-	all     map[string]bool // symbol -> tracked
-	listing []source.SymbolInfo
+// fakeSymbols is the symbols table: two of the four simulator rows and two of
+// the 28 sweep symbols.
+type fakeSymbols map[string]bool
+
+func newFakeSymbols() fakeSymbols {
+	return fakeSymbols{"SIM:NOVA": true, "SIM:HELIX": true, "MUFG": true, "NVDA": true}
 }
 
-func newFakeSymbols() *fakeSymbols {
-	f := &fakeSymbols{all: map[string]bool{"SIM:NOVA": true, "SIM:HELIX": true, "MUFG": false, "NVDA": false}}
-	f.listing = []source.SymbolInfo{{Symbol: "SIM:HELIX"}, {Symbol: "SIM:NOVA"}}
-	return f
-}
-
-func (f *fakeSymbols) Symbols(context.Context) ([]source.SymbolInfo, error) { return f.listing, nil }
-func (f *fakeSymbols) Exists(_ context.Context, s string) (bool, error) {
-	_, ok := f.all[s]
-	return ok, nil
-}
+func (f fakeSymbols) Exists(_ context.Context, s string) (bool, error) { return f[s], nil }
 
 func servableHandlers(src string) *Handlers {
 	return &Handlers{Meta: newFakeSymbols(), Source: src, Log: slog.New(slog.NewTextHandler(io.Discard, nil))}
@@ -38,7 +27,6 @@ func servableHandlers(src string) *Handlers {
 func servableRouter(h *Handlers) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.GET("/symbols", h.GetSymbols)
 	r.GET("/symbols/:symbol", h.GetSymbolSnapshot)
 	r.GET("/symbols/:symbol/candles", h.GetCandles)
 	r.GET("/symbols/:symbol/indicators", h.GetIndicators)
@@ -53,7 +41,7 @@ func TestSymbolServable(t *testing.T) {
 		want           bool
 	}{
 		{"sim", "SIM:NOVA", true},
-		{"sim", "MUFG", true}, // a real, untracked sweep symbol
+		{"sim", "MUFG", true}, // a real sweep symbol
 		{"sim", "NOPE", false},
 		{"finnhub", "MUFG", true},
 		{"finnhub", "NVDA", true},
@@ -78,17 +66,5 @@ func TestUnknownAndSimSymbolsAre404OnEveryRoute(t *testing.T) {
 		if code := get(t, servableRouter(servableHandlers("finnhub")), path, nil); code != http.StatusNotFound {
 			t.Errorf("finnhub source: GET %s = %d, want 404", path, code)
 		}
-	}
-}
-
-func TestSymbolsListHidesSimOnTheRealFeed(t *testing.T) {
-	var sim, real []symbolResponse
-	get(t, servableRouter(servableHandlers("sim")), "/symbols", &sim)
-	get(t, servableRouter(servableHandlers("finnhub")), "/symbols", &real)
-	if len(sim) != 2 {
-		t.Errorf("sim source lists %d symbols, want 2", len(sim))
-	}
-	if real == nil || len(real) != 0 {
-		t.Errorf("finnhub source lists %v, want an empty (non-null) list: the SIM: rows are not served there", real)
 	}
 }

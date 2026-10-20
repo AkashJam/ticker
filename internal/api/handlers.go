@@ -60,7 +60,6 @@ type Handlers struct {
 // SymbolStore is what the symbol handlers need from the symbols table, as an
 // interface so the 404 rule can be tested without a database.
 type SymbolStore interface {
-	Symbols(ctx context.Context) ([]source.SymbolInfo, error)
 	Exists(ctx context.Context, symbol string) (bool, error)
 }
 

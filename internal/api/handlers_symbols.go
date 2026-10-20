@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,40 +12,9 @@ import (
 	"github.com/AkashJam/ticker/internal/store"
 )
 
-type symbolResponse struct {
-	Symbol   string `json:"symbol"`
-	Name     string `json:"name"`
-	Type     string `json:"type"`
-	Exchange string `json:"exchange"`
-	// Regime surfaces source.SymbolInfo.Regime (steady/high_vol/
-	// mean_reverting/gappy) — the sim source's per-symbol behavior label,
-	// previously computed but never serialized. Used by the portfolio
-	// site's market dashboard to badge each card (mockups/v3).
-	Regime string `json:"regime"`
-}
-
-// GetSymbols handles GET /symbols (§8).
-func (h *Handlers) GetSymbols(c *gin.Context) {
-	symbols, err := h.Meta.Symbols(c.Request.Context())
-	if err != nil {
-		h.Log.Error("api: get symbols", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
-		return
-	}
-
-	// Non-nil, so an empty list is [] and not null.
-	out := make([]symbolResponse, 0, len(symbols))
-	for _, s := range symbols {
-		if strings.HasPrefix(s.Symbol, simPrefix) && !h.simServed() {
-			continue // the table keeps the SIM: rows; the real feed does not list them
-		}
-		out = append(out, symbolResponse{
-			Symbol: s.Symbol, Name: s.Name, Type: string(s.Type), Exchange: s.Exchange,
-			Regime: string(s.Regime),
-		})
-	}
-	c.JSON(http.StatusOK, out)
-}
+// There is no GET /symbols: GET /sensors lists the eighteen, and the list of
+// tracked symbols it replaced was removed with the tracked column (phase17.md
+// step 4, decision 7, migration 000009).
 
 type snapshotResponse struct {
 	Symbol        string  `json:"symbol"`

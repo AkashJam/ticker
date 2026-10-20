@@ -6,8 +6,9 @@ package source
 // SIM: list — a sim walk under a real ticker would be fabrication with a
 // real name on it, so the two lists are disjoint by construction.
 //
-// The sweep reads this list; the symbols table carries the same rows with
-// tracked = false (migration 000003) until Phase 14 promotes them. The first
+// The sweep reads this list; the symbols table carries the same rows
+// (migration 000003), so their pages and daily bars are served. GET /sensors
+// lists the sensors (phase14.md decision 2). The first
 // entry doubles as the sweep's canary: its quote decides whether a session
 // exists and is complete.
 //

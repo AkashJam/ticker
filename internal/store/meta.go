@@ -5,8 +5,6 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-
-	"github.com/AkashJam/ticker/internal/source"
 )
 
 // Meta is the symbols/metadata repository (portfolio.md §6.3) — a distinct
@@ -21,40 +19,13 @@ func NewMeta(pool *pgxpool.Pool) *Meta {
 	return &Meta{pool: pool}
 }
 
-// Exists reports whether symbol is in the table at all, tracked or not: the 28
-// sweep symbols are rows with tracked = false until the release promotes them,
-// and their pages and daily bars are served from the start.
+// Exists reports whether symbol is in the table: the four simulator rows and
+// the 28 sweep symbols. GET /sensors lists the sensors; this only decides
+// whether a symbol's pages and daily bars are served.
 func (m *Meta) Exists(ctx context.Context, symbol string) (bool, error) {
 	var ok bool
 	if err := m.pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM symbols WHERE symbol = $1)`, symbol).Scan(&ok); err != nil {
 		return false, fmt.Errorf("store: symbol exists: %w", err)
 	}
 	return ok, nil
-}
-
-// Symbols returns every tracked symbol — the shape GET /symbols serves.
-func (m *Meta) Symbols(ctx context.Context) ([]source.SymbolInfo, error) {
-	const q = `
-		SELECT symbol, name, type, exchange
-		FROM symbols
-		WHERE tracked = true
-		ORDER BY symbol`
-	rows, err := m.pool.Query(ctx, q)
-	if err != nil {
-		return nil, fmt.Errorf("store: query symbols: %w", err)
-	}
-	defer rows.Close()
-
-	// Non-nil for the same reason as store/timescale.go's Candles/
-	// RecentCandles — a nil slice marshals to JSON `null`, breaking the
-	// documented §8 array contract for GET /symbols.
-	out := make([]source.SymbolInfo, 0)
-	for rows.Next() {
-		var s source.SymbolInfo
-		if err := rows.Scan(&s.Symbol, &s.Name, &s.Type, &s.Exchange); err != nil {
-			return nil, fmt.Errorf("store: scan symbol: %w", err)
-		}
-		out = append(out, s)
-	}
-	return out, rows.Err()
 }
