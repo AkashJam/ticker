@@ -18,6 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/AkashJam/ticker/internal/centralbank"
+	"github.com/AkashJam/ticker/internal/dividend"
 	"github.com/AkashJam/ticker/internal/edgar"
 	"github.com/AkashJam/ticker/internal/news"
 	"github.com/AkashJam/ticker/internal/reference"
@@ -31,6 +32,10 @@ const (
 	SrcSector  = "sectorNews"
 	SrcTopic   = "topicNews"
 	SrcFilings = "filings"
+	// SrcDividend asks whether the session was an ex-dividend date (bearing.md
+	// #112). It is a caveat rather than an explanation, so the page reads it as a
+	// line under the trip and never lists it with the news.
+	SrcDividend = "dividend"
 )
 
 // Statuses of one source.
@@ -101,6 +106,9 @@ type Source struct {
 	// Categorised is false for 6-Ks, which carry no item codes: foreign filers
 	// are detected but not categorised, and the page says so.
 	Categorised *bool `json:"categorised,omitempty"`
+
+	// Dividend source: set when the session was an ex-dividend date.
+	Dividend *dividend.Dividend `json:"dividend,omitempty"`
 }
 
 // Window is the dates a coverage looked at: from inclusive, to exclusive.
@@ -148,20 +156,26 @@ type (
 	FilingSource interface {
 		Recent(ctx context.Context, cik int) ([]edgar.Filing, error)
 	}
+	// DividendSource reports the dividend that went ex on a session, or nil.
+	DividendSource interface {
+		ExDividend(ctx context.Context, symbol string, session time.Time) (*dividend.Dividend, error)
+	}
 )
 
 // Collector fetches coverage. FilingSource may be nil: EDGAR needs a contact,
-// and without one the filings source is an error frozen at once.
+// and without one the filings source is an error frozen at once. Dividends may be
+// nil in the same way.
 type Collector struct {
-	Config   Config
-	News     NewsSearcher
-	Bank     BankFetcher
-	Filings  FilingSource
-	Now      func() time.Time
-	Sleep    func(ctx context.Context, d time.Duration) error
-	NewsGap  time.Duration
-	Log      *slog.Logger
-	lastNews time.Time
+	Config    Config
+	News      NewsSearcher
+	Bank      BankFetcher
+	Filings   FilingSource
+	Dividends DividendSource
+	Now       func() time.Time
+	Sleep     func(ctx context.Context, d time.Duration) error
+	NewsGap   time.Duration
+	Log       *slog.Logger
+	lastNews  time.Time
 }
 
 // NewCollector returns a collector with the production pacing: a second between
@@ -198,10 +212,12 @@ func Decode(b []byte) (*Coverage, error) {
 
 // Routing names how an event is routed and which sources it asks.
 func Routing(global bool, splitPending bool, label *string) (string, []string) {
+	// Every route also asks the dividend source: whether the session was an
+	// ex-date is a fact about the move, whichever part of it the split blames.
 	if global {
-		return RoutingGlobal, []string{SrcFilings, SrcTopic}
+		return RoutingGlobal, []string{SrcFilings, SrcTopic, SrcDividend}
 	}
-	all := []string{SrcBank, SrcEconomy, SrcFilings, SrcSector}
+	all := []string{SrcBank, SrcEconomy, SrcFilings, SrcSector, SrcDividend}
 	switch {
 	case splitPending:
 		return RoutingPendingSplit, all
@@ -210,9 +226,9 @@ func Routing(global bool, splitPending bool, label *string) (string, []string) {
 	}
 	switch *label {
 	case trigger.LabelCurrencyLed:
-		return *label, []string{SrcBank, SrcEconomy}
+		return *label, []string{SrcBank, SrcEconomy, SrcDividend}
 	case trigger.LabelStockLed:
-		return *label, []string{SrcFilings, SrcSector}
+		return *label, []string{SrcFilings, SrcSector, SrcDividend}
 	}
 	return *label, all // both, neither
 }
@@ -297,6 +313,8 @@ func (c *Collector) fetch(ctx context.Context, name string, ev trigger.Trip, cfg
 		s, err = c.newsSource(ctx, cfg.Topic, from, to, ev.ClosedAt, excluded, prev)
 	case SrcFilings:
 		s, err = c.filings(ctx, cfg, from, to, ev.ClosedAt, prev)
+	case SrcDividend:
+		s, err = c.dividend(ctx, ev)
 	default:
 		return nil, fmt.Errorf("coverage: unknown source %q", name)
 	}
@@ -474,6 +492,25 @@ func (c *Collector) filings(ctx context.Context, cfg SensorConfig, from, to, clo
 	if len(s.Items) == 0 {
 		s.Status = StatusEmpty
 		s.Absent = &Absent{Reason: fmt.Sprintf("no %s was filed in the window", form)}
+	}
+	return s, nil
+}
+
+// dividend asks whether the tripped session was an ex-dividend date. A raw close
+// falls by about the dividend on its ex-date, so the trip can be partly that;
+// the trigger does not correct for it (bearing.md #112), the ledger names it.
+func (c *Collector) dividend(ctx context.Context, ev trigger.Trip) (*Source, error) {
+	if c.Dividends == nil {
+		return nil, fmt.Errorf("no dividend source is configured: %w", errNotConfigured)
+	}
+	d, err := c.Dividends.ExDividend(ctx, ev.Symbol, ev.SessionDate)
+	if err != nil {
+		return nil, err
+	}
+	s := &Source{Status: StatusOK, Query: "Yahoo chart, dividend events", Dividend: d}
+	if d == nil {
+		s.Status = StatusEmpty
+		s.Absent = &Absent{Reason: "no ex-dividend date on this session"}
 	}
 	return s, nil
 }

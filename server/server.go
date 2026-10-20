@@ -164,7 +164,7 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 			filer = c
 		}
 		judge := &trigger.Runner{
-			Coverage: coverage.NewProduction(refForTrigger, filer, log),
+			Coverage: coverage.NewProduction(refForTrigger, filer, loc, log),
 			Candles:  ts, Events: ts, Loc: loc, Threshold: cfg.TriggerThreshold, Log: log,
 			Rates: &ecb.RateSource{Store: refForTrigger, Feed: ecb.NewClient()}, SplitThreshold: cfg.SplitThreshold,
 			Thin: func(ctx context.Context) (map[string]bool, error) {
@@ -251,9 +251,13 @@ func New(ctx context.Context, cfg flags.Config, log *slog.Logger) (*Server, erro
 }
 
 // maxTickAge is how long the leader may go without ingesting a tick before
-// the dead-man switch stops pinging. Generous on purpose: a quiet upstream
-// or reconnect shouldn't page, only a genuinely stuck ingest loop.
-const maxTickAge = 30 * time.Minute
+// the feed reads stale and the dead-man switch stops pinging. The state, the
+// nav dot and the pager share it (ingest.FeedState), so they cannot disagree.
+// Ten minutes sits above the adapter's idle guard (three minutes without a
+// trade in session forces a reconnect) plus a reconnect past a `502` or two,
+// so a guarded stall recovers before it pages; thirty let a frozen feed read
+// live for half an hour after the open (phase14.md finding 2).
+const maxTickAge = 10 * time.Minute
 
 // healthy is the dead-man switch's liveness check (§13): Redis must be
 // reachable on every replica, and the leader must also have ingested

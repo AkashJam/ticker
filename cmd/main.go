@@ -324,7 +324,7 @@ func runTrigger(ctx context.Context, cfg flags.Config, sessionArg string, dryRun
 		filer = c
 	}
 	judge := &trigger.Runner{
-		Coverage: coverage.NewProduction(refStore, filer, log),
+		Coverage: coverage.NewProduction(refStore, filer, loc, log),
 		Candles:  ts, Events: events, Loc: loc, Threshold: cfg.TriggerThreshold, Log: log,
 		Rates: &ecb.RateSource{Store: refStore, Feed: ecb.NewClient()}, SplitThreshold: cfg.SplitThreshold,
 		Thin: func(ctx context.Context) (map[string]bool, error) {

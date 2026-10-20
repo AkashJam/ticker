@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/AkashJam/ticker/internal/centralbank"
+	"github.com/AkashJam/ticker/internal/dividend"
 	"github.com/AkashJam/ticker/internal/edgar"
 	"github.com/AkashJam/ticker/internal/news"
 	"github.com/AkashJam/ticker/internal/reference"
@@ -80,11 +81,23 @@ func (f *fakeFilings) Recent(context.Context, int) ([]edgar.Filing, error) {
 	return f.filings, f.err
 }
 
+type fakeDividends struct {
+	div   *dividend.Dividend
+	err   error
+	calls []string
+}
+
+func (f *fakeDividends) ExDividend(_ context.Context, symbol string, _ time.Time) (*dividend.Dividend, error) {
+	f.calls = append(f.calls, symbol)
+	return f.div, f.err
+}
+
 type rig struct {
 	c *Collector
 	n *fakeNews
 	b *fakeBank
 	f *fakeFilings
+	d *fakeDividends
 }
 
 const (
@@ -94,7 +107,7 @@ const (
 )
 
 func newRig() *rig {
-	r := &rig{n: &fakeNews{byPhrase: map[string][]news.Item{}, errs: map[string]error{}}, b: &fakeBank{}, f: &fakeFilings{}}
+	r := &rig{n: &fakeNews{byPhrase: map[string][]news.Item{}, errs: map[string]error{}}, b: &fakeBank{}, f: &fakeFilings{}, d: &fakeDividends{}}
 	cfg := fakeConfig{sensors: map[string]SensorConfig{
 		"AMX": {Symbol: "AMX", EconomyQuery: econ, SectorQuery: sector, CIK: 1129137,
 			FeedReason: "Banxico's RSS channels are all data series"},
@@ -105,6 +118,7 @@ func newRig() *rig {
 		"NVDA": {Symbol: "NVDA", Global: true, Topic: topic, CIK: 1045810},
 	}, excluded: news.ExcludedList{Excluded: []news.Entry{{Name: "MarketBeat", Hosts: []string{"marketbeat.com"}}}}}
 	r.c = NewCollector(cfg, r.n, r.b, r.f, quiet())
+	r.c.Dividends = r.d
 	r.c.Sleep = func(context.Context, time.Duration) error { return nil }
 	r.c.Now = func() time.Time { return time.Date(2026, 10, 15, 20, 20, 0, 0, time.UTC) }
 	return r
@@ -152,14 +166,14 @@ func TestRouting(t *testing.T) {
 		routing string
 		want    []string
 	}{
-		{"currency-led asks the bank and the economy", false, false, lbl(trigger.LabelCurrencyLed), trigger.LabelCurrencyLed, []string{SrcBank, SrcEconomy}},
-		{"stock-led asks the filings and the sector", false, false, lbl(trigger.LabelStockLed), trigger.LabelStockLed, []string{SrcFilings, SrcSector}},
-		{"both asks everything", false, false, lbl(trigger.LabelBoth), trigger.LabelBoth, []string{SrcBank, SrcEconomy, SrcFilings, SrcSector}},
-		{"neither asks everything", false, false, lbl(trigger.LabelNeither), trigger.LabelNeither, []string{SrcBank, SrcEconomy, SrcFilings, SrcSector}},
-		{"a country with no split asks everything", false, false, nil, RoutingNone, []string{SrcBank, SrcEconomy, SrcFilings, SrcSector}},
-		{"a pending split asks everything", false, true, nil, RoutingPendingSplit, []string{SrcBank, SrcEconomy, SrcFilings, SrcSector}},
-		{"a global name asks its 8-Ks and its topic", true, false, nil, RoutingGlobal, []string{SrcFilings, SrcTopic}},
-		{"a global name ignores a pending split", true, true, nil, RoutingGlobal, []string{SrcFilings, SrcTopic}},
+		{"currency-led asks the bank, the economy and the dividend", false, false, lbl(trigger.LabelCurrencyLed), trigger.LabelCurrencyLed, []string{SrcBank, SrcEconomy, SrcDividend}},
+		{"stock-led asks the filings, the sector and the dividend", false, false, lbl(trigger.LabelStockLed), trigger.LabelStockLed, []string{SrcFilings, SrcSector, SrcDividend}},
+		{"both asks everything", false, false, lbl(trigger.LabelBoth), trigger.LabelBoth, []string{SrcBank, SrcEconomy, SrcFilings, SrcSector, SrcDividend}},
+		{"neither asks everything", false, false, lbl(trigger.LabelNeither), trigger.LabelNeither, []string{SrcBank, SrcEconomy, SrcFilings, SrcSector, SrcDividend}},
+		{"a country with no split asks everything", false, false, nil, RoutingNone, []string{SrcBank, SrcEconomy, SrcFilings, SrcSector, SrcDividend}},
+		{"a pending split asks everything", false, true, nil, RoutingPendingSplit, []string{SrcBank, SrcEconomy, SrcFilings, SrcSector, SrcDividend}},
+		{"a global name asks its 8-Ks, its topic and the dividend", true, false, nil, RoutingGlobal, []string{SrcFilings, SrcTopic, SrcDividend}},
+		{"a global name ignores a pending split", true, true, nil, RoutingGlobal, []string{SrcFilings, SrcTopic, SrcDividend}},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			routing, got := Routing(tt.global, tt.pending, tt.label)
@@ -230,7 +244,7 @@ func TestACurrencyLedTripAsksOnlyTheBankAndTheEconomy(t *testing.T) {
 	if r.f.calls != 0 || len(r.n.calls) != 1 || r.n.calls[0] != "Canada" {
 		t.Errorf("filings calls %d, news calls %v; a currency-led trip must not ask the filings or the sector", r.f.calls, r.n.calls)
 	}
-	if len(cov.Sources) != 2 {
+	if len(cov.Sources) != 3 || cov.Sources[SrcDividend] == nil {
 		t.Errorf("sources = %v", names(cov.Sources))
 	}
 	b := cov.Sources[SrcBank]
@@ -266,7 +280,7 @@ func TestAGlobalNameGetsItsEightKsWithItemCodesAndItsTopic(t *testing.T) {
 		{Form: "8-K/A", Filed: hr(14, 0), Accepted: hr(14, 21), Items: []string{"5.02"}, Description: "8-K/A", URL: "https://sec/a"},
 	}
 	cov := collect(t, r, trip("NVDA", nil, false), nil, trigger.StageTrip)
-	if cov.Routing != RoutingGlobal || len(cov.Sources) != 2 {
+	if cov.Routing != RoutingGlobal || len(cov.Sources) != 3 {
 		t.Fatalf("routing %s, sources %v", cov.Routing, names(cov.Sources))
 	}
 	f := cov.Sources[SrcFilings]
@@ -478,7 +492,113 @@ func jsonMarshal(c *Coverage) ([]byte, error) { return json.Marshal(c) }
 func TestAPendingSplitAsksEverythingAndSaysSo(t *testing.T) {
 	r := newRig()
 	cov := collect(t, r, trip("AMX", nil, true), nil, trigger.StageTrip)
-	if cov.Routing != RoutingPendingSplit || len(cov.Sources) != 4 {
+	if cov.Routing != RoutingPendingSplit || len(cov.Sources) != 5 {
 		t.Errorf("routing %s, sources %v", cov.Routing, names(cov.Sources))
+	}
+}
+
+// --- the dividend source (bearing.md #112) ---
+
+func TestAnExDividendSessionIsNamedWithItsDateAndAmount(t *testing.T) {
+	r := newRig()
+	r.d.div = &dividend.Dividend{Date: "2026-10-15", Amount: 1.249, Currency: "USD"}
+	cov := collect(t, r, trip("RY", lbl(trigger.LabelStockLed), false), nil, trigger.StageTrip)
+	d := cov.Sources[SrcDividend]
+	if d == nil || d.Status != StatusOK || d.Dividend == nil || d.Dividend.Amount != 1.249 || d.Dividend.Date != "2026-10-15" || d.Dividend.Currency != "USD" {
+		t.Fatalf("dividend = %+v", d)
+	}
+	if d.Attempts != 1 || d.Absent != nil || d.Query == "" {
+		t.Errorf("dividend = %+v: one attempt, no absence, the source named", d)
+	}
+	if len(r.d.calls) != 1 || r.d.calls[0] != "RY" {
+		t.Errorf("calls = %v: one lookup for the tripped sensor", r.d.calls)
+	}
+}
+
+func TestNoExDividendIsAStatedAbsence(t *testing.T) {
+	r := newRig()
+	d := collect(t, r, trip("AMX", lbl(trigger.LabelBoth), false), nil, trigger.StageTrip).Sources[SrcDividend]
+	if d.Status != StatusEmpty || d.Dividend != nil || d.Absent == nil || d.Absent.Reason != "no ex-dividend date on this session" {
+		t.Errorf("dividend = %+v", d)
+	}
+}
+
+func TestEveryRouteAsksTheDividendOnce(t *testing.T) {
+	for _, ev := range []trigger.Trip{
+		trip("RY", lbl(trigger.LabelCurrencyLed), false),
+		trip("AMX", lbl(trigger.LabelStockLed), false),
+		trip("AMX", lbl(trigger.LabelNeither), false),
+		trip("AMX", nil, true),
+		trip("NVDA", nil, false),
+	} {
+		r := newRig()
+		cov := collect(t, r, ev, nil, trigger.StageTrip)
+		if cov.Sources[SrcDividend] == nil || len(r.d.calls) != 1 {
+			t.Errorf("%s (%s): dividend %+v, calls %v", ev.Symbol, cov.Routing, cov.Sources[SrcDividend], r.d.calls)
+		}
+	}
+}
+
+func TestAFailedDividendLookupIsRetriedThenFrozenAfterThreeAttempts(t *testing.T) {
+	r := newRig()
+	r.d.err = errors.New("dividend: RY: yahoo returned HTTP 429")
+	ev := trip("RY", lbl(trigger.LabelStockLed), false)
+
+	cov := collect(t, r, ev, nil, trigger.StageTrip)
+	d := cov.Sources[SrcDividend]
+	if d.Status != StatusError || d.Attempts != 1 || !strings.Contains(d.Error, "429") {
+		t.Fatalf("trip: %+v", d)
+	}
+	b, _ := json.Marshal(cov)
+	cov = collect(t, r, ev, b, trigger.StageFollowUp)
+	if d = cov.Sources[SrcDividend]; d.Attempts != 2 || d.Status != StatusError {
+		t.Fatalf("follow-up: %+v", d)
+	}
+	b, _ = json.Marshal(cov)
+	cov = collect(t, r, ev, b, trigger.StageFollowUp)
+	if d = cov.Sources[SrcDividend]; d.Attempts != 3 || d.Status != StatusError {
+		t.Fatalf("third: %+v", d)
+	}
+	b, _ = json.Marshal(cov)
+	before := len(r.d.calls)
+	cov = collect(t, r, ev, b, trigger.StageFollowUp)
+	if len(r.d.calls) != before || cov.Sources[SrcDividend].Attempts != 3 {
+		t.Errorf("a source at three attempts is frozen: calls %d to %d", before, len(r.d.calls))
+	}
+}
+
+func TestADividendThatAnsweredEmptyAtTheTripIsAskedAgainAtTheFollowUp(t *testing.T) {
+	// Yahoo may not list the same day's ex-date at 16:15 ET; the follow-up asks
+	// every source again, so the next session's answer corrects it.
+	r := newRig()
+	ev := trip("RY", lbl(trigger.LabelStockLed), false)
+	cov := collect(t, r, ev, nil, trigger.StageTrip)
+	if cov.Sources[SrcDividend].Status != StatusEmpty {
+		t.Fatalf("trip: %+v", cov.Sources[SrcDividend])
+	}
+	b, _ := json.Marshal(cov)
+	r.d.div = &dividend.Dividend{Date: "2026-10-15", Amount: 0.8, Currency: "USD"}
+	cov = collect(t, r, ev, b, trigger.StageFollowUp)
+	if d := cov.Sources[SrcDividend]; d.Status != StatusOK || d.Attempts != 2 || d.Dividend == nil {
+		t.Errorf("follow-up: %+v", d)
+	}
+}
+
+func TestWithoutADividendSourceTheSourceIsAnErrorFrozenAtOnce(t *testing.T) {
+	r := newRig()
+	r.c.Dividends = nil
+	d := collect(t, r, trip("RY", lbl(trigger.LabelStockLed), false), nil, trigger.StageTrip).Sources[SrcDividend]
+	if d.Status != StatusError || d.Attempts != MaxAttempts || !strings.Contains(d.Error, "not configured") {
+		t.Errorf("dividend = %+v", d)
+	}
+}
+
+func TestADividendFailureDoesNotBlockTheNews(t *testing.T) {
+	r := newRig()
+	r.d.err = errors.New("blocked")
+	r.n.byPhrase[sector] = []news.Item{{Title: "Telcel", Outlet: "AP", OutletURL: "https://apnews.com", Link: "a", Published: hr(15, 10)}}
+	cov := collect(t, r, trip("AMX", lbl(trigger.LabelBoth), false), nil, trigger.StageTrip)
+	if cov.Sources[SrcDividend].Status != StatusError || cov.Sources[SrcSector].Status != StatusOK {
+		t.Errorf("dividend %+v, sector %+v", cov.Sources[SrcDividend], cov.Sources[SrcSector])
 	}
 }

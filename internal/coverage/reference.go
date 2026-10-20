@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
+	"time"
 
 	"github.com/AkashJam/ticker/internal/centralbank"
+	"github.com/AkashJam/ticker/internal/dividend"
 	"github.com/AkashJam/ticker/internal/edgar"
 	"github.com/AkashJam/ticker/internal/news"
 	"github.com/AkashJam/ticker/internal/reference"
@@ -88,7 +90,11 @@ func (r ReferenceConfig) Excluded(ctx context.Context) (news.ExcludedList, error
 // NewProduction builds the collector the server and the CLI use: the reference
 // tables for configuration, Google News, the central bank feeds, and EDGAR when
 // a contact was given (filer may be nil: the filings source is then an error
-// frozen at once, never a request that would identify no one).
-func NewProduction(store *reference.Store, filer FilingSource, log *slog.Logger) *Collector {
-	return NewCollector(ReferenceConfig{Store: store}, news.NewClient(), centralbank.NewClient(), filer, log)
+// frozen at once, never a request that would identify no one). loc is
+// America/New_York, the zone an ex-date is dated in; the dividend source asks
+// Yahoo once per tripped sensor.
+func NewProduction(store *reference.Store, filer FilingSource, loc *time.Location, log *slog.Logger) *Collector {
+	c := NewCollector(ReferenceConfig{Store: store}, news.NewClient(), centralbank.NewClient(), filer, log)
+	c.Dividends = dividend.NewClient(loc)
+	return c
 }
