@@ -51,10 +51,10 @@ func NewTimescale(pool *pgxpool.Pool) *Timescale {
 // processed this stream entry and must skip accumulating it again.
 func (t *Timescale) InsertTick(ctx context.Context, tick source.NormalizedTick, streamID string) (inserted bool, err error) {
 	const q = `
-		INSERT INTO ticks (time, symbol, price, volume, simulated, stream_id, open, high, low)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO ticks (time, symbol, price, volume, stream_id, open, high, low)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		ON CONFLICT (time, stream_id) DO NOTHING`
-	tag, err := t.pool.Exec(ctx, q, tick.Timestamp, tick.Symbol, tick.Price, tick.Volume, tick.Simulated, streamID,
+	tag, err := t.pool.Exec(ctx, q, tick.Timestamp, tick.Symbol, tick.Price, tick.Volume, streamID,
 		nullIfZero(tick.Open), nullIfZero(tick.High), nullIfZero(tick.Low))
 	if err != nil {
 		return false, fmt.Errorf("store: insert tick: %w", err)

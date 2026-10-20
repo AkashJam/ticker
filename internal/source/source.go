@@ -43,8 +43,9 @@ type NormalizedTick struct {
 	Low  float64 `json:"low,omitempty"`
 	// Simulated is true when the tick was produced by the sim source. It is
 	// internal to dev and CI (portfolio.md ADR-006): the aggregator uses it to
-	// give SIM: symbols their own daily bar, and it is stored on the tick row.
-	// It is not part of QuoteEvent, so no API response or SSE event carries it.
+	// give SIM: symbols their own daily bar. It is not stored (the ticks column
+	// was dropped by migration 000010) and not part of QuoteEvent, so no row,
+	// API response or SSE event carries it.
 	Simulated bool `json:"simulated"`
 }
 
