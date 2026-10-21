@@ -27,6 +27,7 @@ import (
 	"github.com/AkashJam/ticker/internal/coverage"
 	"github.com/AkashJam/ticker/internal/ecb"
 	"github.com/AkashJam/ticker/internal/edgar"
+	"github.com/AkashJam/ticker/internal/fixture"
 	"github.com/AkashJam/ticker/internal/fred"
 	"github.com/AkashJam/ticker/internal/history"
 	"github.com/AkashJam/ticker/internal/news"
@@ -146,6 +147,16 @@ func main() {
 				},
 			},
 			{
+				Name:  "fixture",
+				Usage: "dev and CI only: record the e2e fixture's events with the real judge on the backfilled closes and invented news, then exit; refuses ENV=prod and any database a real sweep has written",
+				Flags: append(append([]cli.Flag{}, sharedFlags...),
+					&cli.StringFlag{Name: "state", Usage: "tripped | quiet (portfolio/e2e-fixture/ports.ts)"},
+				),
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					return runFixture(ctx, configFromCmd(cmd), cmd.String("state"))
+				},
+			},
+			{
 				Name:   "sigma",
 				Usage:  "print each sensor's residual return, sigma and z on the newest daily close, read-only, then exit",
 				Flags:  sharedFlags,
@@ -162,9 +173,12 @@ func main() {
 			{
 				Name:  "ecb",
 				Usage: "fetch the ECB reference rates and write the dataset to --out, or to Redis without it, then exit",
-				Flags: append([]cli.Flag{&cli.StringFlag{Name: "out", Usage: "write JSON here instead of Redis; this is how embedded/ecb.json is made"}}, sharedFlags...),
+				Flags: append([]cli.Flag{
+					&cli.StringFlag{Name: "out", Usage: "write JSON here instead of Redis; this is how embedded/ecb.json is made"},
+					&cli.StringFlag{Name: "state-out", Usage: "write the daily-rate window (ecb_state) here instead of Redis; this is how internal/fixture/data/ecb_state.json is made"},
+				}, sharedFlags...),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return runECB(ctx, configFromCmd(cmd), cmd.String("out"))
+					return runECB(ctx, configFromCmd(cmd), cmd.String("out"), cmd.String("state-out"))
 				},
 			},
 			{
@@ -376,6 +390,49 @@ func runTrigger(ctx context.Context, cfg flags.Config, sessionArg string, dryRun
 	return nil
 }
 
+// runFixture records the e2e fixture's events for one state (phase17.md step
+// 5). It is idempotent like the trigger: a second run finds every event
+// recorded and writes nothing new.
+func runFixture(ctx context.Context, cfg flags.Config, state string) error {
+	// The database and a sane split threshold; the fixture judges at its own
+	// threshold, and refuses production itself.
+	if err := cfg.ValidateTrigger(); err != nil {
+		return err
+	}
+	log := newLogger(cfg.LogLevel)
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	loc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		return fmt.Errorf("fixture: load America/New_York: %w", err)
+	}
+	pool, err := store.NewPool(ctx, cfg.TimescaleDSN)
+	if err != nil {
+		return fmt.Errorf("fixture: %w", err)
+	}
+	defer pool.Close()
+
+	refStore := reference.New(nil, reference.Embedded(), log)
+	sums, err := fixture.Run(ctx, fixture.Deps{
+		Store: store.NewTimescale(pool), Loc: loc, Env: cfg.Env, SplitThreshold: cfg.SplitThreshold, Log: log,
+		Thin: func(ctx context.Context) (map[string]bool, error) {
+			sensors, err := refStore.Sensors(ctx)
+			if err != nil {
+				return nil, err
+			}
+			return server.ThinSensors(sensors), nil
+		},
+	}, state)
+	for _, sum := range sums {
+		var kept []string
+		for _, t := range sum.Trips {
+			kept = append(kept, fmt.Sprintf("%s z %+.2f", t.Symbol, t.Z))
+		}
+		fmt.Printf("fixture %s: session %s: %d new, %d already recorded: %s\n", state, sum.Session.Format(time.DateOnly), sum.Inserted, sum.Existing, strings.Join(kept, ", "))
+	}
+	return err
+}
+
 // runSigma prints the figures Phase 15's threshold is made of, for every
 // sensor, on the newest daily close in the database. It reads candles and
 // writes nothing, so it is the way to check a z against a spreadsheet before
@@ -568,26 +625,45 @@ func runFred(ctx context.Context, cfg flags.Config, out string) error {
 // history zip and writes the dataset to a file, which is how the embedded
 // snapshot is generated and refreshed; without it the dataset goes to Redis.
 // It does not ping healthchecks.io: that check watches the scheduled run.
-func runECB(ctx context.Context, cfg flags.Config, out string) error {
+func runECB(ctx context.Context, cfg flags.Config, out, stateOut string) error {
 	log := newLogger(cfg.LogLevel)
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	toFile := out != "" || stateOut != ""
 	var cache reference.Cache
-	if out == "" {
+	if !toFile {
 		if cfg.RedisAddr == "" {
-			return fmt.Errorf("ecb: REDIS_ADDR (or --redis-addr) is required without --out")
+			return fmt.Errorf("ecb: REDIS_ADDR (or --redis-addr) is required without --out or --state-out")
 		}
 		cache = store.NewRedis(cfg.RedisAddr)
 	}
 	refresher := ecb.NewRefresher(ecb.NewClient(), fred.NewClient(), reference.New(cache, reference.Embedded(), log), log)
 
-	if out == "" {
+	if !toFile {
 		return refresher.Refresh(ctx)
 	}
 	st, err := refresher.Build(ctx)
 	if err != nil {
 		return err
+	}
+	if stateOut != "" {
+		// The window only: the split reads Window (ecb.RateSource), and Sums are
+		// the monthly averages the dataset is computed from, years of them, which
+		// the fixture never reads (phase17.md step 5).
+		window := *st
+		window.Sums = nil
+		b, err := json.MarshalIndent(window, "", "  ")
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(stateOut, append(b, '\n'), 0o644); err != nil {
+			return err
+		}
+		fmt.Printf("ecb: wrote %s last=%s currencies=%d\n", stateOut, st.Last.Format(time.DateOnly), len(st.Window))
+		if out == "" {
+			return nil
+		}
 	}
 	ds, err := refresher.Compute(ctx, st)
 	if err != nil {
