@@ -324,4 +324,4 @@ func (m memCache) CacheSet(_ context.Context, key, value string, _ time.Duration
 type clock struct{ t time.Time }
 
 func (c *clock) set(t time.Time) { c.t = t }
-func (c *clock) now() time.Time { return c.t }
+func (c *clock) now() time.Time  { return c.t }

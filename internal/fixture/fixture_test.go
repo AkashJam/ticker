@@ -27,7 +27,9 @@ type fakeStore struct {
 	now    time.Time
 }
 
-func key(symbol string, session time.Time) string { return symbol + " " + session.Format(time.DateOnly) }
+func key(symbol string, session time.Time) string {
+	return symbol + " " + session.Format(time.DateOnly)
+}
 
 // newFakeStore builds a seeded walk per symbol, ending on last.
 func newFakeStore(last time.Time) *fakeStore {
