@@ -114,7 +114,9 @@ func (f *fakeStore) PendingCoverage(_ context.Context, before time.Time) ([]trig
 		}
 		out = append(out, t)
 	}
-	slices.SortFunc(out, func(a, b trigger.Trip) int { return strings.Compare(key(a.Symbol, a.SessionDate), key(b.Symbol, b.SessionDate)) })
+	slices.SortFunc(out, func(a, b trigger.Trip) int {
+		return strings.Compare(key(a.Symbol, a.SessionDate), key(b.Symbol, b.SessionDate))
+	})
 	return out, nil
 }
 
