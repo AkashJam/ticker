@@ -87,6 +87,7 @@ func (p *Producer) handle(ctx context.Context, tick source.NormalizedTick) {
 		return // standby replica — no ingest (§6.1)
 	}
 
+	received := time.Now()
 	tick, err := Normalize(tick)
 	if err != nil {
 		p.log.Warn("ingest: dropping invalid tick", "error", err)
@@ -113,7 +114,7 @@ func (p *Producer) handle(ctx context.Context, tick source.NormalizedTick) {
 		p.log.Error("ingest: marshal quote event", "error", err)
 		return
 	}
-	envelope, err := json.Marshal(source.PubSubMessage{Type: "quote", Payload: public})
+	envelope, err := json.Marshal(source.PubSubMessage{Type: "quote", Payload: public, EmittedAt: received})
 	if err != nil {
 		p.log.Error("ingest: marshal quote envelope", "error", err)
 	} else if err := p.redis.Publish(ctx, store.QuoteChannel(tick.Symbol), envelope); err != nil {

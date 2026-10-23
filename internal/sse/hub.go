@@ -27,15 +27,19 @@ const heartbeatInterval = 15 * time.Second
 // Ticker case study's tiles read, via the portfolio's server-side
 // Prometheus query, instead of the figures it used to estimate.
 var (
-	// ingestToFanout is tick stamp → SSE write, observed once per viewer
-	// write: normalize, XADD, PUBLISH, Redis pub/sub and this hub, as each
-	// viewer's stream actually experiences it. Only quotes — candles are
-	// aggregator output, not a tick's path. Buckets sized for one box:
-	// everything is local, so sub-millisecond to a second covers it.
+	// ingestToFanout is the producer receiving a tick → SSE write, observed
+	// once per viewer write: normalize, XADD, PUBLISH, Redis pub/sub and this
+	// hub, as each viewer's stream actually experiences it. It starts after
+	// the feed's 1 s bar and its 1 s grace, which are a design choice, not
+	// the pipeline's. Only quotes — candles are aggregator output, not a
+	// tick's path. Buckets run from sub-millisecond to ten seconds: the
+	// pipeline is local and fast, but a quantile that lands past the last
+	// bucket is reported as that bucket's edge, so the top has to sit well
+	// above anything the pipeline does (phase18.md step 2, M27).
 	ingestToFanout = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "ticker_ingest_to_fanout_seconds",
-		Help:    "Seconds from a tick's source timestamp to its SSE write to a viewer, by source.",
-		Buckets: []float64{.0005, .001, .0025, .005, .01, .025, .05, .1, .25, .5, 1},
+		Name:    "ticker_pipeline_fanout_seconds",
+		Help:    "Seconds from a tick entering the pipeline to its SSE write to a viewer, by source.",
+		Buckets: []float64{.0005, .001, .0025, .005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10},
 	}, []string{"source"})
 
 	// sseClients counts admitted stream connections (not ones rejected at
@@ -47,22 +51,26 @@ var (
 	})
 )
 
-// fanoutLatency reads a quote payload's source timestamp and returns the
-// seconds elapsed at `now`, plus the source label. ok is false for a
-// payload that isn't a tick or carries no timestamp — nothing to observe.
-// Pure so it can be tested without a Redis subscription or an HTTP writer.
-func fanoutLatency(payload []byte, now time.Time) (seconds float64, sourceLabel string, ok bool) {
-	var tick source.QuoteEvent
-	if err := json.Unmarshal(payload, &tick); err != nil || tick.Timestamp.IsZero() {
+// fanoutLatency returns the seconds from the moment a quote entered the
+// pipeline (the envelope's EmittedAt) to `now`, plus the source label. ok is
+// false for a message with no emit stamp or a payload that isn't a quote with
+// a symbol: nothing to observe. Pure so it can be tested without a Redis
+// subscription or an HTTP writer.
+func fanoutLatency(msg source.PubSubMessage, now time.Time) (seconds float64, sourceLabel string, ok bool) {
+	if msg.EmittedAt.IsZero() {
+		return 0, "", false
+	}
+	var quote source.QuoteEvent
+	if err := json.Unmarshal(msg.Payload, &quote); err != nil || quote.Symbol == "" {
 		return 0, "", false
 	}
 	// The payload no longer says where a tick came from; SIM: symbols are the
 	// simulator's by construction (they never share a name with a real one).
 	sourceLabel = "live"
-	if strings.HasPrefix(tick.Symbol, "SIM:") {
+	if strings.HasPrefix(quote.Symbol, "SIM:") {
 		sourceLabel = "sim"
 	}
-	return now.Sub(tick.Timestamp).Seconds(), sourceLabel, true
+	return now.Sub(msg.EmittedAt).Seconds(), sourceLabel, true
 }
 
 // Hub fans Redis pub/sub messages out to connected clients as SSE. A plain
@@ -164,7 +172,7 @@ func (h *Hub) relay(w http.ResponseWriter, flusher http.Flusher, raw string) {
 	flusher.Flush()
 
 	if msg.Type == "quote" {
-		if seconds, sourceLabel, ok := fanoutLatency(msg.Payload, time.Now()); ok {
+		if seconds, sourceLabel, ok := fanoutLatency(msg, time.Now()); ok {
 			ingestToFanout.WithLabelValues(sourceLabel).Observe(seconds)
 		}
 	}

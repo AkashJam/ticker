@@ -99,6 +99,12 @@ type Candle struct {
 type PubSubMessage struct {
 	Type    string          `json:"type"` // "quote" | "candle"
 	Payload json.RawMessage `json:"payload"`
+	// EmittedAt is when a quote entered the pipeline (the producer received
+	// the tick), the start of the hub's latency span. It is the envelope's, not
+	// the QuoteEvent's: a Finnhub tick is stamped with its bar's first second,
+	// so timing from that stamp would measure the 1 s bar and its grace, not
+	// the pipeline. Zero on candles and on an older publisher's quotes.
+	EmittedAt time.Time `json:"emittedAt,omitzero"`
 }
 
 // MarketSource is the seam every feed implementation satisfies — Sim and

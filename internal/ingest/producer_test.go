@@ -153,3 +153,24 @@ func TestProducer_LastTick(t *testing.T) {
 		t.Errorf("LastTick should be ~now after leader ingest, got %v", p.LastTick())
 	}
 }
+
+// The hub's latency span starts at the envelope's EmittedAt (phase18.md step
+// 2, M27), not at the tick's own stamp, which for a Finnhub bar is its first
+// second.
+func TestProducer_QuoteEnvelopeCarriesTheEmitTime(t *testing.T) {
+	p, redis := newTestProducer(true)
+	tick := validTick()
+	tick.Timestamp = time.Now().Add(-3 * time.Second)
+
+	before := time.Now()
+	p.handle(context.Background(), tick)
+	after := time.Now()
+
+	var env source.PubSubMessage
+	if err := json.Unmarshal(redis.published, &env); err != nil {
+		t.Fatal(err)
+	}
+	if env.EmittedAt.Before(before) || env.EmittedAt.After(after) {
+		t.Errorf("emittedAt = %v, want between %v and %v", env.EmittedAt, before, after)
+	}
+}
