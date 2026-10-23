@@ -316,6 +316,14 @@ func runTrigger(ctx context.Context, cfg flags.Config, sessionArg string, dryRun
 		}
 		session = latest.Time
 	}
+	// Nothing before the go-live is recorded: a record counts its judged sessions
+	// from LiveFrom, so an event before it would sit under "has not judged a
+	// session yet" (phase17.md step 5, record cadence). A dry run writes nothing,
+	// so it may still look at an earlier session.
+	if !dryRun && session.Before(trigger.LiveFrom) {
+		return fmt.Errorf("trigger: refused: %s is before the trigger's go-live (%s); use --dry-run to look at it",
+			session.Format(time.DateOnly), trigger.LiveFrom.Format(time.DateOnly))
+	}
 
 	// The reference table needs Redis only for a refreshed copy; without an
 	// address the embedded one answers.
