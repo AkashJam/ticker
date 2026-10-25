@@ -223,22 +223,33 @@ func rawOrNull(b []byte) json.RawMessage {
 	return json.RawMessage(b)
 }
 
-// tripped reports whether the newest event is from the newest session with
-// bars: the last close tripped something (phase15.md step 7, decision 4). It
-// reads quiet again after the next close that trips nothing.
-func (h *Handlers) tripped(ctx context.Context) bool {
+// tripsAtLastClose is how many events the last close recorded: the events of the
+// newest session, when that is the newest session with bars (phase15.md step 7,
+// decision 4; phase19.md step 3, I12). It reads zero again after the next close that
+// trips nothing. A session cannot trip more than the eighteen sensors, so the page
+// size is a ceiling, not a cut.
+const tripsPageSize = 64
+
+func (h *Handlers) trips(ctx context.Context) int {
 	if h.Events == nil || h.Candles == nil {
-		return false
+		return 0
 	}
-	latest, err := h.Events.Events(ctx, 1)
+	latest, err := h.Events.Events(ctx, tripsPageSize)
 	if err != nil || len(latest) == 0 {
-		return false
+		return 0
 	}
-	sessions, err := h.canarySessions(ctx, latest[0].SessionDate)
-	if err != nil || len(sessions) == 0 {
-		return false
+	newest := latest[0].SessionDate.UTC()
+	sessions, err := h.canarySessions(ctx, newest)
+	if err != nil || len(sessions) == 0 || !sessions[len(sessions)-1].Equal(newest) {
+		return 0
 	}
-	return sessions[len(sessions)-1].Equal(latest[0].SessionDate.UTC())
+	n := 0
+	for _, e := range latest {
+		if e.SessionDate.UTC().Equal(newest) {
+			n++
+		}
+	}
+	return n
 }
 
 // eventLookups are the reference rows an event is dressed from.

@@ -317,30 +317,44 @@ func TestEventWithNoBarsStillAppearsWithoutPriceOrBand(t *testing.T) {
 
 // --- tripped ---
 
-func state(t *testing.T, h *Handlers) bool {
+func state(t *testing.T, h *Handlers) (tripped bool, trips int) {
 	t.Helper()
 	var got struct {
 		Tripped bool `json:"tripped"`
+		Trips   int  `json:"trips"`
 	}
 	if code := get(t, ledgerRouter(h), "/market/state", &got); code != http.StatusOK {
 		t.Fatalf("state = %d", code)
 	}
-	return got.Tripped
+	return got.Tripped, got.Trips
 }
 
 func TestTrippedForExactlyOneSession(t *testing.T) {
 	b := fixtureBars()
-	if !state(t, newHandlers(t, []trigger.Trip{tripFor("CAT", "", session)}, b)) {
-		t.Error("the newest event is from the newest session: tripped")
+	if tr, n := state(t, newHandlers(t, []trigger.Trip{tripFor("CAT", "", session)}, b)); !tr || n != 1 {
+		t.Errorf("the newest event is from the newest session: tripped, one trip (got %v, %d)", tr, n)
 	}
-	if state(t, newHandlers(t, []trigger.Trip{tripFor("CAT", "", session.AddDate(0, 0, -1))}, b)) {
-		t.Error("a close later that tripped nothing reads quiet")
+	if tr, n := state(t, newHandlers(t, []trigger.Trip{tripFor("CAT", "", session.AddDate(0, 0, -1))}, b)); tr || n != 0 {
+		t.Errorf("a close later that tripped nothing reads quiet (got %v, %d)", tr, n)
 	}
-	if state(t, newHandlers(t, nil, b)) {
-		t.Error("no events: quiet")
+	if tr, n := state(t, newHandlers(t, nil, b)); tr || n != 0 {
+		t.Errorf("no events: quiet (got %v, %d)", tr, n)
 	}
-	if state(t, &Handlers{}) {
-		t.Error("an unwired handler cannot claim a trip")
+	if tr, n := state(t, &Handlers{}); tr || n != 0 {
+		t.Errorf("an unwired handler cannot claim a trip (got %v, %d)", tr, n)
+	}
+}
+
+func TestTripsCountsTheLastClosesEventsOnly(t *testing.T) {
+	b := fixtureBars()
+	three := []trigger.Trip{
+		tripFor("CAT", "", session),
+		tripFor("DDOG", "", session),
+		tripFor("NVDA", "", session),
+		tripFor("CAT", "", session.AddDate(0, 0, -1)), // an earlier close's event is not counted
+	}
+	if tr, n := state(t, newHandlers(t, three, b)); !tr || n != 3 {
+		t.Errorf("three events at the last close: tripped, three trips (got %v, %d)", tr, n)
 	}
 }
 
