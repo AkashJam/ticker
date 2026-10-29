@@ -29,6 +29,32 @@ var HousingTags = []string{
 	HousingAveragedAllResidents, HousingDerivedRent, HousingSurveyComponent, HousingIncludedNotSeparate, HousingNotInSurvey,
 }
 
+// Survey kinds: what sort of figure a city's survey publishes, so the page can
+// name it ("Poverty line") instead of calling every one "cost of living" (M22).
+// A closed set, so a typo cannot invent a kind the page has no wording for.
+const (
+	KindPovertyLine           = "poverty_line"
+	KindMinimumIncomeStandard = "minimum_income_standard"
+	KindLivingWage            = "living_wage"
+	KindBenefitOrBudget       = "benefit_or_reference_budget"
+	KindAverageSpending       = "average_spending"
+)
+
+// KindInfo is a kind's heading and its one-line plain gloss.
+type KindInfo struct {
+	Label string
+	Gloss string
+}
+
+// SurveyKinds is the closed set, keyed by kind.
+var SurveyKinds = map[string]KindInfo{
+	KindPovertyLine:           {"Poverty line", "The least a household needs to spend to avoid being counted as poor."},
+	KindMinimumIncomeStandard: {"Minimum income standard", "A budget built from what members of the public say a household needs for a decent minimum."},
+	KindLivingWage:            {"Living wage", "The pay one worker needs to cover a modest budget with no help from benefits."},
+	KindBenefitOrBudget:       {"Benefit standard or reference budget", "What the state pays as a basic benefit, or prices a basket of essentials at."},
+	KindAverageSpending:       {"Average spending", "What households there actually spend on average, which is not a minimum."},
+}
+
 // MeasureAverage marks a survey that reports average consumption.
 const MeasureAverage = "average"
 
@@ -79,7 +105,10 @@ type SurveySource struct {
 // (research/city-surveys.md is the working file); Verified is false while an item
 // the owner must close is open, and an unverified city gets no page.
 type Survey struct {
-	Slug       string   `json:"slug"`
+	Slug string `json:"slug"`
+	// Kind is one of SurveyKinds: poverty line, minimum income standard, living wage,
+	// benefit or reference budget, average spending.
+	Kind       string   `json:"kind"`
 	Verified   bool     `json:"verified"`
 	OpenItems  []string `json:"openItems"`
 	Instrument string   `json:"instrument"`

@@ -119,6 +119,13 @@ func TestCityChartsRunFromTheFirstObservation(t *testing.T) {
 	if it.Survey.Parts != nil || it.Survey.SplitNote == nil {
 		t.Errorf("italy publishes a total, not a split: %+v", it.Survey)
 	}
+	// M22 and M23: the kind and its gloss ride on the survey; the 2025 figure replaced 2024.
+	if it.Survey.Kind != "poverty_line" || it.Survey.KindLabel != "Poverty line" || it.Survey.KindGloss == "" {
+		t.Errorf("italy kind %q %q %q", it.Survey.Kind, it.Survey.KindLabel, it.Survey.KindGloss)
+	}
+	if it.Survey.Headline.Year != 2025 || it.Survey.Headline.Value != 1256.37 {
+		t.Errorf("italy headline %+v", it.Survey.Headline)
+	}
 }
 
 func TestCityMacroAndComposition(t *testing.T) {

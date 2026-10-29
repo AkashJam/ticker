@@ -179,3 +179,31 @@ func TestSurveyLookup(t *testing.T) {
 		t.Error("colombia has no survey and no Atlas row")
 	}
 }
+
+// M22: each record names what sort of figure it is, from the closed set, as
+// decided in phase18.md. Singapore is included though it has no page yet.
+func TestSurveyKinds(t *testing.T) {
+	want := map[string]string{
+		"italy": KindPovertyLine, "south-africa": KindPovertyLine, "mexico": KindPovertyLine,
+		"canada": KindPovertyLine, "australia": KindPovertyLine, "israel": KindPovertyLine,
+		"france": KindMinimumIncomeStandard, "united-kingdom": KindMinimumIncomeStandard,
+		"ireland": KindMinimumIncomeStandard, "poland": KindMinimumIncomeStandard,
+		"united-states": KindLivingWage, "brazil": KindLivingWage,
+		"japan": KindBenefitOrBudget, "germany": KindBenefitOrBudget, "korea": KindBenefitOrBudget,
+		"netherlands": KindBenefitOrBudget, "norway": KindBenefitOrBudget, "turkiye": KindBenefitOrBudget,
+		"china": KindAverageSpending, "india": KindAverageSpending, "singapore": KindAverageSpending,
+	}
+	rows, err := New(nil, Embedded(), nil).Surveys(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range rows {
+		info, ok := SurveyKinds[s.Kind]
+		if !ok || info.Label == "" || info.Gloss == "" {
+			t.Errorf("%s: kind %q is not in SurveyKinds", s.Slug, s.Kind)
+		}
+		if s.Kind != want[s.Slug] {
+			t.Errorf("%s: kind %q, want %q", s.Slug, s.Kind, want[s.Slug])
+		}
+	}
+}
