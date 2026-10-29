@@ -58,6 +58,9 @@ type CitySurvey struct {
 	Sources     []reference.SurveySource `json:"sources"`
 	NextRelease *string                  `json:"nextRelease"`
 	OpenItems   []string                 `json:"openItems"`
+	// Change is the change block (M22): null where the survey has fewer than two
+	// editions on one method.
+	Change *ChangeBlock `json:"change"`
 }
 
 // CitySecondLine is a labelled figure beside the headline, with its euro value
@@ -202,6 +205,7 @@ func BuildCity(slug string, in CityInput) (CityResponse, error) {
 			Instrument: sv.Instrument, Publisher: sv.Publisher, Headline: sv.Headline,
 			Housing: sv.Housing, Parts: sv.Parts, SplitNote: sv.SplitNote, Sources: sv.Sources,
 			NextRelease: sv.NextRelease, OpenItems: nonNil(sv.OpenItems),
+			Change: buildChange(*sv, wb),
 		},
 		Cost:          cost,
 		Affordability: buildAffordability(country.Country, *sv, cost, wb),

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-12T07:55:36Z",
+  "generatedAt": "2026-10-29T15:56:20Z",
   "rows": {
     "AU": {
       "prices": {
@@ -25,6 +25,33 @@
             139.880337389597,
             144.309741509281,
             148.457258197608
+          ]
+        }
+      },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            2744.67,
+            2865.7,
+            2965.11,
+            3047.08,
+            3136.15,
+            3209.6,
+            3277.58,
+            3333.3,
+            3422.55,
+            3491.49,
+            3390.38,
+            3456.59,
+            3671.52,
+            4069.82,
+            4223.97,
+            4348.55
           ]
         }
       },
@@ -112,6 +139,33 @@
           ]
         }
       },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            1006.77,
+            1125.63,
+            1251.56,
+            1381.52,
+            1515.36,
+            1584.72,
+            1651.81,
+            1729.03,
+            1829.87,
+            1933.58,
+            1918.98,
+            2199.38,
+            2518.81,
+            2717.79,
+            2961.33,
+            3164.5
+          ]
+        }
+      },
       "everydaySpendingEur": {
         "value": 501,
         "unit": "EUR/person/month",
@@ -193,6 +247,33 @@
             134.895535203205,
             138.108185460789,
             140.970234688036
+          ]
+        }
+      },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            2327.09,
+            2406.75,
+            2457.28,
+            2528.71,
+            2617.72,
+            2685.6,
+            2733.76,
+            2829.98,
+            2909.07,
+            2959.95,
+            2764.99,
+            2993.21,
+            3320.69,
+            3427.02,
+            3490.44,
+            3619.88
           ]
         }
       },
@@ -280,6 +361,33 @@
           ]
         }
       },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            304043.9,
+            339306.89,
+            366914.36,
+            392600.86,
+            422674.73,
+            452459.93,
+            478563.38,
+            499829.11,
+            518538.48,
+            523426.71,
+            505963.84,
+            636275.57,
+            711545.31,
+            723283.91,
+            763478.09,
+            809493.53
+          ]
+        }
+      },
       "everydaySpendingEur": {
         "value": 753,
         "unit": "EUR/person/month",
@@ -361,6 +469,32 @@
             132.229151902431,
             132.517581947783,
             132.59651563686
+          ]
+        }
+      },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2024",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            903.75,
+            1082.59,
+            1203.18,
+            1333.2,
+            1473.36,
+            1614.78,
+            1790.02,
+            1970.18,
+            2165.46,
+            2343.17,
+            2332.66,
+            2657.74,
+            2750.96,
+            3025.19,
+            3186.88
           ]
         }
       },
@@ -448,6 +582,33 @@
           ]
         }
       },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            1486.7,
+            1563.34,
+            1602.16,
+            1624.13,
+            1651.32,
+            1683.57,
+            1719.66,
+            1768.13,
+            1817.82,
+            1870.51,
+            1752.4,
+            1844.72,
+            2097.94,
+            2219.74,
+            2277.95,
+            2373.36
+          ]
+        }
+      },
       "everydaySpendingEur": {
         "value": 2373,
         "unit": "EUR/person/month",
@@ -529,6 +690,33 @@
             124.026305708083,
             126.503639381943,
             127.697612054654
+          ]
+        }
+      },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            1417.89,
+            1448.09,
+            1455.01,
+            1465.58,
+            1475.46,
+            1497.72,
+            1522.7,
+            1552.46,
+            1593.14,
+            1627.51,
+            1531.21,
+            1627.67,
+            1754.25,
+            1882.79,
+            1939.28,
+            1954.62
           ]
         }
       },
@@ -616,6 +804,33 @@
           ]
         }
       },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            1363.54,
+            1396.78,
+            1437.76,
+            1491.96,
+            1539.98,
+            1569,
+            1632.26,
+            1686.16,
+            1747.34,
+            1782.96,
+            1556.3,
+            1709.73,
+            1977,
+            2078.17,
+            2113.32,
+            2203.33
+          ]
+        }
+      },
       "everydaySpendingEur": {
         "value": 2567,
         "unit": "EUR/person/month",
@@ -697,6 +912,33 @@
             169.053520242749,
             172.741444317758,
             176.046565851866
+          ]
+        }
+      },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            1305568.55,
+            1449942.17,
+            1602149.85,
+            1766974.24,
+            1944110.82,
+            2107811.07,
+            2258371.06,
+            2426204.05,
+            2610066.64,
+            2804981.44,
+            2759848.62,
+            2843628.58,
+            3105444.4,
+            3370116.5,
+            3605536.13,
+            3837171.95
           ]
         }
       },
@@ -784,6 +1026,33 @@
           ]
         }
       },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            1445.54,
+            1430.6,
+            1430.08,
+            1446.54,
+            1489.39,
+            1529.85,
+            1582.74,
+            1630.14,
+            1720.83,
+            1769.13,
+            1567.88,
+            1733.22,
+            2024.4,
+            2254.49,
+            2380.24,
+            2446.97
+          ]
+        }
+      },
       "everydaySpendingEur": {
         "value": 2447,
         "unit": "EUR/person/month",
@@ -865,6 +1134,33 @@
             118.7576499388,
             122.409220726234,
             126.132190942472
+          ]
+        }
+      },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            5389.73,
+            5681.64,
+            5831.92,
+            6015.5,
+            6146.86,
+            6209.99,
+            6409.62,
+            6508.11,
+            6665.93,
+            6839.79,
+            6201.8,
+            6872.12,
+            7583.62,
+            7699.31,
+            8119.73,
+            8426.84
           ]
         }
       },
@@ -952,6 +1248,33 @@
           ]
         }
       },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            2799.9,
+            3244.5,
+            3659.05,
+            4164.42,
+            4602.27,
+            5099.31,
+            5659.05,
+            6151.15,
+            6792.77,
+            7346.47,
+            7207.05,
+            8475.15,
+            8724.21,
+            9490.05,
+            10321.27,
+            11145.27
+          ]
+        }
+      },
       "everydaySpendingEur": {
         "value": 113,
         "unit": "EUR/person/month",
@@ -1033,6 +1356,33 @@
             128.61715650361,
             129.880659438397,
             131.870007172766
+          ]
+        }
+      },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            1360.02,
+            1397.2,
+            1379.23,
+            1360.39,
+            1367.46,
+            1396.74,
+            1417.63,
+            1456.99,
+            1487.02,
+            1503.74,
+            1354.64,
+            1462.38,
+            1647.24,
+            1739.8,
+            1792.21,
+            1838.69
           ]
         }
       },
@@ -1120,6 +1470,32 @@
           ]
         }
       },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2024",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            186383.1,
+            184629.88,
+            187791.11,
+            193056.74,
+            195856.64,
+            197252.53,
+            196063.71,
+            198928.31,
+            200996.63,
+            201375.04,
+            193590.06,
+            200207.12,
+            212472.08,
+            220974.26,
+            226241.78
+          ]
+        }
+      },
       "everydaySpendingEur": {
         "value": 1381,
         "unit": "EUR/person/month",
@@ -1201,6 +1577,33 @@
             129.195964772806,
             132.195563411264,
             135.002199769989
+          ]
+        }
+      },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            1187749.57,
+            1260607.66,
+            1305169.16,
+            1337987.27,
+            1374442.7,
+            1415906.6,
+            1468829.11,
+            1536322.48,
+            1602085.85,
+            1645996.68,
+            1582046.36,
+            1684987.32,
+            1837527.5,
+            1938770.34,
+            1996296.11,
+            2062171.79
           ]
         }
       },
@@ -1288,6 +1691,33 @@
           ]
         }
       },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            7226.73,
+            7717.73,
+            8155.15,
+            8446.17,
+            8934.8,
+            9151.86,
+            9753.92,
+            10384.75,
+            10899.1,
+            11173.33,
+            10472.3,
+            11905.23,
+            13498.37,
+            14299.16,
+            15081.01,
+            15637.93
+          ]
+        }
+      },
       "everydaySpendingEur": {
         "value": 719,
         "unit": "EUR/person/month",
@@ -1369,6 +1799,33 @@
             137.672842074349,
             142.2799246225,
             146.838060742517
+          ]
+        }
+      },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            1458.77,
+            1498.58,
+            1495.39,
+            1511.69,
+            1530.09,
+            1558.52,
+            1580.99,
+            1640.09,
+            1703.75,
+            1750.16,
+            1666.06,
+            1808.14,
+            2059.43,
+            2195.65,
+            2261.24,
+            2341.54
           ]
         }
       },
@@ -1456,6 +1913,33 @@
           ]
         }
       },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            19497.58,
+            20014.77,
+            20715.88,
+            21614.97,
+            22394.78,
+            23410.19,
+            24283.14,
+            25212.73,
+            26150.87,
+            26873.93,
+            25818.77,
+            27802.78,
+            30943.39,
+            31871.82,
+            33082.89,
+            34848.84
+          ]
+        }
+      },
       "everydaySpendingEur": {
         "value": 2967,
         "unit": "EUR/person/month",
@@ -1537,6 +2021,32 @@
             136.86287449004,
             140.863099606157,
             144.863324722274
+          ]
+        }
+      },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2024",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            2252.3,
+            2359.81,
+            2415.16,
+            2507.77,
+            2566.46,
+            2641.69,
+            2772.92,
+            2884.21,
+            3002.98,
+            3095.47,
+            3072.15,
+            3378.34,
+            3721.39,
+            3844.44,
+            3876.8
           ]
         }
       },
@@ -1624,6 +2134,33 @@
           ]
         }
       },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            1971.62,
+            2118.23,
+            2201.08,
+            2203.77,
+            2269.32,
+            2351.11,
+            2422.1,
+            2616.27,
+            2783.53,
+            2937.16,
+            2976.79,
+            3386.4,
+            4079.93,
+            4471.93,
+            4778.67,
+            5159.23
+          ]
+        }
+      },
       "everydaySpendingEur": {
         "value": 1214,
         "unit": "EUR/person/month",
@@ -1705,6 +2242,33 @@
             834.593133556954,
             1322.88394140871,
             1784.32133830282
+          ]
+        }
+      },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            812.29,
+            963.2,
+            1049.3,
+            1175.31,
+            1288.97,
+            1448.34,
+            1580.6,
+            1836.23,
+            2085.29,
+            2388.59,
+            2760.62,
+            3834.06,
+            7994.83,
+            14296.13,
+            23581.34,
+            33453.87
           ]
         }
       },
@@ -1791,6 +2355,33 @@
           ]
         }
       },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            2763.68,
+            2859.07,
+            2928.73,
+            2996.34,
+            3099.5,
+            3184.4,
+            3269.8,
+            3391.07,
+            3534.55,
+            3643.35,
+            3576.67,
+            4044.88,
+            4413.72,
+            4660.45,
+            4876.42,
+            5104.17
+          ]
+        }
+      },
       "everydaySpendingEur": {
         "value": 4505,
         "unit": "EUR/person/month",
@@ -1872,6 +2463,33 @@
             194.89674005803,
             203.396484041645,
             209.916367980884
+          ]
+        }
+      },
+      "spending": {
+        "source": "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency",
+        "asOf": "2025",
+        "unit": "local currency/person/month",
+        "series": {
+          "start": "2010-01",
+          "step": 12,
+          "values": [
+            3033.95,
+            3292.44,
+            3553.26,
+            3765.56,
+            3946.9,
+            4135.86,
+            4383.4,
+            4626.39,
+            4877.7,
+            5042.07,
+            4794.81,
+            5199.39,
+            5648.3,
+            5955.84,
+            6187.68,
+            6475.03
           ]
         }
       },

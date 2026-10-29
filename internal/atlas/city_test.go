@@ -255,3 +255,52 @@ func TestEveryVerifiedCityHasARatioAndNoRatioIsInventedForAMissingLeg(t *testing
 		t.Errorf("missing spending: %+v", r.Affordability)
 	}
 }
+
+// M22's change block: each line indexed to 100 in the survey's first year, and
+// only where the survey has two or more editions on one method.
+func TestChangeBlockItalyAndCanada(t *testing.T) {
+	in := embeddedInput(t)
+	it, err := BuildCity("italy", in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := it.Survey.Change
+	if c == nil || c.BaseYear != 2014 || c.EndYear != 2025 || len(c.Survey) != 12 || len(c.Prices) != 12 || len(c.Spending) != 12 {
+		t.Fatalf("italy change %+v", c)
+	}
+	if c.Survey[0].Index != 100 || c.Prices[0].Index != 100 || c.Spending[0].Index != 100 {
+		t.Errorf("base year not 100: %v %v %v", c.Survey[0], c.Prices[0], c.Spending[0])
+	}
+	// 1256.37 / 1025.05 = +22.6%; the mock reads +23% for the survey and prices.
+	if c.Rises.Survey != 22.6 || c.Rises.Prices < 20 || c.Rises.Prices > 26 || c.Rises.Spending < c.Rises.Prices {
+		t.Errorf("italy rises %+v", c.Rises)
+	}
+	ca, err := BuildCity("canada", in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cc := ca.Survey.Change; cc == nil || cc.BaseYear != 2020 || cc.EndYear != 2025 || len(cc.Survey) != 6 {
+		t.Errorf("canada change %+v", cc)
+	}
+	// No earlier editions loaded: no block, and the JSON says null.
+	jp, err := BuildCity("japan", in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if jp.Survey.Change != nil {
+		t.Errorf("japan has no history, got %+v", jp.Survey.Change)
+	}
+}
+
+func TestChangeBlockNeedsEveryYearOnEveryLine(t *testing.T) {
+	in := embeddedInput(t)
+	for i := range in.Surveys {
+		if in.Surveys[i].Slug == "italy" {
+			in.Surveys[i].History = in.Surveys[i].History[:1]
+		}
+	}
+	it, _ := BuildCity("italy", in)
+	if it.Survey.Change != nil {
+		t.Errorf("one edition is not a change: %+v", it.Survey.Change)
+	}
+}

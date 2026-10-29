@@ -93,6 +93,13 @@ type SurveyPart struct {
 	IncludesHousing bool    `json:"includesHousing,omitempty"`
 }
 
+// SurveyEdition is one published edition of a survey: the figure for a year, a
+// month in the headline's currency and that year's prices.
+type SurveyEdition struct {
+	Year  int     `json:"year"`
+	Value float64 `json:"value"`
+}
+
 // SurveySource is a primary source: where the figure was read, and when.
 type SurveySource struct {
 	Label     string `json:"label"`
@@ -116,10 +123,16 @@ type Survey struct {
 	// Measure is MeasureAverage where the figure is what residents actually spend
 	// on average (Shanghai, Mumbai) and empty where it is a floor or a priced budget.
 	// The affordability block words the two differently.
-	Measure     string         `json:"measure,omitempty"`
-	Headline    SurveyHeadline `json:"headline"`
-	SecondLines []SecondLine   `json:"secondLines"`
-	Housing     SurveyHousing  `json:"housing"`
+	Measure  string         `json:"measure,omitempty"`
+	Headline SurveyHeadline `json:"headline"`
+	// History is every edition on the headline's method, oldest first and ending with
+	// the headline itself; the change block (Phase 22 step 2) is drawn from it. Nil
+	// where a survey has fewer than two editions on one method: no block, no splice.
+	History       []SurveyEdition `json:"history,omitempty"`
+	HistoryNote   string          `json:"historyNote,omitempty"`
+	HistorySource *SurveySource   `json:"historySource,omitempty"`
+	SecondLines   []SecondLine    `json:"secondLines"`
+	Housing       SurveyHousing   `json:"housing"`
 	// Parts is nil, with SplitNote saying why, where the survey publishes a total
 	// and not a split: no split, no bar.
 	Parts       []SurveyPart   `json:"parts"`

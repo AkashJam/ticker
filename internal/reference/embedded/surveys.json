@@ -9,6 +9,19 @@
       "nextRelease": "mid-October 2027 (the 2026 report)",
       "slug": "italy",
       "kind": "poverty_line",
+      "history": [
+        {"year": 2014, "value": 1025.05}, {"year": 2015, "value": 1027.8}, {"year": 2016, "value": 1025.23},
+        {"year": 2017, "value": 1037.13}, {"year": 2018, "value": 1046.97}, {"year": 2019, "value": 1050.97},
+        {"year": 2020, "value": 1047.7}, {"year": 2021, "value": 1063.4}, {"year": 2022, "value": 1175.15},
+        {"year": 2023, "value": 1217.1}, {"year": 2024, "value": 1224.64}, {"year": 2025, "value": 1256.37}
+      ],
+      "historyNote": "ISTAT has published this threshold every year since 2014 on one method.",
+      "historySource": {
+        "label": "ISTAT IstatData, dataflow 34_211_DF_DCCV_SOGLIAPOVA_2",
+        "url": "https://esploradati.istat.it/SDMXWS/rest/data/IT1,34_211_DF_DCCV_SOGLIAPOVA_2,1.0/A.ITC4..15.40.2",
+        "detail": "Every year 2014 to 2025, current euros, same series as the headline",
+        "retrieved": "2026-10-29"
+      },
       "verified": true,
       "instrument": "ISTAT absolute poverty threshold",
       "publisher": "ISTAT",
@@ -1193,6 +1206,17 @@
       "nextRelease": null,
       "slug": "canada",
       "kind": "poverty_line",
+      "history": [
+        {"year": 2020, "value": 2214.08}, {"year": 2021, "value": 2278.04}, {"year": 2022, "value": 2444.25},
+        {"year": 2023, "value": 2536}, {"year": 2024, "value": 2573.46}, {"year": 2025, "value": 2620}
+      ],
+      "historyNote": "Statistics Canada publishes the 2023-base threshold for 2020 to 2025; thresholds on its earlier bases are not spliced on.",
+      "historySource": {
+        "label": "Statistics Canada table 11-10-0066-01, 2023 base, Toronto, Total threshold",
+        "url": "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1110006601",
+        "detail": "Current dollars for the reference family of four (C$53,138 in 2020 to C$62,880 in 2025), halved for one person and divided by 12",
+        "retrieved": "2026-10-29"
+      },
       "verified": true,
       "instrument": "Market Basket Measure",
       "publisher": "Statistics Canada",

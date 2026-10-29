@@ -207,3 +207,39 @@ func TestSurveyKinds(t *testing.T) {
 		}
 	}
 }
+
+// The change block's history: oldest first, no repeats, ending with the headline
+// itself, and only on the cities whose earlier editions are in the file.
+func TestSurveyHistory(t *testing.T) {
+	rows, err := New(nil, Embedded(), nil).Surveys(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	withHistory := map[string]bool{"italy": true, "canada": true}
+	for _, s := range rows {
+		if len(s.History) == 0 {
+			if withHistory[s.Slug] {
+				t.Errorf("%s: no history", s.Slug)
+			}
+			if s.HistoryNote != "" || s.HistorySource != nil {
+				t.Errorf("%s: a note or source without editions", s.Slug)
+			}
+			continue
+		}
+		if !withHistory[s.Slug] {
+			t.Errorf("%s: history not expected yet; add it to this list when its research is in", s.Slug)
+		}
+		if len(s.History) < 2 || s.HistoryNote == "" || s.HistorySource == nil || s.HistorySource.Retrieved == "" {
+			t.Errorf("%s: history needs two editions, a note and a dated source: %+v", s.Slug, s.History)
+		}
+		for i, e := range s.History {
+			if e.Value <= 0 || (i > 0 && e.Year != s.History[i-1].Year+1) {
+				t.Errorf("%s: edition %+v after %+v: years must be consecutive and values positive", s.Slug, e, s.History[max(i-1, 0)])
+			}
+		}
+		last := s.History[len(s.History)-1]
+		if last.Year != s.Headline.Year || last.Value != s.Headline.Value {
+			t.Errorf("%s: history ends %+v, headline is %d %v", s.Slug, last, s.Headline.Year, s.Headline.Value)
+		}
+	}
+}

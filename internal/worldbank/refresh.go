@@ -38,6 +38,19 @@ type Prices struct {
 	Series change.Series `json:"series"`
 }
 
+// Spending is household consumption per person per month in the country's own
+// currency, as an annual series from 2010: the denominator-free index the change
+// block sets a survey against. Series is nil, with a Reason, when consumption or
+// population is missing for a year (no stand-in, no gap bridged). No level is
+// compared across countries: the unit is local and current prices.
+type Spending struct {
+	Source string         `json:"source"`
+	AsOf   string         `json:"asOf"`
+	Unit   string         `json:"unit"`
+	Series *change.Series `json:"series"`
+	Reason string         `json:"reason,omitempty"`
+}
+
 // Composition is the economic composition the city pages draw.
 type Composition struct {
 	Agriculture   Value `json:"agriculture"`
@@ -50,6 +63,7 @@ type Composition struct {
 // city-page figures: they are not Atlas measures (bearing.md #84).
 type Row struct {
 	Prices              Prices      `json:"prices"`
+	Spending            Spending    `json:"spending"`
 	EverydaySpendingEur Value       `json:"everydaySpendingEur"`
 	GniPpp              Value       `json:"gniPpp"`
 	Unemployment        Value       `json:"unemployment"`
@@ -104,7 +118,7 @@ func sleepCtx(ctx context.Context, d time.Duration) error {
 var (
 	mrnev    = url.Values{"mrnev": {"1"}}
 	cpiRange = url.Values{"date": {"2010:2026"}}
-	popRange = url.Values{"date": {"2015:2026"}}
+	popRange = url.Values{"date": {"2010:2026"}}
 )
 
 // level is a mrnev=1 indicator copied into a Row as a Value.
@@ -158,7 +172,7 @@ func (r *Refresher) Build(ctx context.Context) (Dataset, error) {
 		id    string
 		query url.Values
 	}{
-		{"FP.CPI.TOTL", cpiRange}, {"NE.CON.PRVT.CD", mrnev}, {"SP.POP.TOTL", popRange},
+		{"FP.CPI.TOTL", cpiRange}, {"NE.CON.PRVT.CD", mrnev}, {"NE.CON.PRVT.CN", cpiRange}, {"SP.POP.TOTL", popRange},
 	}
 	for _, l := range levels {
 		calls = append(calls, struct {
@@ -227,6 +241,10 @@ func (r *Refresher) Build(ctx context.Context) (Dataset, error) {
 	// Everyday spending: consumption ÷ population of the same year, at that
 	// year's ECB annual average, per month.
 	cons := latestBy(got["NE.CON.PRVT.CD"])
+	consLCU := map[string][]Obs{}
+	for _, o := range got["NE.CON.PRVT.CN"] {
+		consLCU[o.Code] = append(consLCU[o.Code], o)
+	}
 	pop := map[string]map[int]float64{}
 	for _, o := range got["SP.POP.TOTL"] {
 		if pop[o.Code] == nil {
@@ -237,6 +255,7 @@ func (r *Refresher) Build(ctx context.Context) (Dataset, error) {
 	for _, code := range codes {
 		row := ds.Rows[code]
 		row.EverydaySpendingEur = spending(cons[code], pop[code], usd, fetched)
+		row.Spending = spendingSeries(consLCU[code], pop[code], fetched)
 		ds.Rows[code] = row
 	}
 	return ds, nil
@@ -349,4 +368,32 @@ func (r *Refresher) fetch(ctx context.Context, codes []string, id string, query 
 		}
 	}
 	return nil, lastErr
+}
+
+const spendingSeriesSource = "World Bank NE.CON.PRVT.CN ÷ SP.POP.TOTL, current local currency"
+
+// spendingSeries is consumption ÷ population of the same year, per month, from
+// 2010. Like annual, a series that starts later or skips a year is not served.
+func spendingSeries(cons []Obs, pop map[int]float64, fetched string) Spending {
+	sp := Spending{Source: spendingSeriesSource, AsOf: fetched, Unit: "local currency/person/month"}
+	if len(cons) == 0 {
+		sp.Reason = "consumption not published"
+		return sp
+	}
+	per := make([]Obs, 0, len(cons))
+	for _, o := range cons {
+		p, ok := pop[o.Year]
+		if !ok || p <= 0 {
+			sp.Reason = fmt.Sprintf("no population for %d", o.Year)
+			return sp
+		}
+		per = append(per, Obs{Code: o.Code, Year: o.Year, Value: round(o.Value/p/12, 2)})
+	}
+	s, err := annual(per)
+	if err != nil {
+		sp.Reason = err.Error()
+		return sp
+	}
+	sp.Series, sp.AsOf = &s, s.AsOf()
+	return sp
 }

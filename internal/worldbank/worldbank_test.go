@@ -335,3 +335,45 @@ func TestStale(t *testing.T) {
 		t.Error("a two-day-old dataset is not stale")
 	}
 }
+
+// The change block's spending: consumption ÷ population of the same year ÷ 12,
+// in the country's own currency, from 2010 with no gap.
+func TestSpendingSeriesIsLocalPerPersonPerMonth(t *testing.T) {
+	d := goodData()
+	var cons, pop []Obs
+	for y := 2010; y <= 2025; y++ {
+		cons = append(cons, Obs{"IT", y, 1.2e12 + float64(y-2010)*1.2e10})
+		pop = append(pop, Obs{"IT", y, 6.0e7})
+	}
+	d["NE.CON.PRVT.CN"] = cons
+	d["SP.POP.TOTL"] = append(pop, Obs{"US", 2024, 3.4e8})
+	r, _ := testRefresher(&fakeAPI{data: d})
+	ds, err := r.Build(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	sp := ds.Rows["IT"].Spending
+	if sp.Series == nil || sp.Series.Start != "2010-01" || sp.Series.Step != 12 || len(sp.Series.Values) != 16 || sp.AsOf != "2025" {
+		t.Fatalf("IT spending %+v", sp)
+	}
+	// 1.2e12 / 6e7 = 20,000 a year; ÷ 12.
+	if v := sp.Series.Values[0]; v < 1666.6 || v > 1666.7 {
+		t.Errorf("IT 2010 = %v, want 1666.67", v)
+	}
+	// No consumption for the US: null with a reason, and the build still succeeds.
+	if us := ds.Rows["US"].Spending; us.Series != nil || us.Reason == "" {
+		t.Errorf("US spending %+v, want nil with a reason", us)
+	}
+}
+
+func TestSpendingSeriesNeedsPopulationEveryYear(t *testing.T) {
+	cons := []Obs{{"IT", 2010, 1}, {"IT", 2011, 1}}
+	sp := spendingSeries(cons, map[int]float64{2010: 1}, "2026-10-29")
+	if sp.Series != nil || sp.Reason != "no population for 2011" {
+		t.Errorf("spending %+v", sp)
+	}
+	sp = spendingSeries([]Obs{{"IT", 2011, 1}}, map[int]float64{2011: 1}, "2026-10-29")
+	if sp.Series != nil || sp.Reason == "" {
+		t.Errorf("a series that starts after 2010 must not be served: %+v", sp)
+	}
+}
