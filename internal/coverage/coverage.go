@@ -100,6 +100,8 @@ type Source struct {
 	Excluded   int           `json:"excluded,omitempty"`
 	NonEnglish int           `json:"nonEnglish,omitempty"`
 	Undated    int           `json:"undated,omitempty"`
+	NoSubject  int           `json:"noSubject,omitempty"`
+	Duplicates int           `json:"duplicates,omitempty"`
 
 	// Bank and filings sources.
 	Items []Item `json:"items,omitempty"`
@@ -218,6 +220,8 @@ func Routing(global bool, splitPending bool, label *string) (string, []string) {
 		return RoutingGlobal, []string{SrcFilings, SrcTopic, SrcDividend}
 	}
 	all := []string{SrcBank, SrcEconomy, SrcFilings, SrcSector, SrcDividend}
+	// The economy is asked on every country trip (M17): a stock-led split says the
+	// currency was quiet, not that the whole market was.
 	switch {
 	case splitPending:
 		return RoutingPendingSplit, all
@@ -228,7 +232,7 @@ func Routing(global bool, splitPending bool, label *string) (string, []string) {
 	case trigger.LabelCurrencyLed:
 		return *label, []string{SrcBank, SrcEconomy, SrcDividend}
 	case trigger.LabelStockLed:
-		return *label, []string{SrcFilings, SrcSector, SrcDividend}
+		return *label, []string{SrcEconomy, SrcFilings, SrcSector, SrcDividend}
 	}
 	return *label, all // both, neither
 }
@@ -366,8 +370,8 @@ func (c *Collector) newsSource(ctx context.Context, phrase string, from, to, clo
 	// A follow-up adds to what the trip found: Google returns a bounded page, so
 	// an early item can drop off it. Union by link, then group again.
 	items = mergeNews(prev, items)
-	res := news.Group(items, closedAt, excluded)
-	s := &Source{Status: StatusOK, Query: phrase, Outlets: res.Outlets, Total: res.Total, Excluded: res.Excluded, NonEnglish: res.NonEnglish, Undated: res.Undated}
+	res := news.Group(items, closedAt, excluded, phrase)
+	s := &Source{Status: StatusOK, Query: phrase, Outlets: res.Outlets, Total: res.Total, Excluded: res.Excluded, NonEnglish: res.NonEnglish, Undated: res.Undated, NoSubject: res.NoSubject, Duplicates: res.Duplicates}
 	if len(res.Outlets) == 0 {
 		s.Status = StatusEmpty
 		s.Absent = &Absent{Reason: newsAbsence(res)}
@@ -382,7 +386,7 @@ func newsAbsence(r news.Result) string {
 	case r.Excluded == r.Total:
 		return fmt.Sprintf("all %d headlines came from outlets that generate pages from price or filing data", r.Total)
 	}
-	return fmt.Sprintf("none of the %d headlines could be used (%d from machine-generated outlets, %d not in English, %d undated)", r.Total, r.Excluded, r.NonEnglish, r.Undated)
+	return fmt.Sprintf("none of the %d headlines could be used (%d from machine-generated outlets, %d not in English, %d undated, %d naming none of the query's terms, %d repeated)", r.Total, r.Excluded, r.NonEnglish, r.Undated, r.NoSubject, r.Duplicates)
 }
 
 func mergeNews(prev *Source, fresh []news.Item) []news.Item {

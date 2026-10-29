@@ -291,6 +291,12 @@ func TestTrippedRecordsTheStory(t *testing.T) {
 		t.Errorf("MUFG: stage %s complete %v, want the trip's fetch, not yet followed up", mufg.Stage, mufg.Complete)
 	}
 
+	// M16: the economy query's filter drops a reference page (excluded), a headline
+	// that names none of its terms, and a headline one outlet runs twice.
+	if econ := mufg.Sources[coverage.SrcEconomy]; econ == nil || econ.Excluded != 1 || econ.NoSubject != 1 || econ.Duplicates != 1 {
+		t.Errorf("MUFG economy: %+v, want 1 excluded, 1 without a subject, 1 duplicate", econ)
+	}
+
 	for k := range st.events {
 		if strings.HasPrefix(k, "NVDA ") {
 			t.Errorf("NVDA has an event (%s); the record spec needs it to have none", k)

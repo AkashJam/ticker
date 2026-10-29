@@ -83,7 +83,7 @@ func TestGroupKeepsTheTwoEarliestPerOutletAndOrdersOutletsEarliestFirst(t *testi
 		{Title: "f1", Outlet: "FT", OutletURL: "https://www.ft.com", Published: at(7)},
 		{Title: "b1", Outlet: "Bloomberg", OutletURL: "https://www.bloomberg.com", Published: at(21)},
 	}
-	got := Group(items, close16, ExcludedList{})
+	got := Group(items, close16, ExcludedList{}, "")
 	names := []string{}
 	for _, o := range got.Outlets {
 		names = append(names, o.Name)
@@ -104,7 +104,7 @@ func TestGroupKeepsTheTwoEarliestPerOutletAndOrdersOutletsEarliestFirst(t *testi
 }
 
 func TestGroupSideAtTheCloseIsAfter(t *testing.T) {
-	got := Group([]Item{{Title: "x", Outlet: "A", Published: close16}}, close16, ExcludedList{})
+	got := Group([]Item{{Title: "x", Outlet: "A", Published: close16}}, close16, ExcludedList{}, "")
 	if got.Outlets[0].Items[0].Side != SideAfter {
 		t.Error("the close itself is after")
 	}
@@ -122,7 +122,7 @@ func TestGroupDropsMachineOutletsByHostThenName(t *testing.T) {
 		{Title: "d", Outlet: "Reuters", OutletURL: "https://www.reuters.com", Published: at(10)},
 		{Title: "e", Outlet: "Notmarketbeat", OutletURL: "https://notmarketbeat.com", Published: at(10)}, // not a subdomain
 	}
-	got := Group(items, close16, list)
+	got := Group(items, close16, list, "")
 	if got.Excluded != 3 || len(got.Outlets) != 2 {
 		t.Fatalf("excluded %d, outlets %+v", got.Excluded, got.Outlets)
 	}
@@ -136,18 +136,18 @@ func TestGroupDropsNonLatinTitlesAndUndatedItems(t *testing.T) {
 		{Title: "No date", Outlet: "Reuters", Published: time.Time{}},
 		{Title: "Bank of Mexico keeps rate – 12%", Outlet: "AP", Published: at(11)}, // digits and punctuation are not letters
 	}
-	got := Group(items, close16, ExcludedList{})
+	got := Group(items, close16, ExcludedList{}, "")
 	if got.NonEnglish != 2 || got.Undated != 1 || len(got.Outlets) != 2 {
 		t.Errorf("non-English %d, undated %d, outlets %+v", got.NonEnglish, got.Undated, got.Outlets)
 	}
 }
 
 func TestGroupEmptyAndUnnamedOutlets(t *testing.T) {
-	got := Group(nil, close16, ExcludedList{})
+	got := Group(nil, close16, ExcludedList{}, "")
 	if got.Outlets == nil || len(got.Outlets) != 0 || got.Total != 0 {
 		t.Errorf("an empty result must be an empty list: %+v", got)
 	}
-	got = Group([]Item{{Title: "x", Outlet: "", OutletURL: "https://www.example.org/a", Published: at(9)}, {Title: "y", Published: at(9)}}, close16, ExcludedList{})
+	got = Group([]Item{{Title: "x", Outlet: "", OutletURL: "https://www.example.org/a", Published: at(9)}, {Title: "y", Published: at(9)}}, close16, ExcludedList{}, "")
 	if len(got.Outlets) != 2 {
 		t.Fatalf("outlets = %+v", got.Outlets)
 	}
@@ -167,10 +167,10 @@ func TestEmbeddedListIsTheElevenOutletsOfBearing111(t *testing.T) {
 	if err := json.Unmarshal(b, &l); err != nil {
 		t.Fatal(err)
 	}
-	if len(l.Excluded) != 12 || l.Source == "" || l.AsOf == "" {
-		t.Fatalf("%d entries (#111 names eleven outlets, one of which is two entries: Kalkine Media and kalkine.ca)", len(l.Excluded))
+	if len(l.Excluded) != 15 || l.Source == "" || l.AsOf == "" {
+		t.Fatalf("%d entries (#111 names eleven outlets, one of which is two entries: Kalkine Media and kalkine.ca; Phase 21 adds Britannica, FOREX.com and OEC)", len(l.Excluded))
 	}
-	for _, name := range []string{"MarketBeat", "ad-hoc-news.de", "Kalkine Media", "kalkine.ca", "Bybit", "Traders Union", "BigGo Finance", "tmgm.com", "CryptoRank", "Moomoo", "TipRanks", "Stock Titan"} {
+	for _, name := range []string{"MarketBeat", "ad-hoc-news.de", "Kalkine Media", "kalkine.ca", "Bybit", "Traders Union", "BigGo Finance", "tmgm.com", "CryptoRank", "Moomoo", "TipRanks", "Stock Titan", "Britannica", "FOREX.com", "OEC"} {
 		found := false
 		for _, e := range l.Excluded {
 			found = found || e.Name == name
@@ -182,6 +182,65 @@ func TestEmbeddedListIsTheElevenOutletsOfBearing111(t *testing.T) {
 	for _, e := range l.Excluded {
 		if len(e.Hosts) == 0 {
 			t.Errorf("%s has no host to match", e.Name)
+		}
+	}
+}
+
+func TestSubjectsReadsAQueryOwnTerms(t *testing.T) {
+	cases := map[string][]string{
+		`Mexico (economy OR Banxico OR "Mexican peso")`:                 {"mexico", "banxico", "mexican peso"},
+		`"Telkom Indonesia" OR Telkomsel OR "Jakarta stocks"`:           {"telkom indonesia", "telkomsel", "jakarta stocks"},
+		`"Bank Indonesia" OR rupiah OR "Indonesia economy"`:             {"bank indonesia", "rupiah", "indonesia economy"},
+		`Chile (economy OR "central bank" OR "Chilean peso" OR copper)`: {"chile", "chilean peso", "copper"},
+	}
+	for phrase, want := range cases {
+		if got := Subjects(phrase); !slices.Equal(got, want) {
+			t.Errorf("Subjects(%q) = %q, want %q", phrase, got, want)
+		}
+	}
+}
+
+func TestGroupDropsHeadlinesThatNameNoSubject(t *testing.T) {
+	q := `"Telkom Indonesia" OR Telkomsel OR "Jakarta stocks"`
+	items := []Item{
+		{Title: "Telkomsel raises data prices - Reuters", Outlet: "Reuters", Published: at(9)},
+		{Title: "Jakarta stocks fall most since 1998 - Bloomberg", Outlet: "Bloomberg", Published: at(10)},
+		{Title: "Velo-discount launches in Mexico - Velodisco", Outlet: "Velodisco", Published: at(11)},
+		{Title: "Local telecom Telkomselfoo plans a merger - AP", Outlet: "AP", Published: at(12)}, // not a whole word
+	}
+	got := Group(items, close16, ExcludedList{}, q)
+	if got.NoSubject != 2 || len(got.Outlets) != 2 {
+		t.Fatalf("no-subject %d, outlets %+v, want 2 dropped and Reuters and Bloomberg kept", got.NoSubject, got.Outlets)
+	}
+	if got.Outlets[0].Items[0].Title != "Telkomsel raises data prices" {
+		t.Errorf("title = %q, want the outlet suffix stripped", got.Outlets[0].Items[0].Title)
+	}
+}
+
+func TestGroupFoldsAccentsInTheSubjectTest(t *testing.T) {
+	got := Group([]Item{{Title: "América Móvil beats estimates", Outlet: "Reuters", Published: at(9)}}, close16, ExcludedList{}, `"America Movil" OR Telcel`)
+	if got.NoSubject != 0 || len(got.Outlets) != 1 {
+		t.Errorf("accented headline dropped: %+v", got)
+	}
+}
+
+func TestGroupDropsAHeadlineTwiceFromOneOutletButNotFromTwo(t *testing.T) {
+	items := []Item{
+		{Title: "Peso falls - Fakti.bg", Outlet: "Fakti.bg", Published: at(9)},
+		{Title: "Peso falls - Fakti.bg", Outlet: "Fakti.bg", Published: at(10)},
+		{Title: "Peso falls - Reuters", Outlet: "Reuters", Published: at(11)},
+	}
+	got := Group(items, close16, ExcludedList{}, "peso")
+	if got.Duplicates != 1 || len(got.Outlets) != 2 {
+		t.Errorf("duplicates %d, outlets %+v, want 1 dropped and both outlets kept", got.Duplicates, got.Outlets)
+	}
+}
+
+func TestGroupNeverNamesAnOutletByAURL(t *testing.T) {
+	got := Group([]Item{{Title: "x", Outlet: "https://www.fakti.bg/a", OutletURL: "https://www.fakti.bg/a", Published: at(9)}, {Title: "y", Outlet: "ad-hoc.example.org", OutletURL: "https://ad-hoc.example.org", Published: at(9)}}, close16, ExcludedList{}, "")
+	for _, o := range got.Outlets {
+		if strings.Contains(o.Name, "/") {
+			t.Errorf("outlet named %q", o.Name)
 		}
 	}
 }

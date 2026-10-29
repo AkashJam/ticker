@@ -1,6 +1,6 @@
 {
-  "source": "bearing.md #111: outlets that generate pages from price or filing data and explain nothing; measured 14 Oct 2026 at 18% of all news-query items and 36% of sector-query items",
-  "asOf": "2026-10-17",
+  "source": "bearing.md #111: outlets that generate pages from price or filing data and explain nothing; measured 14 Oct 2026 at 18% of all news-query items and 36% of sector-query items; Phase 21 M16 adds the evergreen reference sites (Britannica, FOREX.com, OEC), which answer a country or currency query with a page that is never about the move",
+  "asOf": "2026-10-29",
   "criterion": "machine-generated text, not a judgement of quality; real newspapers stay in even where they run some automated content",
   "excluded": [
     {"name": "MarketBeat",      "hosts": ["marketbeat.com"]},
@@ -14,6 +14,9 @@
     {"name": "CryptoRank",      "hosts": ["cryptorank.io"]},
     {"name": "Moomoo",          "hosts": ["moomoo.com"]},
     {"name": "TipRanks",        "hosts": ["tipranks.com"]},
-    {"name": "Stock Titan",     "hosts": ["stocktitan.net"]}
+    {"name": "Stock Titan",     "hosts": ["stocktitan.net"]},
+    {"name": "Britannica",      "hosts": ["britannica.com"]},
+    {"name": "FOREX.com",       "hosts": ["forex.com"]},
+    {"name": "OEC",             "hosts": ["oec.world"]}
   ]
 }

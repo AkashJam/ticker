@@ -93,15 +93,25 @@ type Result struct {
 	Excluded   int      `json:"excluded"`   // from the machine-generated outlets
 	NonEnglish int      `json:"nonEnglish"` // titles that are mostly not Latin script
 	Undated    int      `json:"undated"`    // items with no usable timestamp, which cannot be placed
+	NoSubject  int      `json:"noSubject"`  // titles that name none of the query's terms (M16)
+	Duplicates int      `json:"duplicates"` // the same headline twice from one outlet
 }
 
 // Group groups items. closedAt is the session's close: an item published before
-// it is a possible explanation, after it a reaction.
-func Group(items []Item, closedAt time.Time, excluded ExcludedList) Result {
+// it is a possible explanation, after it a reaction. phrase is the query that
+// found the items: a headline must name one of its terms (M16), and an empty
+// phrase turns that test off. Google appends " - Outlet" to every title; it is
+// stripped, since the outlet is shown beside it.
+func Group(items []Item, closedAt time.Time, excluded ExcludedList, phrase string) Result {
 	res := Result{Total: len(items), Outlets: []Outlet{}}
 	byOutlet := map[string][]GroupedItem{}
 	urls := map[string]string{}
+	terms := Subjects(phrase)
+	// Earliest first, so a duplicate headline keeps its earliest appearance.
+	items = slices.SortedStableFunc(slices.Values(items), func(a, b Item) int { return a.Published.Compare(b.Published) })
+	seen := map[string]bool{}
 	for _, it := range items {
+		it.Title = stripOutlet(it.Title, it.Outlet)
 		switch {
 		case excluded.Excludes(it):
 			res.Excluded++
@@ -112,10 +122,21 @@ func Group(items []Item, closedAt time.Time, excluded ExcludedList) Result {
 		case it.Published.IsZero():
 			res.Undated++
 			continue
+		case len(terms) > 0 && !namesSubject(it.Title, terms):
+			res.NoSubject++
+			continue
 		}
 		name := strings.TrimSpace(it.Outlet)
-		if name == "" {
+		if name == "" || looksLikeURL(name) {
 			name = hostOf(it.OutletURL)
+		}
+		// One outlet repeating a headline is a duplicate; two outlets running the
+		// same wire story are two outlets.
+		if key := name + "\x00" + wordsOf(it.Title); seen[key] {
+			res.Duplicates++
+			continue
+		} else {
+			seen[key] = true
 		}
 		if name == "" {
 			name = "Unknown outlet"
@@ -160,4 +181,82 @@ func latinEnough(title string) bool {
 		}
 	}
 	return letters == 0 || float64(latin)/float64(letters) >= minLatin
+}
+
+// genericTerms are query words that name a topic, not a subject: "economy"
+// alone matches any country's story.
+var genericTerms = map[string]bool{"economy": true, "central bank": true}
+
+// Subjects returns the terms of a query phrase: its quoted phrases and bare
+// words, without the OR and AND operators, parentheses or generic words. Google
+// reads `Mexico (economy OR Banxico)` as Mexico and either, so the country stays
+// a term and "economy" does not.
+func Subjects(phrase string) []string {
+	var terms []string
+	for i := 0; i < len(phrase); {
+		switch c := phrase[i]; {
+		case c == '"':
+			j := strings.IndexByte(phrase[i+1:], '"')
+			if j < 0 {
+				j = len(phrase) - i - 1
+			}
+			terms = append(terms, phrase[i+1:i+1+j])
+			i += j + 2
+		case c == ' ' || c == '(' || c == ')':
+			i++
+		default:
+			j := i
+			for j < len(phrase) && !strings.ContainsRune(" ()\"", rune(phrase[j])) {
+				j++
+			}
+			terms = append(terms, phrase[i:j])
+			i = j
+		}
+	}
+	out := terms[:0]
+	for _, t := range terms {
+		t = fold(t)
+		if t == "" || t == "or" || t == "and" || genericTerms[t] {
+			continue
+		}
+		out = append(out, t)
+	}
+	return out
+}
+
+// namesSubject reports whether title contains a term as whole words.
+func namesSubject(title string, terms []string) bool {
+	t := " " + wordsOf(title) + " "
+	for _, term := range terms {
+		if strings.Contains(t, " "+wordsOf(term)+" ") {
+			return true
+		}
+	}
+	return false
+}
+
+var accents = strings.NewReplacer("á", "a", "à", "a", "ã", "a", "â", "a", "ä", "a", "é", "e", "è", "e", "ê", "e", "í", "i", "ì", "i", "ó", "o", "ô", "o", "õ", "o", "ö", "o", "ú", "u", "ü", "u", "ç", "c", "ñ", "n")
+
+func fold(s string) string { return accents.Replace(strings.ToLower(strings.TrimSpace(s))) }
+
+// wordsOf lower-cases s, folds accents and turns every run of non-letters and
+// digits into one space, so "Itaú Unibanco's" and "itau unibanco s" compare equal.
+func wordsOf(s string) string {
+	return strings.Join(strings.FieldsFunc(fold(s), func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) }), " ")
+}
+
+// stripOutlet removes the " - Outlet" Google appends to a title, when the
+// title ends with this item's own outlet name.
+func stripOutlet(title, outlet string) string {
+	title, outlet = strings.TrimSpace(title), strings.TrimSpace(outlet)
+	if outlet != "" {
+		if t, ok := strings.CutSuffix(title, " - "+outlet); ok {
+			return strings.TrimSpace(t)
+		}
+	}
+	return title
+}
+
+func looksLikeURL(s string) bool {
+	return strings.Contains(s, "://") || strings.HasPrefix(strings.ToLower(s), "www.") || (!strings.Contains(s, " ") && strings.Contains(s, ".") && !strings.HasSuffix(s, "."))
 }

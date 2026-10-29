@@ -34,9 +34,11 @@ type story struct {
 // outlet is one outlet's headlines for a source: hours from the close,
 // negative before it.
 type outlet struct {
-	name  string
-	host  string // empty: <slug>.example
-	hours []float64
+	name   string
+	host   string // empty: <slug>.example
+	hours  []float64
+	title  string // empty: the part's headline for the kind
+	repeat bool   // later hours repeat the headline word for word, which the filter drops
 }
 
 // A sensor's part of the story. Sources a sensor's routing does not ask are
@@ -68,18 +70,22 @@ func usd(v float64) *float64 { return &v }
 var parts = map[string]part{
 	"MUFG": {
 		headline: map[string]string{
-			"economy": "Yen slides as the rate outlook shifts",
-			"sector":  "Japanese lenders fall with bond yields",
+			"economy": "Japanese yen slides as the rate outlook shifts",
+			"sector":  "Japanese banks fall with bond yields",
 		},
 		outlets: map[string][]outlet{
-			"economy": {{name: "Nikkei", hours: []float64{-5, 2}}, {name: "Reuters", hours: []float64{-3}}, {name: "Bloomberg", hours: []float64{-1}}, {name: "The Japan Times", hours: []float64{1}}, {name: "Kyodo News", hours: []float64{4}}},
-			"sector":  {{name: "Nikkei Asia", hours: []float64{-2}}, {name: "Reuters", hours: []float64{1}}, {name: "Bloomberg", hours: []float64{3}}},
+			"economy": {{name: "Nikkei", hours: []float64{-5, 2}}, {name: "Reuters", hours: []float64{-3}}, {name: "Bloomberg", hours: []float64{-1}}, {name: "The Japan Times", hours: []float64{1}}, {name: "Kyodo News", hours: []float64{4}},
+				// Dropped by the filter, and counted: no subject, a reference page, a headline twice.
+				{name: "Daily Brief", hours: []float64{-1}, title: "Oil prices edge higher ahead of OPEC talks"},
+				{name: "Britannica", host: "www.britannica.com", hours: []float64{0}},
+				{name: "Fakti.bg", hours: []float64{3, 5}, repeat: true}},
+			"sector": {{name: "Nikkei Asia", hours: []float64{-2}}, {name: "Reuters", hours: []float64{1}}, {name: "Bloomberg", hours: []float64{3}}},
 		},
 		bank: &bankItem{title: "Summary of Opinions at the Monetary Policy Meeting", language: "en", hours: -6},
 	},
 	"KB": {
 		headline: map[string]string{
-			"economy": "Won steadies as exporters buy dollars",
+			"economy": "Korean won steadies as exporters buy dollars",
 			"sector":  "Korean banks rally on dividend plans",
 		},
 		outlets: map[string][]outlet{
@@ -91,8 +97,8 @@ var parts = map[string]part{
 	},
 	"ITUB": {
 		headline: map[string]string{
-			"economy": "Real weakens on fiscal worries",
-			"sector":  "Brazilian bank shares slip",
+			"economy": "Brazilian real weakens on fiscal worries",
+			"sector":  "Itau Unibanco shares slip",
 		},
 		outlets: map[string][]outlet{
 			"economy": {{name: "Reuters", hours: []float64{-2}}, {name: "Valor International", hours: []float64{1}}, {name: "Bloomberg", hours: []float64{3}}},
@@ -154,8 +160,15 @@ func newStory(ctx context.Context, cfg coverage.Config, trips map[string]time.Ti
 					host = "www." + slug(o.name) + ".example"
 				}
 				for i, h := range o.hours {
+					headline := p.headline[kind]
+					if o.title != "" {
+						headline = o.title
+					}
+					if i > 0 && !o.repeat {
+						headline = fmt.Sprintf("%s, update %d", headline, i)
+					}
 					st.news[phrase] = append(st.news[phrase], news.Item{
-						Title:     fmt.Sprintf("%s - %s", p.headline[kind], o.name),
+						Title:     fmt.Sprintf("%s - %s", headline, o.name),
 						Link:      fmt.Sprintf("https://news.google.com/rss/articles/fixture-%s-%s-%s-%d", strings.ToLower(sym), kind, slug(o.name), i),
 						Outlet:    o.name,
 						OutletURL: "https://" + host,

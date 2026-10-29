@@ -167,7 +167,7 @@ func TestRouting(t *testing.T) {
 		want    []string
 	}{
 		{"currency-led asks the bank, the economy and the dividend", false, false, lbl(trigger.LabelCurrencyLed), trigger.LabelCurrencyLed, []string{SrcBank, SrcEconomy, SrcDividend}},
-		{"stock-led asks the filings, the sector and the dividend", false, false, lbl(trigger.LabelStockLed), trigger.LabelStockLed, []string{SrcFilings, SrcSector, SrcDividend}},
+		{"stock-led asks the economy too, then the filings, the sector and the dividend", false, false, lbl(trigger.LabelStockLed), trigger.LabelStockLed, []string{SrcEconomy, SrcFilings, SrcSector, SrcDividend}},
 		{"both asks everything", false, false, lbl(trigger.LabelBoth), trigger.LabelBoth, []string{SrcBank, SrcEconomy, SrcFilings, SrcSector, SrcDividend}},
 		{"neither asks everything", false, false, lbl(trigger.LabelNeither), trigger.LabelNeither, []string{SrcBank, SrcEconomy, SrcFilings, SrcSector, SrcDividend}},
 		{"a country with no split asks everything", false, false, nil, RoutingNone, []string{SrcBank, SrcEconomy, SrcFilings, SrcSector, SrcDividend}},
@@ -189,8 +189,8 @@ func TestRouting(t *testing.T) {
 func TestTripFetchForABothTripWithNoBankFeed(t *testing.T) {
 	r := newRig()
 	r.n.byPhrase[econ] = []news.Item{
-		{Title: "Peso slides", Outlet: "Reuters", OutletURL: "https://www.reuters.com", Link: "r1", Published: hr(15, 14)},
-		{Title: "Peso slides again", Outlet: "Reuters", OutletURL: "https://www.reuters.com", Link: "r2", Published: hr(15, 21)},
+		{Title: "Mexico peso slides", Outlet: "Reuters", OutletURL: "https://www.reuters.com", Link: "r1", Published: hr(15, 14)},
+		{Title: "Mexico peso slides again", Outlet: "Reuters", OutletURL: "https://www.reuters.com", Link: "r2", Published: hr(15, 21)},
 		{Title: "Generated", Outlet: "MarketBeat", OutletURL: "https://www.marketbeat.com", Link: "m1", Published: hr(15, 14)},
 	}
 	r.n.byPhrase[sector] = nil
@@ -274,7 +274,7 @@ func TestBankKeepsItsLanguageAndCapsItsItems(t *testing.T) {
 
 func TestAGlobalNameGetsItsEightKsWithItemCodesAndItsTopic(t *testing.T) {
 	r := newRig()
-	r.n.byPhrase[topic] = []news.Item{{Title: "Chips rally", Outlet: "WSJ", OutletURL: "https://www.wsj.com", Link: "w1", Published: hr(15, 15)}}
+	r.n.byPhrase[topic] = []news.Item{{Title: "Semiconductor stocks rally", Outlet: "WSJ", OutletURL: "https://www.wsj.com", Link: "w1", Published: hr(15, 15)}}
 	r.f.filings = []edgar.Filing{
 		{Form: "8-K", Filed: session, Accepted: hr(15, 21), Items: []string{"2.02", "9.01"}, Description: "8-K", URL: "https://sec/e"},
 		{Form: "8-K/A", Filed: hr(14, 0), Accepted: hr(14, 21), Items: []string{"5.02"}, Description: "8-K/A", URL: "https://sec/a"},
@@ -318,7 +318,7 @@ func TestNoFilingIsAStatedAbsence(t *testing.T) {
 func TestAFailingSourceDoesNotBlockTheOthers(t *testing.T) {
 	r := newRig()
 	r.n.errs[econ] = &news.StatusError{Code: 429}
-	r.n.byPhrase[sector] = []news.Item{{Title: "Telcel", Outlet: "AP", OutletURL: "https://apnews.com", Link: "a", Published: hr(15, 10)}}
+	r.n.byPhrase[sector] = []news.Item{{Title: "America Movil shares fall", Outlet: "AP", OutletURL: "https://apnews.com", Link: "a", Published: hr(15, 10)}}
 	cov := collect(t, r, trip("AMX", lbl(trigger.LabelBoth), false), nil, trigger.StageTrip)
 	e := cov.Sources[SrcEconomy]
 	if e.Status != StatusError || e.Attempts != 1 || !strings.Contains(e.Error, "429") {
@@ -366,7 +366,7 @@ func TestAnErrorThatRecoversKeepsTheRest(t *testing.T) {
 	prev, _ := marshal(collect(t, r, ev, nil, trigger.StageTrip))
 
 	delete(r.n.errs, econ)
-	r.n.byPhrase[econ] = []news.Item{{Title: "Peso", Outlet: "Reuters", OutletURL: "https://www.reuters.com", Link: "r", Published: hr(15, 10)}}
+	r.n.byPhrase[econ] = []news.Item{{Title: "Mexico peso", Outlet: "Reuters", OutletURL: "https://www.reuters.com", Link: "r", Published: hr(15, 10)}}
 	cov := collect(t, r, ev, prev, trigger.StageFollowUp)
 	if e := cov.Sources[SrcEconomy]; e.Status != StatusOK || e.Attempts != 2 {
 		t.Errorf("economy = %+v", e)
@@ -379,7 +379,7 @@ func TestAnErrorThatRecoversKeepsTheRest(t *testing.T) {
 func TestWithoutAContactEDGARIsAnErrorFrozenAtOnce(t *testing.T) {
 	r := newRig()
 	r.c.Filings = nil
-	r.n.byPhrase[sector] = []news.Item{{Title: "Telcel", Outlet: "AP", OutletURL: "https://apnews.com", Link: "a", Published: hr(15, 10)}}
+	r.n.byPhrase[sector] = []news.Item{{Title: "America Movil shares fall", Outlet: "AP", OutletURL: "https://apnews.com", Link: "a", Published: hr(15, 10)}}
 	cov := collect(t, r, trip("AMX", lbl(trigger.LabelStockLed), false), nil, trigger.StageTrip)
 	f := cov.Sources[SrcFilings]
 	if f.Status != StatusError || f.Attempts != MaxAttempts || !strings.Contains(f.Error, "FETCH_CONTACT") {
@@ -411,13 +411,13 @@ func TestAMissingConfigurationIsFrozenToo(t *testing.T) {
 func TestFollowUpAddsTheAfterTheCloseSideAndKeepsWhatWasFound(t *testing.T) {
 	r := newRig()
 	ev := trip("AMX", lbl(trigger.LabelStockLed), false)
-	r.n.byPhrase[sector] = []news.Item{{Title: "Before", Outlet: "Reuters", OutletURL: "https://www.reuters.com", Link: "r1", Published: hr(15, 14)}}
+	r.n.byPhrase[sector] = []news.Item{{Title: "America Movil before the close", Outlet: "Reuters", OutletURL: "https://www.reuters.com", Link: "r1", Published: hr(15, 14)}}
 	r.f.filings = []edgar.Filing{{Form: "6-K", Filed: session, Accepted: hr(15, 12), Description: "FORM 6-K", URL: "https://sec/k1"}}
 	first := collect(t, r, ev, nil, trigger.StageTrip)
 	prev, _ := marshal(first)
 
 	// Next day: Google's page no longer holds the earlier item, and there is a reaction.
-	r.n.byPhrase[sector] = []news.Item{{Title: "Reaction", Outlet: "AP", OutletURL: "https://apnews.com", Link: "a1", Published: hr(16, 13)}}
+	r.n.byPhrase[sector] = []news.Item{{Title: "America Movil reaction", Outlet: "AP", OutletURL: "https://apnews.com", Link: "a1", Published: hr(16, 13)}}
 	r.f.filings = append(r.f.filings, edgar.Filing{Form: "6-K", Filed: hr(16, 0), Accepted: hr(16, 12), Description: "FORM 6-K", URL: "https://sec/k2"})
 	cov := collect(t, r, ev, prev, trigger.StageFollowUp)
 
@@ -596,7 +596,7 @@ func TestWithoutADividendSourceTheSourceIsAnErrorFrozenAtOnce(t *testing.T) {
 func TestADividendFailureDoesNotBlockTheNews(t *testing.T) {
 	r := newRig()
 	r.d.err = errors.New("blocked")
-	r.n.byPhrase[sector] = []news.Item{{Title: "Telcel", Outlet: "AP", OutletURL: "https://apnews.com", Link: "a", Published: hr(15, 10)}}
+	r.n.byPhrase[sector] = []news.Item{{Title: "America Movil shares fall", Outlet: "AP", OutletURL: "https://apnews.com", Link: "a", Published: hr(15, 10)}}
 	cov := collect(t, r, trip("AMX", lbl(trigger.LabelBoth), false), nil, trigger.StageTrip)
 	if cov.Sources[SrcDividend].Status != StatusError || cov.Sources[SrcSector].Status != StatusOK {
 		t.Errorf("dividend %+v, sector %+v", cov.Sources[SrcDividend], cov.Sources[SrcSector])
