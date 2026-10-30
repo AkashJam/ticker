@@ -194,15 +194,15 @@ var genericTerms = map[string]bool{"economy": true, "central bank": true}
 func Subjects(phrase string) []string {
 	var terms []string
 	for i := 0; i < len(phrase); {
-		switch c := phrase[i]; {
-		case c == '"':
+		switch phrase[i] {
+		case '"':
 			j := strings.IndexByte(phrase[i+1:], '"')
 			if j < 0 {
 				j = len(phrase) - i - 1
 			}
 			terms = append(terms, phrase[i+1:i+1+j])
 			i += j + 2
-		case c == ' ' || c == '(' || c == ')':
+		case ' ', '(', ')':
 			i++
 		default:
 			j := i
