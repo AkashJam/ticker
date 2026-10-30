@@ -115,7 +115,11 @@ type Survey struct {
 	Slug string `json:"slug"`
 	// Kind is one of SurveyKinds: poverty line, minimum income standard, living wage,
 	// benefit or reference budget, average spending.
-	Kind       string   `json:"kind"`
+	Kind string `json:"kind"`
+	// Area names the place the figures are for where that is not the city itself
+	// ("Urban Maharashtra" for Mumbai); empty where the city is the place. The change
+	// block's sentence says it in place of the city.
+	Area       string   `json:"area,omitempty"`
 	Verified   bool     `json:"verified"`
 	OpenItems  []string `json:"openItems"`
 	Instrument string   `json:"instrument"`

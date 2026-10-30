@@ -163,6 +163,16 @@
       "nextRelease": null,
       "slug": "united-kingdom",
       "kind": "minimum_income_standard",
+      "history": [
+        {"year": 2024, "value": 3216.89}, {"year": 2025, "value": 3352.48}
+      ],
+      "historyNote": "MIS London has editions for 2015 to 2018, 2020, 2022, 2024 and 2025; only the last two are consecutive, so the line starts in 2024.",
+      "historySource": {
+        "label": "Trust for London, A Minimum Income Standard for London 2024 and 2025",
+        "url": "https://trustforlondon.org.uk/documents/842/A_Minimum_Income_Standard_for_London_in_2024_final.pdf",
+        "detail": "Single working-age adult, Inner London, lower-quartile rent: £742.36 a week in 2024 (Table 4 £402.45 plus Figure 4 rent £339.91) and £773.65 in 2025, × 52 ÷ 12",
+        "retrieved": "2026-10-30"
+      },
       "verified": true,
       "instrument": "Minimum Income Standard for London",
       "publisher": "Loughborough CRSP for Trust for London",
@@ -223,6 +233,17 @@
       "nextRelease": null,
       "slug": "japan",
       "kind": "benefit_or_reference_budget",
+      "history": [
+        {"year": 2023, "value": 130120}, {"year": 2024, "value": 130120},
+        {"year": 2025, "value": 130120}, {"year": 2026, "value": 130920}
+      ],
+      "historyNote": "The standard as it stood at the end of each year, from the October 2023 revision; in October 2025 a ¥500 rise in the special addition was offset by a ¥500 fall in the transitional addition.",
+      "historySource": {
+        "label": "MHLW, 生活保護制度における生活扶助基準額の算出方法 (October 2023, October 2025 and October 2026 editions)",
+        "url": "https://www.mhlw.go.jp/content/001152601.pdf",
+        "detail": "Class 1, class 2, special and transitional additions for one person aged 20–40, 1級地-1, plus the Tokyo housing ceiling of ¥53,700; MHLW updates the file in place, so the 2023 and 2025 editions were read from Internet Archive copies",
+        "retrieved": "2026-10-30"
+      },
       "verified": true,
       "instrument": "Public assistance standard (seikatsu hogo)",
       "publisher": "MHLW",
@@ -400,6 +421,21 @@
       "nextRelease": null,
       "slug": "brazil",
       "kind": "living_wage",
+      "history": [
+        {"year": 2010, "value": 682.53}, {"year": 2011, "value": 761.94}, {"year": 2012, "value": 872.14},
+        {"year": 2013, "value": 873.9}, {"year": 2014, "value": 954.24}, {"year": 2015, "value": 1080.09},
+        {"year": 2016, "value": 1337.69}, {"year": 2017, "value": 1222.85}, {"year": 2018, "value": 1219.46},
+        {"year": 2019, "value": 1326.94}, {"year": 2020, "value": 1630.92}, {"year": 2021, "value": 1885.89},
+        {"year": 2022, "value": 2102.32}, {"year": 2023, "value": 2093.64}, {"year": 2024, "value": 2219.18},
+        {"year": 2025, "value": 2358.61}, {"year": 2026, "value": 2583.34}
+      ],
+      "historyNote": "DIEESE's September figure for 2010 to 2026, each as it published it. It is priced on whichever capital has the dearest food basket that month, so the city behind it changes from year to year; São Paulo's is the one in 2026.",
+      "historySource": {
+        "label": "DIEESE, Pesquisa Nacional da Cesta Básica de Alimentos, September bulletins 2010 to 2026",
+        "url": "https://www.dieese.org.br/analisecestabasica/2026/202609cestabasica.pdf",
+        "detail": "Salário mínimo necessário for a family of four (R$ 2,047.58 in 2010 to R$ 7,750.01 in 2026), divided by 3 adult-equivalents as in the headline",
+        "retrieved": "2026-10-30"
+      },
       "verified": true,
       "instrument": "Necessary minimum wage (salário mínimo necessário)",
       "publisher": "DIEESE",
@@ -433,6 +469,19 @@
     {
       "slug": "china",
       "kind": "average_spending",
+      "history": [
+        {"year": 2015, "value": 3078.83}, {"year": 2016, "value": 3321.42}, {"year": 2017, "value": 3525.33},
+        {"year": 2018, "value": 3834.58}, {"year": 2019, "value": 4022.67}, {"year": 2020, "value": 3736.58},
+        {"year": 2021, "value": 4274.58}, {"year": 2022, "value": 4009.25}, {"year": 2023, "value": 4576.58},
+        {"year": 2024, "value": 4581.67}
+      ],
+      "historyNote": "The Shanghai Statistics Bureau publishes urban residents' consumption on the integrated household survey from 2015; earlier years are on the old urban survey and are not spliced on.",
+      "historySource": {
+        "label": "Shanghai Statistical Yearbooks 2018 (table 10.7), 2022 and 2025 (table 9.14)",
+        "url": "https://tjj.sh.gov.cn/tjnj/2025tjnj/C0914.htm",
+        "detail": "Urban residents' consumption per person a year, ¥36,946 (2015) to ¥54,980 (2024), ÷ 12; overlapping years agree across the yearbooks",
+        "retrieved": "2026-10-30"
+      },
       "verified": true,
       "openItems": [
         "Cite the NBS definition of the housing category directly.",
@@ -528,6 +577,17 @@
     {
       "slug": "india",
       "kind": "average_spending",
+      "area": "Urban Maharashtra",
+      "history": [
+        {"year": 2023, "value": 6657}, {"year": 2024, "value": 7362.56}
+      ],
+      "historyNote": "HCES 2022–23 and 2023–24 share one method; the 2011–12 survey before them does not, so the line has two points.",
+      "historySource": {
+        "label": "MoSPI, NSS Report 592, Survey on Household Consumption Expenditure: 2023–24",
+        "url": "https://mospi.gov.in/sites/default/files/publication_reports/Final_Report_HCES_2023-24L.pdf",
+        "detail": "Table 3.2, urban Maharashtra MPCE without imputation, ₹6,657 (2022–23, published to the rupee) and ₹7,362.56 (2023–24)",
+        "retrieved": "2026-10-30"
+      },
       "verified": true,
       "openItems": [],
       "instrument": "Household Consumption Expenditure Survey (HCES)",
@@ -640,6 +700,18 @@
       "nextRelease": null,
       "slug": "australia",
       "kind": "poverty_line",
+      "history": [
+        {"year": 2017, "value": 2223.52}, {"year": 2018, "value": 2240.29}, {"year": 2019, "value": 2295.84},
+        {"year": 2020, "value": 2431.95}, {"year": 2021, "value": 2511.56}, {"year": 2022, "value": 2672.02},
+        {"year": 2023, "value": 2609.84}, {"year": 2024, "value": 2652.78}, {"year": 2025, "value": 2866.59}
+      ],
+      "historyNote": "Each June quarter's line as first published; each edition re-derives the index from revised household income, which is why 2023 sits below 2022.",
+      "historySource": {
+        "label": "Melbourne Institute, Poverty Lines: Australia, June quarter 2017 to 2025",
+        "url": "https://melbourneinstitute.unimelb.edu.au/__data/assets/pdf_file/0016/5430004/Poverty-Lines-Australia-June-Quarter-2025.pdf",
+        "detail": "Single person, head in workforce, including housing, A$513.12 (2017) to A$661.52 (2025) a week × 52 ÷ 12; read from Internet Archive copies",
+        "retrieved": "2026-10-30"
+      },
       "verified": true,
       "instrument": "Henderson poverty line",
       "publisher": "Melbourne Institute",
@@ -795,6 +867,17 @@
       "nextRelease": null,
       "slug": "germany",
       "kind": "benefit_or_reference_budget",
+      "history": [
+        {"year": 2022, "value": 875}, {"year": 2023, "value": 951}, {"year": 2024, "value": 1012},
+        {"year": 2025, "value": 1012}, {"year": 2026, "value": 1012}
+      ],
+      "historyNote": "The basic need plus the Berlin rent ceiling for one person as it stood at the end of each year; the ceiling rose from €426 to €449 in October 2023.",
+      "historySource": {
+        "label": "Regelbedarfsstufe 1 (IAQ, Sozialpolitik aktuell, table III.16) and Berlin AV-Wohnen rent ceilings",
+        "url": "https://sozialrecht.berlin.de/kategorie/rundschreiben/rs-soz-03-2023-1370812.html",
+        "detail": "Basic need €449 (2022), €502 (2023), €563 (2024–2026); ceiling €426 (Senate answer S19/12669, July 2022), €449 from 1 October 2023 (Rundschreiben Soz 03/2023) and from 1 January 2026 (Jobcenter Berlin Mitte overview)",
+        "retrieved": "2026-10-30"
+      },
       "verified": true,
       "instrument": "Bürgergeld basic need plus Berlin AV-Wohnen rent ceiling",
       "publisher": "BMAS (RBEG §5) and Jobcenter Berlin",
@@ -1022,6 +1105,18 @@
       "nextRelease": "MESL 2027 (annual update)",
       "slug": "ireland",
       "kind": "minimum_income_standard",
+      "history": [
+        {"year": 2019, "value": 2069.95}, {"year": 2020, "value": 2097.59}, {"year": 2021, "value": 2153.15},
+        {"year": 2022, "value": 2238.04}, {"year": 2023, "value": 2413.15}, {"year": 2024, "value": 2480.27},
+        {"year": 2025, "value": 2620.15}, {"year": 2026, "value": 2726.01}
+      ],
+      "historyNote": "A single adult in full-time minimum-wage work, urban, renting privately at 90% of the Dublin average one-bed rent in every year; the basket was reviewed in 2020 and 2026.",
+      "historySource": {
+        "label": "Vincentian MESL Research Centre, minimum-wage income scenarios 2019 to 2021 and appendix tables 2022 to 2026 (table 8A)",
+        "url": "https://budgeting.ie/resources/",
+        "detail": "Total MESL expenditure, single adult, full-time NMW, private rented, €477.68 (2019) to €629.08 (2026) a week × 52 ÷ 12; 2023 and 2024 read from Internet Archive copies of budgeting.ie/download/pdf/mesl_202X_-_appendix_tables.pdf",
+        "retrieved": "2026-10-30"
+      },
       "verified": true,
       "instrument": "Minimum Essential Standard of Living (MESL)",
       "publisher": "Vincentian MESL Research Centre",
@@ -1131,6 +1226,18 @@
       "nextRelease": null,
       "slug": "poland",
       "kind": "minimum_income_standard",
+      "history": [
+        {"year": 2019, "value": 1212.59}, {"year": 2020, "value": 1265.94}, {"year": 2021, "value": 1329.24},
+        {"year": 2022, "value": 1487.63}, {"year": 2023, "value": 1717.41}, {"year": 2024, "value": 1818.35},
+        {"year": 2025, "value": 1947.12}
+      ],
+      "historyNote": "IPiSS's modified social minimum for a one-person working-age household, as each year's annual-average report publishes it.",
+      "historySource": {
+        "label": "IPiSS, Informacja o poziomie i strukturze minimum socjalnego, annual-average reports for 2019 to 2025",
+        "url": "https://www.ipiss.com.pl/wp-content/uploads/2026/04/MS_2025_srednioroczne.pdf",
+        "detail": "Table 1, one-person working household, zł 1,212.59 (2019) to zł 1,947.12 (2025)",
+        "retrieved": "2026-10-30"
+      },
       "verified": true,
       "instrument": "Social minimum (minimum socjalne)",
       "publisher": "IPiSS",
@@ -1262,6 +1369,17 @@
       "nextRelease": null,
       "slug": "mexico",
       "kind": "poverty_line",
+      "history": [
+        {"year": 2021, "value": 3808.81}, {"year": 2022, "value": 4194.32}, {"year": 2023, "value": 4379.41},
+        {"year": 2024, "value": 4567.57}, {"year": 2025, "value": 4740.84}, {"year": 2026, "value": 4951.66}
+      ],
+      "historyNote": "The September urban line for 2021 to 2026, on the 2016-basket method. The September 2020 bulletin is left out: the 2021 bulletin gives a different 2020 value than it published at the time.",
+      "historySource": {
+        "label": "CONEVAL, Líneas de Pobreza por Ingresos, September 2021 to 2024; INEGI bulletins 555/25 and 624/26",
+        "url": "https://www.inegi.org.mx/contenidos/saladeprensa/boletines/2026/lp/lp2026_10.pdf",
+        "detail": "Urban line (food plus non-food basket), pesos per person per month, as each bulletin published it; CONEVAL's work passed to INEGI in July 2025",
+        "retrieved": "2026-10-30"
+      },
       "verified": true,
       "instrument": "Urban income poverty line",
       "publisher": "INEGI",
@@ -1308,6 +1426,17 @@
       "nextRelease": null,
       "slug": "korea",
       "kind": "benefit_or_reference_budget",
+      "history": [
+        {"year": 2021, "value": 858349}, {"year": 2022, "value": 910444}, {"year": 2023, "value": 953368},
+        {"year": 2024, "value": 1054102}, {"year": 2025, "value": 1117444}, {"year": 2026, "value": 1189556}
+      ],
+      "historyNote": "The livelihood benefit plus the Seoul housing-benefit ceiling for one person, as set each January; the benefit moved from 30% to 32% of the standard median income in 2024.",
+      "historySource": {
+        "label": "MOHW, standard median income decisions for 2021 to 2026",
+        "url": "https://www.mohw.go.kr/board.es?mid=a10503000000&bid=0027&act=view&list_no=1487098",
+        "detail": "Livelihood benefit for one person (₩548,349 to ₩820,556) and the Seoul ceiling for one person (₩310,000 to ₩369,000), from each year's release; 2023's ceiling from that release's attachment",
+        "retrieved": "2026-10-30"
+      },
       "verified": false,
       "instrument": "Livelihood benefit plus Seoul housing-benefit ceiling",
       "publisher": "MOHW and MOLIT",
@@ -1347,6 +1476,17 @@
       "nextRelease": null,
       "slug": "turkiye",
       "kind": "benefit_or_reference_budget",
+      "history": [
+        {"year": 2023, "value": 17336.25}, {"year": 2024, "value": 25706.18},
+        {"year": 2025, "value": 36304.79}, {"year": 2026, "value": 48884.82}
+      ],
+      "historyNote": "Türk-İş's September figure for 2023 to 2026. From October 2023 a new team calculates the report; Türk-İş says it uses the same nutrition pattern, and nothing earlier than September 2023 is joined on.",
+      "historySource": {
+        "label": "Türk-İş, Açlık ve Yoksulluk Sınırı, September bulletins 2023 to 2026",
+        "url": "https://www.turkis.org.tr/turk-is-eylul-2026-aclik-ve-yoksulluk-siniri/",
+        "detail": "Monthly living cost of a single worker in Ankara, as each September bulletin published it (TL 17,336.25 in 2023 to TL 48,884.82 in 2026)",
+        "retrieved": "2026-10-30"
+      },
       "verified": true,
       "instrument": "Single-worker living cost",
       "publisher": "Türk-İş",
@@ -1380,15 +1520,26 @@
       "nextRelease": null,
       "slug": "israel",
       "kind": "poverty_line",
+      "history": [
+        {"year": 2020, "value": 3514}, {"year": 2021, "value": 3561}, {"year": 2022, "value": 3845},
+        {"year": 2023, "value": 4155}, {"year": 2024, "value": 4434}
+      ],
+      "historyNote": "NII's line from administrative data, which it uses from the 2019 report; each year is as first published, and the next report revises it by up to 1.5%.",
+      "historySource": {
+        "label": "National Insurance Institute, Poverty and Income Inequality reports 2020 to 2024",
+        "url": "https://www.btl.gov.il/English%20Homepage/Publications/Poverty_Report/Documents/oni2022-e.pdf",
+        "detail": "Single-person line from each year's own report: Table 2 (2020, 2021), Schedule 2 (2022), the 2023 report's press release (₪4,155) and the 2024 report (₪4,434)",
+        "retrieved": "2026-10-30"
+      },
       "verified": true,
       "instrument": "Poverty line, single person",
       "publisher": "National Insurance Institute",
       "headline": {
-        "value": 3547,
+        "value": 4434,
         "currency": "ILS",
         "year": 2024,
         "label": "Monthly poverty line, single person, 2024",
-        "method": "50% of median disposable income per standard person: a relative income threshold with no basket behind it."
+        "method": "50% of median disposable income per standard person (₪3,547 in 2024); a single person counts as 1.25 standard persons. A relative income threshold with no basket behind it."
       },
       "housing": {
         "tag": "included_not_separate",
@@ -1396,10 +1547,10 @@
       },
       "sources": [
         {
-          "label": "National Insurance Institute, 2024 poverty report press release",
-          "url": "",
-          "detail": "",
-          "retrieved": "2026-10-14"
+          "label": "National Insurance Institute, Poverty and Income Inequality 2024",
+          "url": "https://www.btl.gov.il/Publications/oni_report/Documents/dohahoni2024.pdf",
+          "detail": "poverty line by family size, 2024: one person (1.25 standard persons) ₪4,434; per standard person ₪3,547",
+          "retrieved": "2026-10-30"
         }
       ]
     },

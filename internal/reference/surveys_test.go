@@ -215,7 +215,11 @@ func TestSurveyHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	withHistory := map[string]bool{"italy": true, "canada": true}
+	withHistory := map[string]bool{
+		"italy": true, "canada": true, "mexico": true, "brazil": true, "turkiye": true,
+		"china": true, "ireland": true, "poland": true, "israel": true, "korea": true,
+		"japan": true, "germany": true, "australia": true, "united-kingdom": true, "india": true,
+	}
 	for _, s := range rows {
 		if len(s.History) == 0 {
 			if withHistory[s.Slug] {

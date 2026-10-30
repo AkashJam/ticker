@@ -283,12 +283,12 @@ func TestChangeBlockItalyAndCanada(t *testing.T) {
 		t.Errorf("canada change %+v", cc)
 	}
 	// No earlier editions loaded: no block, and the JSON says null.
-	jp, err := BuildCity("japan", in)
+	fr, err := BuildCity("france", in)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if jp.Survey.Change != nil {
-		t.Errorf("japan has no history, got %+v", jp.Survey.Change)
+	if fr.Survey.Change != nil {
+		t.Errorf("france has no history, got %+v", fr.Survey.Change)
 	}
 }
 
@@ -302,5 +302,27 @@ func TestChangeBlockNeedsEveryYearOnEveryLine(t *testing.T) {
 	it, _ := BuildCity("italy", in)
 	if it.Survey.Change != nil {
 		t.Errorf("one edition is not a change: %+v", it.Survey.Change)
+	}
+}
+
+// Mumbai's figures are for urban Maharashtra, and the response says so; a city that
+// is its own place carries no area.
+func TestCityAreaOnlyWhereTheFigureIsNotTheCity(t *testing.T) {
+	in := embeddedInput(t)
+	mu, err := BuildCity("india", in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if mu.Survey.Area != "Urban Maharashtra" {
+		t.Errorf("india area %q", mu.Survey.Area)
+	}
+	for _, slug := range []string{"italy", "china", "japan"} {
+		c, err := BuildCity(slug, in)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if c.Survey.Area != "" {
+			t.Errorf("%s area %q, want none", slug, c.Survey.Area)
+		}
 	}
 }

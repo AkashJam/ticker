@@ -48,6 +48,7 @@ type CitySurvey struct {
 	Kind        string                   `json:"kind"`
 	KindLabel   string                   `json:"kindLabel"`
 	KindGloss   string                   `json:"kindGloss"`
+	Area        string                   `json:"area"`
 	Instrument  string                   `json:"instrument"`
 	Publisher   string                   `json:"publisher"`
 	Headline    reference.SurveyHeadline `json:"headline"`
@@ -201,7 +202,7 @@ func BuildCity(slug string, in CityInput) (CityResponse, error) {
 		Slug:        country.Slug, City: *country.City, Country: country.Country, Code: country.Code,
 		Sensor: country.Sensor, Region: country.Region, Verified: sv.Verified,
 		Survey: CitySurvey{
-			Kind: sv.Kind, KindLabel: reference.SurveyKinds[sv.Kind].Label, KindGloss: reference.SurveyKinds[sv.Kind].Gloss,
+			Kind: sv.Kind, KindLabel: reference.SurveyKinds[sv.Kind].Label, KindGloss: reference.SurveyKinds[sv.Kind].Gloss, Area: sv.Area,
 			Instrument: sv.Instrument, Publisher: sv.Publisher, Headline: sv.Headline,
 			Housing: sv.Housing, Parts: sv.Parts, SplitNote: sv.SplitNote, Sources: sv.Sources,
 			NextRelease: sv.NextRelease, OpenItems: nonNil(sv.OpenItems),
